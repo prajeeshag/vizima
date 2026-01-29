@@ -2,7 +2,7 @@ import {
   PixelProjected,
   type PixelProjectedConfig,
 } from "./pixel-data-projected";
-import { getProjection, Proj } from "../globe/proj";
+import { getProjector, type ProjectorState } from "../projection";
 import { isPreriodicLon } from "./pixel-utils";
 
 export async function interpPixelProjected(
@@ -11,8 +11,8 @@ export async function interpPixelProjected(
 ): Promise<PixelProjected> {
   const width = props.viewSize[0];
   const height = props.viewSize[1];
-  const proj = getProjection(props.proj);
-  const mask = createMask(props, proj);
+  const proj = getProjector(props.proj);
+  const mask = createMask();
 
   const gridValue = props.grid;
   const pixelFieldArray = new Float32Array(width * height);
@@ -37,28 +37,28 @@ export async function interpPixelProjected(
     }
   }
   return new PixelProjected(props, pixelFieldArray);
-}
 
-function createMask(props: PixelProjectedConfig, proj: Proj) {
-  const canvas = document.createElement("canvas");
-  canvas.width = props.viewSize[0];
-  canvas.height = props.viewSize[1];
-  const ctx = canvas.getContext("2d");
-  if (!ctx) {
-    throw new Error("Canvas 2D context is null!");
+  function createMask() {
+    const canvas = document.createElement("canvas");
+    canvas.width = props.viewSize[0];
+    canvas.height = props.viewSize[1];
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      throw new Error("Canvas 2D context is null!");
+    }
+    ctx.beginPath();
+    ctx.fillStyle = "rgba(255, 255, 255, 1)";
+    proj.geoPath(ctx)({ type: "Sphere" });
+    ctx.fill();
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const pixels = imageData.data;
+
+    const mask = new Uint8Array(canvas.width * canvas.height);
+
+    for (let i = 0; i < mask.length; i++) {
+      mask[i] = pixels[i * 4 + 3]! > 0 ? 1 : 0;
+    }
+
+    return mask;
   }
-  ctx.beginPath();
-  ctx.fillStyle = "rgba(255, 255, 255, 1)";
-  proj.geoPath(ctx)({ type: "Sphere" });
-  ctx.fill();
-  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  const pixels = imageData.data;
-
-  const mask = new Uint8Array(canvas.width * canvas.height);
-
-  for (let i = 0; i < mask.length; i++) {
-    mask[i] = pixels[i * 4 + 3]! > 0 ? 1 : 0;
-  }
-
-  return mask;
 }

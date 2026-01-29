@@ -1,5 +1,5 @@
 import { GridData } from "../grid-data";
-import { Data } from "../../datatype/types";
+import { Data } from "../types";
 import d3 from "d3";
 
 export type PixelConfig = {

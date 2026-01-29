@@ -1,4 +1,5 @@
 import { PixelNative, type PixelNativeConfig } from "./pixel-data-native";
+import { PixelNativeUtil } from "./pixel-utils";
 
 export async function interpPixelNative(
   props: PixelNativeConfig,

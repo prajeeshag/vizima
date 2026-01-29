@@ -1,11 +1,11 @@
-import { Globe } from "./component/globe";
-import getgraticulePainter from "./component/graticule-painter";
-import getlandPainter from "./component/land-painter";
-import { jsonDataAgent } from "./component/json-data";
-import { gridAgent } from "./component/grid-data";
-import { createPixelFieldAgent } from "./component/pixel-field";
-import getPColorPainter from "./component/pcolor-painter";
-import { Canvas } from "./component/canvas";
+import { Globe } from "./components/projection/globe";
+import getgraticulePainter from "./components/graticule-painter";
+import getlandPainter from "./components/land-painter";
+import { jsonDataAgent } from "./components/json-data";
+import { gridAgent } from "./components/grid-data";
+import { createPixelFieldAgent } from "./components/pixel-field";
+import getPColorPainter from "./components/pcolor-painter";
+import { Canvas } from "./components/canvas";
 import * as d3 from "d3-selection";
 
 export class MapViz {

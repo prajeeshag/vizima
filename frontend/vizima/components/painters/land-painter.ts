@@ -1,11 +1,11 @@
 import { JsonData } from "../json-data";
 import { feature } from "topojson-client";
 import { Painter } from "./painter";
-import { type ProjConfig, getProjection } from "../globe";
+import { type ProjectorState, getProjector } from "../projection";
 
 type LandProps = {
   readonly landJson: JsonData;
-  readonly proj: ProjConfig;
+  readonly proj: ProjectorState;
   readonly strokeStyle?: string;
   readonly lineWidth?: number;
 };
@@ -21,7 +21,7 @@ class LandPainter extends Painter<LandProps> {
     ctx.beginPath();
     ctx.strokeStyle = this.props.strokeStyle || "#f7faf8ff";
     ctx.lineWidth = this.props.lineWidth || 1;
-    const proj = getProjection(this.props.proj);
+    const proj = getProjector(this.props.proj);
     proj.geoPath(ctx)(land);
     ctx.stroke();
   }

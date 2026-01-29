@@ -1,13 +1,31 @@
-
 import { type DragBehavior } from "d3-drag";
-import { type IGlobe } from "./interface";
 import * as versor from "versor";
 import { drag as d3drag } from "d3-drag";
+import { type ProjectorState, type ProjectionName } from ".";
 
-export function dragRotation(
+export interface IGlobe {
+  getRotation(): [number, number, number];
+  setRotation(r: [number, number, number]): void;
+  getTranslate(): [number, number];
+  setTranslate(t: [number, number]): void;
+  getScale(): number;
+  setScale(s: number): void;
+  getProjState(): ProjectorState;
+  invert(point: [number, number]): [number, number] | null | undefined;
+}
+
+interface DragHandler {
+  (
+    globe: IGlobe,
+    renderDrag: (config: ProjectorState) => void,
+    renderEnd: (config: ProjectorState) => void,
+  ): DragBehavior<HTMLCanvasElement, unknown, unknown>;
+}
+
+function dragRotation(
   globe: IGlobe,
-  renderDrag: (globe: IGlobe) => void,
-  renderEnd: (globe: IGlobe) => void,
+  renderDrag: (config: ProjectorState) => void,
+  renderEnd: (config: ProjectorState) => void,
 ): DragBehavior<HTMLCanvasElement, unknown, unknown> {
   let v0: [number, number];
   let r0: [number, number, number];
@@ -22,7 +40,7 @@ export function dragRotation(
       .on("start", (event) => {
         const r = globe.getRotation();
         // Convert current rotation to a versor (quaternion)
-        const coord = globe.invert([event.x, event.y]);
+        const coord = globe.invert?.([event.x, event.y]);
         if (!coord) return;
         v0 = versor.cartesian(coord);
         r0 = r;
@@ -44,29 +62,31 @@ export function dragRotation(
 
         // Update the projection with the new rotation
         const angles = versor.rotation(q1);
+
         // fix to 2 decimal places
         const rot: [number, number, number] = [
           Math.round(angles[0] * 10) / 10,
           Math.round(angles[1] * 10) / 10,
           Math.round(angles[2] * 10) / 10,
         ];
+
         globe.setRotation(rot);
         const canvas = event.sourceEvent.target;
         canvas.style.cursor = "grabbing";
-        renderDrag(globe);
+        renderDrag(globe.getProjState());
       })
       .on("end", (event) => {
         const canvas = event.sourceEvent.target;
         canvas.style.cursor = "default";
-        renderEnd(globe);
+        renderEnd(globe.getProjState());
       })
   );
 }
 
-export function dragRotationSimple(
+function dragRotationSimple(
   globe: IGlobe,
-  renderDrag: (globe: IGlobe) => void,
-  renderEnd: (globe: IGlobe) => void,
+  renderDrag: (projConfig: ProjectorState) => void,
+  renderEnd: (projConfig: ProjectorState) => void,
 ): DragBehavior<HTMLCanvasElement, unknown, unknown> {
   return d3drag<HTMLCanvasElement, unknown>()
     .filter((event) => !event.touches || event.touches.length < 2)
@@ -75,40 +95,33 @@ export function dragRotationSimple(
       canvas.style.cursor = "grabbing";
     })
     .on("drag", (event) => {
-      // 1. Get current rotation [longitude, latitude, roll]
       const rotation = globe.getRotation();
 
-      // 2. Calculate sensitivity
-      // Higher scale (zoom) means smaller movement per pixel
       const scale = globe.getScale();
-      const sensitivity = 75 / scale; // Adjust 75 to tweak the "feel"
+      const sensitivity = 75 / scale;
 
-      // 3. Apply the delta (change in mouse position)
-      // d3.drag event.dx/dy provides the change since the last event
       const newRotation: [number, number, number] = [
         rotation[0] + event.dx * sensitivity,
         rotation[1] - event.dy * sensitivity,
-        rotation[2], // Keep roll (tilt) at 0 or unchanged
+        rotation[2],
       ];
 
-      // 4. Constrain latitude to prevent the globe from flipping upside down
-      // Max latitude should be 90, min -90
       newRotation[1] = Math.max(-90, Math.min(90, newRotation[1]));
 
       globe.setRotation(newRotation);
-      renderDrag(globe);
+      renderDrag(globe.getProjState());
     })
     .on("end", (event) => {
       const canvas = event.sourceEvent.target;
       canvas.style.cursor = "default";
-      renderEnd(globe);
+      renderEnd(globe.getProjState());
     });
 }
 
-export function dragTranslation(
+function dragTranslate(
   globe: IGlobe,
-  renderDrag: (globe: IGlobe) => void,
-  renderEnd: (globe: IGlobe) => void,
+  renderDrag: (projState: ProjectorState) => void,
+  renderEnd: (projState: ProjectorState) => void,
 ): DragBehavior<HTMLCanvasElement, unknown, unknown> {
   let t0: [number, number];
   let p0: [number, number];
@@ -136,23 +149,23 @@ export function dragTranslation(
       const canvas = event.sourceEvent.target;
       canvas.style.cursor = "move";
       globe.setTranslate(point);
-      renderDrag(globe);
+      renderDrag(globe.getProjState());
     })
     .on("end", (event) => {
       const canvas = event.sourceEvent.target;
       canvas.style.cursor = "default";
-      renderEnd(globe);
+      renderEnd(globe.getProjState());
     });
 }
 
-export function dragTranslateWrapX(
+function dragTranslateWrapX(
   globe: IGlobe,
-  renderDrag: (globe: IGlobe) => void,
-  renderEnd: (globe: IGlobe) => void,
+  renderDrag: (projConfig: ProjectorState) => void,
+  renderEnd: (projConfig: ProjectorState) => void,
 ): DragBehavior<HTMLCanvasElement, unknown, unknown> {
-  let t0: [number, number]; // Initial translation
-  let r0: [number, number, number]; // Initial rotation [lambda, phi, gamma]
-  let p0: [number, number]; // Initial mouse/touch point
+  let t0: [number, number];
+  let r0: [number, number, number];
+  let p0: [number, number];
 
   return d3drag<HTMLCanvasElement, unknown>()
     .filter((event) => {
@@ -160,7 +173,7 @@ export function dragTranslateWrapX(
     })
     .on("start", (event) => {
       t0 = globe.getTranslate();
-      r0 = globe.getRotation(); // Assuming globe.getRotation() returns [λ, φ, γ]
+      r0 = globe.getRotation();
       p0 = [event.x, event.y];
     })
     .on("drag", (event) => {
@@ -168,12 +181,9 @@ export function dragTranslateWrapX(
         return;
       }
 
-      // Calculate the change in mouse position
       const dx = event.x - p0[0];
       const dy = event.y - p0[1];
 
-      // 1. Rotation for X (Horizontal move affects Longitude/Lambda)
-      // Sensitivity factor (e.g., 0.25) adjusts how fast the globe spins
       const sensitivity = 0.25;
       const newRotation: [number, number, number] = [
         r0[0] + dx * sensitivity,
@@ -181,21 +191,37 @@ export function dragTranslateWrapX(
         r0[2],
       ];
 
-      // 2. Translation for Y (Vertical move affects Y translation)
       const newTranslate: [number, number] = [t0[0], Math.round(t0[1] + dy)];
 
       const canvas = event.sourceEvent.target;
       canvas.style.cursor = "move";
 
-      // Apply both updates
       globe.setRotation(newRotation);
       globe.setTranslate(newTranslate);
 
-      renderDrag(globe);
+      renderDrag(globe.getProjState());
     })
     .on("end", (event) => {
       const canvas = event.sourceEvent.target;
       canvas.style.cursor = "default";
-      renderEnd(globe);
+      renderEnd(globe.getProjState());
     });
+}
+
+export function getDragHandler(name: ProjectionName): DragHandler {
+  switch (name) {
+    case "Orthographic":
+      return dragRotation;
+    case "Equirectangular":
+    case "EqualEarth":
+    case "Mercator":
+      return dragTranslateWrapX;
+    case "Lambert":
+    case "LonLat":
+    case "Polar":
+      return dragTranslate;
+    default:
+      const _exhaustiveCheck: never = name;
+      throw new Error(`Unhandled projection type: ${name}`);
+  }
 }

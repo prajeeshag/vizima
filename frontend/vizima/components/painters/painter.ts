@@ -1,4 +1,4 @@
-import { Data } from "../../datatype/types";
+import { Data } from "../types";
 
 type PainterProps = {};
 

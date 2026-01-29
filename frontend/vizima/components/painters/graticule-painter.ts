@@ -1,9 +1,9 @@
 import { Painter } from "./painter";
 import { geoGraticule } from "d3-geo";
-import { type ProjConfig, getProjection } from "../globe";
+import { type ProjectorState, getProjector } from "../projection";
 
 type GraticuleProp = {
-  readonly proj: ProjConfig;
+  readonly proj: ProjectorState;
   readonly strokeStyle?: string;
 };
 
@@ -15,7 +15,7 @@ class GraticulePainter extends Painter<GraticuleProp> {
     if (!context) {
       throw Error("Canvas 2D context is null!");
     }
-    const proj = getProjection(this.props.proj);
+    const proj = getProjector(this.props.proj);
     context.beginPath();
     const graticule = geoGraticule();
     const strokeStyle = this.props.strokeStyle || defaultStrokeStyle;

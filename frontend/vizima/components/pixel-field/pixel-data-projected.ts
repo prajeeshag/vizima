@@ -1,9 +1,9 @@
-import type { ProjConfig } from "../globe/proj";
-import { Agent, Provider } from "../../datatype/types";
+import type { ProjectorState } from "../projection";
+import { Agent, Provider } from "../types";
 import { PixelData, type PixelConfig } from "./pixel-data";
 
 export type PixelProjectedConfig = {
-  readonly proj: ProjConfig;
+  readonly proj: ProjectorState;
   readonly lon0: number;
   readonly lat0: number;
   readonly nlon: number;

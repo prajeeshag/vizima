@@ -1,5 +1,5 @@
 import d3 from "d3";
-import { Data, Agent, Provider } from "../datatype/types";
+import { Data, Agent, Provider } from "./types";
 
 export type JsonDataProp = {
   readonly url: string;

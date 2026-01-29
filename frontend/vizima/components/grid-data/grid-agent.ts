@@ -1,4 +1,4 @@
-import { Agent, Provider } from "../../datatype/types";
+import { Agent, Provider } from "../types";
 import { fetchZarrGrid } from "./fetch-zarr-grid";
 import { type GridConfig, GridData } from "./grid-data";
 

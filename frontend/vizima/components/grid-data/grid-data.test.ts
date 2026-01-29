@@ -4,7 +4,10 @@ import { GridData, type GridConfig } from "./grid-data"; // Update this path
 describe("GridScalarData", () => {
   const gridData = new Float32Array([10, 20, 30, 40, 50, 60, 70, 80, 90]);
 
-  const scalarGrid = new GridData({ x0: 0, y0: 0, nx: 3, ny: 3 }, gridData);
+  const scalarGrid = new GridData(
+    { x0: 0, y0: 0, nx: 3, ny: 3, url: "" },
+    gridData,
+  );
 
   describe("get()", () => {
     it("should return the correct value at specific indices", () => {
@@ -17,7 +20,7 @@ describe("GridScalarData", () => {
       const sparseData = new Float32Array(9);
       sparseData[0] = 0; // 0 is falsy in JS
       const sparseGrid = new GridData(
-        { x0: 1, y0: 2, nx: 3, ny: 3 },
+        { x0: 1, y0: 2, nx: 3, ny: 3, url: "" },
         sparseData,
       );
       expect(sparseGrid.get(1, 2)).toBe(0);
@@ -35,7 +38,7 @@ describe("GridScalarData", () => {
       const sparseData = new Float32Array(9);
       sparseData[0] = NaN; // 0 is falsy in JS
       const sparseGrid = new GridData(
-        { x0: 0, y0: 0, nx: 3, ny: 3 },
+        { x0: 0, y0: 0, nx: 3, ny: 3, url: "" },
         sparseData,
       );
       expect(sparseGrid.get(0, 0)).toBeNaN();
@@ -58,7 +61,10 @@ describe("GridScalarData", () => {
     });
 
     it("should interpolate correctly periodic x", () => {
-      const wrapGrid = new GridData({ x0: 0, y0: 0, nx: 3, ny: 3 }, gridData);
+      const wrapGrid = new GridData(
+        { x0: 0, y0: 0, nx: 3, ny: 3, url: "" },
+        gridData,
+      );
       expect(wrapGrid.interpolateNearest(2.4, 0, true)).toBe(30);
       expect(wrapGrid.interpolateNearest(-0.6, 0, true)).toBe(30);
       expect(wrapGrid.interpolateNearest(2.6, 0, true)).toBe(10);
@@ -73,7 +79,10 @@ describe("GridScalarData", () => {
 
     it("should return NaN if any corner is NaN", () => {
       const nanData = new Float32Array([10, NaN, 40, 50, 0, 0, 0, 0, 0]);
-      const nanGrid = new GridData({ x0: 0, y0: 0, nx: 3, ny: 3 }, nanData);
+      const nanGrid = new GridData(
+        { x0: 0, y0: 0, nx: 3, ny: 3, url: "" },
+        nanData,
+      );
       expect(nanGrid.interpolateBilinear(0.5, 0.5, false)).toBeNaN();
     });
 

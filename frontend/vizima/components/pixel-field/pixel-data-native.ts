@@ -1,4 +1,4 @@
-import { Agent, Provider } from "../../datatype/types";
+import { Agent, Provider } from "../types";
 import { PixelData, type PixelConfig } from "./pixel-data";
 
 export type PixelNativeConfig = {

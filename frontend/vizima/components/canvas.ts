@@ -1,4 +1,4 @@
-import { type Painter } from "./painter";
+import { type Painter } from "./painters";
 
 export class Canvas {
   readonly canvas: HTMLCanvasElement;

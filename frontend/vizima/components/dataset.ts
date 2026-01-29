@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { DataProjection } from "./projections";
+import { DataProjection } from "./projection";
 
 const lon = z.number().min(-180).max(360);
 const lat = z.number().min(-90).max(90);
@@ -25,7 +25,7 @@ const VarSchema = z.strictObject({
   standard_name: z.string(),
 });
 
-export const DataVarSchema = VarSchema.extend({
+export const DataVar = VarSchema.extend({
   arrName: z.string(),
   lon: z.string(),
   lat: z.string(),
@@ -33,19 +33,19 @@ export const DataVarSchema = VarSchema.extend({
   time: z.string(),
 }).meta({ title: "DataVar" });
 
-export const VectorVarSchema = VarSchema.extend({
+export const VectorVar = VarSchema.extend({
   uArrName: z.string(),
   vArrName: z.string(),
 }).meta({ title: "VectorVar" });
 
-export const DatasetSchema = z
+export const Dataset = z
   .strictObject({
     lons: z.record(z.string(), LonAxis),
     lats: z.record(z.string(), LatAxis),
     times: z.record(z.string(), z.array(z.string())),
     levels: z.record(z.string(), z.array(z.string())),
-    datavars: z.record(z.string(), DataVarSchema),
-    vectors: z.record(z.string(), VectorVarSchema),
+    datavars: z.record(z.string(), DataVar),
+    vectors: z.record(z.string(), VectorVar),
     projection: DataProjection,
     title: z.string().max(100),
     subtitle: z.string().max(150),
@@ -53,8 +53,8 @@ export const DatasetSchema = z
   })
   .meta({ title: "Dataset" });
 
-export type DataVar = z.infer<typeof DataVarSchema>;
-export type VectorVar = z.infer<typeof VectorVarSchema>;
-export type Dataset = z.infer<typeof DatasetSchema>;
+export type DataVar = z.infer<typeof DataVar>;
+export type VectorVar = z.infer<typeof VectorVar>;
+export type Dataset = z.infer<typeof Dataset>;
 export type LonAxis = z.infer<typeof LonAxis>;
 export type LatAxis = z.infer<typeof LatAxis>;
