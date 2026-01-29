@@ -38,8 +38,8 @@ export async function fetchZarrGrid(
     slice.push(config.vertIndex);
   }
 
-  slice.push(zarr.slice(config.ys, config.ny + config.ys));
-  slice.push(zarr.slice(config.xs, config.nx + config.xs));
+  slice.push(zarr.slice(config.y0, config.ny + config.y0));
+  slice.push(zarr.slice(config.x0, config.nx + config.x0));
 
   const sliceArray = await zarr.get(arr, slice, { signal: signal } as any);
   const values = new Float32Array(sliceArray.data as any).map(

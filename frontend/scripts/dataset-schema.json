@@ -10,17 +10,15 @@
       "additionalProperties": {
         "type": "object",
         "properties": {
-          "start": {
-            "type": "number",
-            "minimum": -180,
-            "maximum": 360,
-            "description": "Longitude at (0,0)"
-          },
-          "end": {
-            "type": "number",
-            "minimum": -180,
-            "maximum": 360,
-            "description": "Longitude at (nx,ny)"
+          "corners": {
+            "minItems": 4,
+            "maxItems": 4,
+            "type": "array",
+            "items": {
+              "type": "number",
+              "minimum": -180,
+              "maximum": 360
+            }
           },
           "count": {
             "type": "integer",
@@ -29,8 +27,7 @@
           }
         },
         "required": [
-          "start",
-          "end",
+          "corners",
           "count"
         ],
         "additionalProperties": false,
@@ -45,17 +42,15 @@
       "additionalProperties": {
         "type": "object",
         "properties": {
-          "start": {
-            "type": "number",
-            "minimum": -90,
-            "maximum": 90,
-            "description": "Latitude at (0,0)"
-          },
-          "end": {
-            "type": "number",
-            "minimum": -90,
-            "maximum": 90,
-            "description": "Latitude at (nx,ny)"
+          "corners": {
+            "minItems": 4,
+            "maxItems": 4,
+            "type": "array",
+            "items": {
+              "type": "number",
+              "minimum": -90,
+              "maximum": 90
+            }
           },
           "count": {
             "type": "integer",
@@ -64,8 +59,7 @@
           }
         },
         "required": [
-          "start",
-          "end",
+          "corners",
           "count"
         ],
         "additionalProperties": false,
@@ -186,10 +180,22 @@
             "name": {
               "type": "string",
               "const": "LonLat"
+            },
+            "poleLon": {
+              "type": "number",
+              "minimum": -180,
+              "maximum": 360
+            },
+            "poleLat": {
+              "type": "number",
+              "minimum": -90,
+              "maximum": 90
             }
           },
           "required": [
-            "name"
+            "name",
+            "poleLon",
+            "poleLat"
           ],
           "additionalProperties": false,
           "title": "LonLat"
@@ -211,95 +217,9 @@
         {
           "type": "object",
           "properties": {
-            "cenLon": {
-              "type": "number",
-              "minimum": -180,
-              "maximum": 360,
-              "description": "Central longitude"
-            },
-            "cenLat": {
-              "type": "number",
-              "minimum": -90,
-              "maximum": 90,
-              "description": "Central latitude"
-            },
             "name": {
               "type": "string",
-              "const": "Stereographic"
-            },
-            "standLon": {
-              "type": "number",
-              "minimum": -180,
-              "maximum": 360
-            }
-          },
-          "required": [
-            "cenLon",
-            "cenLat",
-            "name",
-            "standLon"
-          ],
-          "additionalProperties": false,
-          "title": "Stereographic"
-        },
-        {
-          "type": "object",
-          "properties": {
-            "cenLon": {
-              "type": "number",
-              "minimum": -180,
-              "maximum": 360,
-              "description": "Central longitude"
-            },
-            "cenLat": {
-              "type": "number",
-              "minimum": -90,
-              "maximum": 90,
-              "description": "Central latitude"
-            },
-            "name": {
-              "type": "string",
-              "const": "Equirectangular"
-            },
-            "poleLon": {
-              "type": "number",
-              "minimum": -180,
-              "maximum": 360
-            },
-            "poleLat": {
-              "type": "number",
-              "minimum": -90,
-              "maximum": 90
-            }
-          },
-          "required": [
-            "cenLon",
-            "cenLat",
-            "name",
-            "poleLon",
-            "poleLat"
-          ],
-          "additionalProperties": false,
-          "title": "Equirectangular"
-        },
-        {
-          "type": "object",
-          "properties": {
-            "cenLon": {
-              "type": "number",
-              "minimum": -180,
-              "maximum": 360,
-              "description": "Central longitude"
-            },
-            "cenLat": {
-              "type": "number",
-              "minimum": -90,
-              "maximum": 90,
-              "description": "Central latitude"
-            },
-            "name": {
-              "type": "string",
-              "const": "ConicConformal"
+              "const": "Lambert"
             },
             "standLon": {
               "type": "number",
@@ -318,17 +238,42 @@
             }
           },
           "required": [
-            "cenLon",
-            "cenLat",
             "name",
             "standLon",
             "trueLat1",
             "trueLat2"
           ],
           "additionalProperties": false,
-          "title": "ConicConformal"
+          "title": "Lambert"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "const": "Polar"
+            },
+            "standLon": {
+              "type": "number",
+              "minimum": -180,
+              "maximum": 360
+            },
+            "trueLat": {
+              "type": "number",
+              "minimum": -90,
+              "maximum": 90
+            }
+          },
+          "required": [
+            "name",
+            "standLon",
+            "trueLat"
+          ],
+          "additionalProperties": false,
+          "title": "Polar"
         }
-      ]
+      ],
+      "title": "Projection"
     },
     "title": {
       "type": "string",

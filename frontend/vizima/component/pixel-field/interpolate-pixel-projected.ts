@@ -3,8 +3,9 @@ import {
   type PixelProjectedConfig,
 } from "./pixel-data-projected";
 import { getProjection, Proj } from "../globe/proj";
+import { isPreriodicLon } from "./pixel-utils";
 
-export async function getPixelProj(
+export async function interpPixelProjected(
   props: PixelProjectedConfig,
   signal: AbortSignal,
 ): Promise<PixelProjected> {
@@ -25,7 +26,7 @@ export async function getPixelProj(
       const value = gridValue.interpolateBilinear(
         point![0],
         point![1],
-        is_preriodic_lon(props.lonStart, props.nlon, props.dlon),
+        isPreriodicLon(props.lon0, props.nlon, props.dlon),
       );
       pixelFieldArray[y * width + x] = value;
     }

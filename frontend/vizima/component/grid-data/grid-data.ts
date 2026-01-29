@@ -2,8 +2,8 @@ import { Data } from "../../datatype/types";
 
 export type GridConfig = {
   url: string;
-  readonly xs: number;
-  readonly ys: number;
+  readonly x0: number;
+  readonly y0: number;
   readonly nx: number;
   readonly ny: number;
   readonly timeIndex?: number;
@@ -12,8 +12,8 @@ export type GridConfig = {
 
 export class GridData extends Data<GridConfig, Float32Array> {
   get(x: number, y: number): number {
-    const i = Math.floor(x) - this.props.xs;
-    const j = Math.floor(y) - this.props.ys;
+    const i = Math.floor(x) - this.props.x0;
+    const j = Math.floor(y) - this.props.y0;
     if (i < 0 || i >= this.props.nx || j < 0 || j >= this.props.ny) {
       return NaN;
     }
@@ -35,8 +35,8 @@ export class GridData extends Data<GridConfig, Float32Array> {
   }
 
   private bilinearInterpCtx(x: number, y: number, xwrap: boolean) {
-    const fCol = x - this.props.xs;
-    const fRow = y - this.props.ys;
+    const fCol = x - this.props.x0;
+    const fRow = y - this.props.y0;
 
     let i0 = Math.floor(fCol);
     let j0 = Math.floor(fRow);
@@ -61,8 +61,8 @@ export class GridData extends Data<GridConfig, Float32Array> {
   }
 
   protected nearestInterpCtx(x: number, y: number, xwrap: boolean) {
-    const fCol = x - this.props.xs;
-    const fRow = y - this.props.ys;
+    const fCol = x - this.props.x0;
+    const fRow = y - this.props.y0;
     let i0 = Math.round(fCol);
     let j0 = Math.round(fRow);
 

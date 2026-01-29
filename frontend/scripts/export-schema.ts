@@ -1,7 +1,7 @@
 import { z } from "zod";
 import * as fs from "fs";
 
-import {DatasetSchema} from "../vizima/datatype/dataset";
+import { DatasetSchema } from "../vizima/datatype/dataset";
 
 function exportSchema(schema: z.ZodObject<any>, filename: string) {
   const jsonSchema = schema.toJSONSchema();

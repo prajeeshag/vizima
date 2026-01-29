@@ -1,29 +1,24 @@
-import { ImmutableComponent, Agent, Provider } from "../datatype/types";
+import d3 from "d3";
+import { Data, Agent, Provider } from "../datatype/types";
 
-export interface JsonDataProp {
+export type JsonDataProp = {
   readonly url: string;
-}
+};
 
 const DEFAULT_CACHE_SIZE = 10;
 
-export class JsonData extends ImmutableComponent<JsonDataProp, any> { }
+export class JsonData extends Data<JsonDataProp, any> {}
 
-class JsonDataProvider extends Provider<JsonDataProp, JsonData> { }
+class JsonDataProvider extends Provider<JsonDataProp, JsonData> {}
 
-class JsonDataAgent extends Agent<JsonDataProp, JsonData> { }
+class JsonDataAgent extends Agent<JsonDataProp, JsonData> {}
 
 async function jsonDataFetch(
   props: JsonDataProp,
   signal: AbortSignal,
 ): Promise<JsonData> {
-  try {
-    const response = await fetch(props.url, { signal });
-    const data = await response.json();
-    return new JsonData(props, data);
-  } catch (error) {
-    console.error("Error fetching JSON data:", error);
-    throw error;
-  }
+  const data = await d3.json(props.url, { signal });
+  return new JsonData(props, data);
 }
 
 export const jsonDataAgent = new JsonDataAgent(

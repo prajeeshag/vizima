@@ -1,1 +1,1 @@
-export { Globe } from "./globe";
+export * from "./proj";

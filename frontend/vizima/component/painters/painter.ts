@@ -1,11 +1,10 @@
-import { ImmutableComponent, type ValidComponentProps } from "../../datatype/types";
+import { Data } from "../../datatype/types";
 
-export interface PainterProps { }
+type PainterProps = {};
 
-export type ValidPainterProps<T> = PainterProps & ValidComponentProps<T>;
-
-export abstract class Painter<
-  T extends ValidPainterProps<T>,
-> extends ImmutableComponent<T, null> {
+export abstract class Painter<Props extends PainterProps> extends Data<
+  Props,
+  null
+> {
   abstract draw(canvas: HTMLCanvasElement, signal?: AbortSignal): Promise<void>;
 }

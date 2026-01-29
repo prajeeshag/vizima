@@ -1,6 +1,4 @@
 import { Agent, Provider } from "../../datatype/types";
-import { GridData } from "../grid-data";
-import { Data } from "../../datatype/types";
 import { PixelData, type PixelConfig } from "./pixel-data";
 
 export type PixelNativeConfig = {
@@ -15,12 +13,9 @@ export type PixelNativeConfig = {
  */
 export class PixelNative extends PixelData<PixelNativeConfig> {}
 
-const CACHE_SIZE = 1;
-export class PixelDataNativeAgent extends Agent<
-  PixelNativeConfig,
-  PixelNative
-> {}
-export class PixelDataNativeProvider extends Provider<
+export class PixelNativeAgent extends Agent<PixelNativeConfig, PixelNative> {}
+
+export class PixelNativeProvider extends Provider<
   PixelNativeConfig,
   PixelNative
 > {}

@@ -1,5 +1,6 @@
 import { GridData } from "../grid-data";
 import { Data } from "../../datatype/types";
+import d3 from "d3";
 
 export type PixelConfig = {
   readonly grid: GridData;
@@ -24,6 +25,16 @@ export class PixelData<Config extends PixelConfig> extends Data<
       return NaN;
     }
     const val = this.value[x + y * this.props.viewSize[0]];
+    return val === undefined ? NaN : val;
+  }
+
+  min(): number {
+    const val = d3.min(this.value);
+    return val === undefined ? NaN : val;
+  }
+
+  max(): number {
+    const val = d3.min(this.value);
     return val === undefined ? NaN : val;
   }
 }
