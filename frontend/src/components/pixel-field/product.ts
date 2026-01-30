@@ -1,6 +1,6 @@
 import { GridProduct } from "../grid-data";
 import { Product } from "../types";
-import d3 from "d3";
+import * as d3 from "d3";
 
 export type PixelConfig = {
   readonly grid: GridProduct;

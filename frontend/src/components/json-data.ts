@@ -1,4 +1,4 @@
-import d3 from "d3";
+import * as d3 from "d3";
 import { Product, Agent, Provider } from "./types";
 
 export type JsonDataProp = {

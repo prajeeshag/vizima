@@ -1,5 +1,5 @@
 import { type DragBehavior } from "d3-drag";
-import * as versor from "versor";
+import versor from "versor";
 import { drag as d3drag } from "d3-drag";
 import { type ProjectorState, type ProjectionName } from ".";
 

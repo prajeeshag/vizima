@@ -1,10 +1,10 @@
 import { Painter } from "./painter";
-import type { PixelProjected } from "../pixel-field";
+import type { PixelProduct } from "../pixel-field";
 import { logger } from "../../logger";
 import * as d3 from "d3";
 
 interface PColorLayerProps {
-  readonly field: PixelProjected;
+  readonly field: PixelProduct;
 }
 
 class PColorPainter extends Painter<PColorLayerProps> {
