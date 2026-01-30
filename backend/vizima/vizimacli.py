@@ -9,19 +9,22 @@ import pandas as pd
 import questionary
 import typer
 import xarray as xr
-from pydantic import BaseModel
 
 from .dataset_model import (
-    ConicConformal,
+    DataProjection,
     Dataset,
     DataVar,
-    Equirectangular,
+    Lambert,
     LatAxis,
+    LatCorners,
     LonAxis,
+    LonCorners,
     LonLat,
     Mercator,
-    Stereographic,
+    Polar,
+    TimeAxis,
     VectorVar,
+    VertAxis,
 )
 
 logging.basicConfig(
@@ -35,10 +38,10 @@ logger.setLevel(logging.INFO)
 app = typer.Typer(add_completion=False)
 
 WRF_PROJ_ID_MAPPING = {
-    1: "ConicConformal",
-    2: "Stereographic",
+    1: "Lambert",
+    2: "Polar",
     3: "Mercator",
-    6: "Equirectangular",
+    6: "RotLonLat",
 }
 
 
@@ -59,7 +62,7 @@ def get_packing_params(da, n_bits=16):
 
 def format_to_iso(val):
     if isinstance(val, np.datetime64):
-        return pd.Timestamp(val).isoformat()
+        return f"{pd.Timestamp(val).isoformat()}Z"
     if hasattr(val, "isoformat"):
         return val.isoformat()
     if isinstance(val, str):
@@ -75,53 +78,70 @@ def ask_text(default: any, message: str) -> str:  # type: ignore
     return questionary.text(message, default=default).unsafe_ask()
 
 
-def handle_lonlats(
-    ds: xr.Dataset, coord_name: t.Literal["longitude", "latitude"]
-) -> dict[str, LonAxis | LatAxis]:
-    match coord_name:
-        case "longitude":
-            AxisClass = LonAxis
-            dimind = 1
-        case "latitude":
-            AxisClass = LatAxis
-            dimind = 0
-        case _:
-            raise ValueError(
-                f"coord_name must be 'longitude' or 'latitude'. Got {coord_name}!!"
-            )
-
-    names = ds.cf.coordinates.get(coord_name, [])
-
-    axis = {}
-
+def handle_lons(ds: xr.Dataset) -> dict[str, LonAxis]:
+    names = ds.cf.coordinates.get("longitude", [])
+    axis: dict[str, LonAxis] = {}
     for name in names:
         coord = ds[name]
         match coord.values.ndim:
             case 1:
-                axis[coord.name] = AxisClass(
-                    start=coord.values[0],
-                    end=coord.values[-1],
+                axis[coord.name] = LonAxis(
+                    corners=LonCorners(
+                        lb=coord.values[0],
+                        rb=coord.values[-1],
+                        rt=coord.values[-1],
+                        lt=coord.values[0],
+                    ),
                     count=len(coord.values),
                 )
             case 2:
-                axis[coord.name] = AxisClass(
-                    start=coord.values[0, 0],
-                    end=coord.values[-1, -1],
-                    count=coord.values.shape[dimind],
+                axis[coord.name] = LonAxis(
+                    corners=LonCorners(
+                        lb=coord.values[0, 0],
+                        rb=coord.values[0, -1],
+                        rt=coord.values[-1, -1],
+                        lt=coord.values[-1, 0],
+                    ),
+                    count=len(coord.values[0, :]),
                 )
             case _:
                 raise ValueError(
-                    f"Dimension of {coord_name} should be 1 or 2. Got {coord.values.ndim} for {coord.name}"
+                    f"Dimension of longitude coordinate should be 1 or 2. Got {coord.values.ndim} for {coord.name}"
                 )
     return axis
 
 
-def handle_lons(ds: xr.Dataset) -> dict[str, LonAxis]:
-    return handle_lonlats(ds, "longitude")  # ty:ignore[invalid-return-type]
-
-
 def handle_lats(ds: xr.Dataset) -> dict[str, LatAxis]:
-    return handle_lonlats(ds, "latitude")  # ty:ignore[invalid-return-type]
+    names = ds.cf.coordinates.get("latitude", [])
+    axis: dict[str, LatAxis] = {}
+    for name in names:
+        coord = ds[name]
+        match coord.values.ndim:
+            case 1:
+                axis[coord.name] = LatAxis(
+                    corners=LatCorners(
+                        lb=coord.values[0],
+                        rb=coord.values[0],
+                        rt=coord.values[-1],
+                        lt=coord.values[-1],
+                    ),
+                    count=len(coord.values),
+                )
+            case 2:
+                axis[coord.name] = LatAxis(
+                    corners=LatCorners(
+                        lb=coord.values[0, 0],
+                        rb=coord.values[0, -1],
+                        rt=coord.values[-1, -1],
+                        lt=coord.values[-1, 0],
+                    ),
+                    count=len(coord.values[:, 0]),
+                )
+            case _:
+                raise ValueError(
+                    f"Dimension of latitude coordinate should be 1 or 2. Got {coord.values.ndim} for {coord.name}"
+                )
+    return axis
 
 
 def check_periodic_lon(lon0, dlon, nlon):
@@ -129,16 +149,18 @@ def check_periodic_lon(lon0, dlon, nlon):
     return True if np.isclose(lon_wrap - lon0, 360) else False
 
 
-def handle_times(ds) -> dict[str, list[str]]:
+def handle_times(ds) -> dict[str, TimeAxis]:
     names = ds.cf.coordinates.get("time", [])
     if not names:
         return {}
-    times = {}
+    times: dict[str, TimeAxis] = {}
     for name in names:
         time = ds[name]
         if time.values.ndim == 0:
             continue
-        times[time.name] = [format_to_iso(t) for t in time.values]
+        times[time.name] = TimeAxis.model_validate(
+            [format_to_iso(t) for t in time.values]
+        )
     return times
 
 
@@ -164,7 +186,7 @@ def get_lat_name_for_var(var: xr.DataArray) -> str:
 
 def get_vertical_name_for_var(
     var: xr.DataArray,
-    ds_verticals: dict[str, list[str]],
+    ds_verticals: dict[str, VertAxis],
 ) -> str:
     try:
         vname = var.cf["vertical"].name
@@ -190,7 +212,7 @@ def get_time_name_for_var(var: xr.DataArray) -> str:
 def handle_vectors(
     ds: xr.Dataset,
     data_vars: list[str],
-    ds_verticals: dict[str, list[str]],
+    ds_verticals: dict[str, VertAxis],
 ) -> dict[str, VectorVar]:
     vectors: dict[str, VectorVar] = {}
     vec_choices = questionary.checkbox(
@@ -217,8 +239,6 @@ def handle_vectors(
             timev2: str = get_time_name_for_var(var2)
             if timev1 != timev2:
                 raise ValueError(f"Time don't match for ({v1}, {v2})")
-
-            attrs: dict[str, any] = {}  # type: ignore
 
             name: str = ask_text(f"{v1}_{v2}", f"Vector name for ({v1}, {v2}):")
             units: str = ask_text(
@@ -249,7 +269,7 @@ def handle_vectors(
 def handle_datavars(
     ds: xr.Dataset,
     data_vars: list[str],
-    ds_verticals: dict[str, list[str]],
+    ds_verticals: dict[str, VertAxis],
 ) -> dict[str, DataVar]:
     datavars: dict[str, DataVar] = {}
     for v in data_vars:
@@ -276,7 +296,7 @@ def handle_datavars(
             units=units,
             long_name=long_name,
             standard_name=standard_name,
-            level=level,
+            vertical=level,
             arrName=v,
             lon=lon,
             lat=lat,
@@ -286,15 +306,15 @@ def handle_datavars(
     return datavars
 
 
-def handle_levels(ds: xr.Dataset) -> dict[str, list[str]]:
+def handle_levels(ds: xr.Dataset) -> dict[str, VertAxis]:
     names = ds.cf.coordinates.get("vertical", [])
-    levels: dict[str, list[str]] = {}
+    levels: dict[str, VertAxis] = {}
 
     for name in names:
         units = ds[name].attrs.get("units", "")
         if ds[name].values.ndim == 0:
             continue
-        levels[name] = [f"{val} {units}".strip() for val in ds[name].values]
+        levels[name] = VertAxis([f"{val} {units}".strip() for val in ds[name].values])
 
     return levels
 
@@ -308,64 +328,44 @@ def get_proj_name_from_ds(ds: xr.Dataset) -> str:
     return proj_name
 
 
-def process_conic_conformal(ds: xr.Dataset) -> ConicConformal:
+def process_lambert(ds: xr.Dataset) -> Lambert:
     """
     Process conic conformal projection.
     """
     truelat1 = ds.attrs.get("TRUELAT1", None)
     if truelat1 is None:
-        raise ValueError("truelat1 not found in dataset attributes")
+        raise ValueError("TRUELAT1 not found in dataset attributes")
 
     truelat2 = ds.attrs.get("TRUELAT2", None)
     if truelat2 is None:
-        raise ValueError("truelat2 not found in dataset attributes")
-
-    cen_lon = ds.attrs.get("CEN_LON", None)
-    if cen_lon is None:
-        raise ValueError("cen_lon not found in dataset attributes")
-
-    cen_lat = ds.attrs.get("CEN_LAT", None)
-    if cen_lat is None:
-        raise ValueError("cen_lat not found in dataset attributes")
+        raise ValueError("TRUELAT2 not found in dataset attributes")
 
     stand_lon = ds.attrs.get("STAND_LON", None)
     if stand_lon is None:
-        raise ValueError("stand_lon not found in dataset attributes")
+        raise ValueError("STAND_LON not found in dataset attributes")
 
-    return ConicConformal(
-        name="ConicConformal",
-        cenLon=cen_lon,
-        cenLat=cen_lat,
+    return Lambert(
+        name="Lambert",
         standLon=stand_lon,
         trueLat1=truelat1,
         trueLat2=truelat2,
     )
 
 
-def process_equirectangular(ds: xr.Dataset) -> Equirectangular:
+def process_rotatedpole(ds: xr.Dataset) -> LonLat:
     """
-    Process equirectangular projection.
+    Process rotated pole projection.
     """
-    cen_lon = ds.attrs.get("CEN_LON", None)
-    if cen_lon is None:
-        raise ValueError("cen_lon not found in dataset attributes")
-
-    cen_lat = ds.attrs.get("CEN_LAT", None)
-    if cen_lat is None:
-        raise ValueError("cen_lat not found in dataset attributes")
-
     pole_lon = ds.attrs.get("POLE_LON", None)
     if pole_lon is None:
-        raise ValueError("pole_lon not found in dataset attributes")
+        raise ValueError("POLE_LON not found in dataset attributes")
 
     pole_lat = ds.attrs.get("POLE_LAT", None)
     if pole_lat is None:
-        raise ValueError("pole_lat not found in dataset attributes")
+        raise ValueError("POLE_LAT not found in dataset attributes")
 
-    return Equirectangular(
-        name="Equirectangular",
-        cenLon=cen_lon,
-        cenLat=cen_lat,
+    return LonLat(
+        name="LonLat",
         poleLon=pole_lon,
         poleLat=pole_lat,
     )
@@ -376,41 +376,38 @@ def process_mercator(ds: xr.Dataset) -> Mercator:
 
 
 def process_lonlat(ds: xr.Dataset) -> LonLat:
-    return LonLat(name="LonLat")
+    return LonLat(name="LonLat", poleLat=90, poleLon=0)
 
 
-def process_stereographic(ds: xr.Dataset) -> Stereographic:
-    cen_lon = ds.attrs.get("CEN_LON", None)
-    if cen_lon is None:
-        raise ValueError("cen_lon not found in dataset attributes")
-
-    cen_lat = ds.attrs.get("CEN_LAT", None)
-    if cen_lat is None:
-        raise ValueError("cen_lat not found in dataset attributes")
+def process_polar(ds: xr.Dataset) -> Polar:
+    truelat = ds.attrs.get("TRUELAT1", None)
+    if truelat is None:
+        raise ValueError("TRUELAT1 not found in dataset attributes")
 
     stand_lon = ds.attrs.get("STAND_LON", None)
     if stand_lon is None:
         raise ValueError("stand_lon not found in dataset attributes")
-    return Stereographic(
-        name="Stereographic",
-        cenLat=cen_lat,
-        cenLon=cen_lon,
+    return Polar(
+        name="Polar",
         standLon=stand_lon,
+        trueLat=truelat,
     )
 
 
-PROJECTION_MAPPING = {
+PROJECTION_MAPPING: dict[
+    str, t.Callable[[xr.Dataset], LonLat | Mercator | Polar | Lambert]
+] = {
     "LonLat": process_lonlat,
     "Mercator": process_mercator,
-    "Stereographic": process_stereographic,
-    "Equirectangular": process_equirectangular,
-    "ConicConformal": process_conic_conformal,
+    "Stereographic": process_polar,
+    "RotLonLat": process_rotatedpole,
+    "Lambert": process_lambert,
 }
 
 
 def handle_projection(
     ds: xr.Dataset,
-) -> LonLat | ConicConformal | Equirectangular | Mercator | Stereographic:
+) -> DataProjection:
     """
     Handle projection detection and return appropriate projection object.
     """
@@ -420,7 +417,8 @@ def handle_projection(
         if questionary.confirm("Is this data in regular lat-lon projection?").ask():
             proj_name = "LonLat"
     try:
-        return PROJECTION_MAPPING[proj_name](ds)
+        proj = PROJECTION_MAPPING[proj_name](ds)
+        return DataProjection(proj)
     except KeyError:
         raise ValueError(f"Unsupported projection or no projection found: {proj_name}")
 
@@ -459,7 +457,7 @@ def prepare_metadata(
         lons=lons,
         lats=lats,
         times=times,
-        levels=levels,
+        verticals=levels,
         datavars=datavars,
         vectors=vectors,
         projection=projection,
@@ -473,7 +471,7 @@ def prepare_metadata(
     del metadata["times"]
     del metadata["lons"]
     del metadata["lats"]
-    del metadata["levels"]
+    del metadata["verticals"]
 
     metadata_file.parent.mkdir(parents=True, exist_ok=True)
     with open(metadata_file, "w") as f:
@@ -515,7 +513,7 @@ def process_dataset(
     dataset = Dataset(
         lons=lons,
         lats=lats,
-        levels=levels,
+        verticals=levels,
         times=times,
         datavars=metadata["datavars"],
         vectors=metadata["vectors"],
@@ -531,19 +529,19 @@ def process_dataset(
     encoding: dict[str, dict] = {}
 
     for _, dataarray in metadata["datavars"].items():
-        var = ds[dataarray["name"]]
-        out_ds[dataarray["name"]] = var
+        var = ds[dataarray["arrName"]]
+        out_ds[dataarray["arrName"]] = var
 
         # TODO: need to implement intelligent chunking strategy
         chunks = []
         if dataarray["time"]:
             chunks.append(1)
-        if dataarray["level"]:
+        if dataarray["vertical"]:
             chunks.append(1)
         chunks.append(var.shape[-2])
         chunks.append(var.shape[-1])
 
-        encoding[dataarray["name"]] = {
+        encoding[dataarray["arrName"]] = {
             "dtype": "int16",
             "_FillValue": -32767,
             "chunks": tuple(chunks),

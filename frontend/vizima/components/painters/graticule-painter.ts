@@ -25,8 +25,6 @@ class GraticulePainter extends Painter<GraticuleProp> {
   }
 }
 
-export default function createGraticulePainter(
-  props: GraticuleProp,
-): GraticulePainter {
+export function createGraticulePainter(props: GraticuleProp): GraticulePainter {
   return new GraticulePainter(props, null);
 }

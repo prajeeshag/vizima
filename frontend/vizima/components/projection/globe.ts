@@ -61,7 +61,7 @@ export class Globe implements IGlobe {
 
   getProjState(): ProjectorState {
     return {
-      name: this.projParams.name,
+      type: this.projParams,
       scale: this._proj.scale(),
       translation: this._proj.translate(),
       rotation: this._proj.rotate(),

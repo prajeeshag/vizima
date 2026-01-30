@@ -11,14 +11,37 @@
         "type": "object",
         "properties": {
           "corners": {
-            "minItems": 4,
-            "maxItems": 4,
-            "type": "array",
-            "items": {
-              "type": "number",
-              "minimum": -180,
-              "maximum": 360
-            }
+            "type": "object",
+            "properties": {
+              "lb": {
+                "type": "number",
+                "minimum": -180,
+                "maximum": 360
+              },
+              "rb": {
+                "type": "number",
+                "minimum": -180,
+                "maximum": 360
+              },
+              "rt": {
+                "type": "number",
+                "minimum": -180,
+                "maximum": 360
+              },
+              "lt": {
+                "type": "number",
+                "minimum": -180,
+                "maximum": 360
+              }
+            },
+            "required": [
+              "lb",
+              "rb",
+              "rt",
+              "lt"
+            ],
+            "additionalProperties": false,
+            "title": "LonCorners"
           },
           "count": {
             "type": "integer",
@@ -43,14 +66,37 @@
         "type": "object",
         "properties": {
           "corners": {
-            "minItems": 4,
-            "maxItems": 4,
-            "type": "array",
-            "items": {
-              "type": "number",
-              "minimum": -90,
-              "maximum": 90
-            }
+            "type": "object",
+            "properties": {
+              "lb": {
+                "type": "number",
+                "minimum": -90,
+                "maximum": 90
+              },
+              "rb": {
+                "type": "number",
+                "minimum": -90,
+                "maximum": 90
+              },
+              "rt": {
+                "type": "number",
+                "minimum": -90,
+                "maximum": 90
+              },
+              "lt": {
+                "type": "number",
+                "minimum": -90,
+                "maximum": 90
+              }
+            },
+            "required": [
+              "lb",
+              "rb",
+              "rt",
+              "lt"
+            ],
+            "additionalProperties": false,
+            "title": "LatCorners"
           },
           "count": {
             "type": "integer",
@@ -74,11 +120,14 @@
       "additionalProperties": {
         "type": "array",
         "items": {
-          "type": "string"
-        }
+          "type": "string",
+          "format": "string",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|))$"
+        },
+        "title": "TimeAxis"
       }
     },
-    "levels": {
+    "verticals": {
       "type": "object",
       "propertyNames": {
         "type": "string"
@@ -87,7 +136,8 @@
         "type": "array",
         "items": {
           "type": "string"
-        }
+        },
+        "title": "VertAxis"
       }
     },
     "datavars": {
@@ -116,7 +166,7 @@
           "lat": {
             "type": "string"
           },
-          "level": {
+          "vertical": {
             "type": "string"
           },
           "time": {
@@ -130,7 +180,7 @@
           "arrName",
           "lon",
           "lat",
-          "level",
+          "vertical",
           "time"
         ],
         "additionalProperties": false,
@@ -273,7 +323,7 @@
           "title": "Polar"
         }
       ],
-      "title": "Projection"
+      "title": "DataProjection"
     },
     "title": {
       "type": "string",
@@ -291,7 +341,7 @@
     "lons",
     "lats",
     "times",
-    "levels",
+    "verticals",
     "datavars",
     "vectors",
     "projection",

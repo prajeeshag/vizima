@@ -1,25 +1,9 @@
-import { Data } from "../types";
+export class Grid {
+  constructor(
+    readonly props: { x0: number; y0: number; nx: number; ny: number },
+    readonly value: Float32Array,
+  ) {}
 
-export type GridConfig = {
-  url: string;
-  readonly x0: number;
-  readonly y0: number;
-  readonly nx: number;
-  readonly ny: number;
-  readonly timeIndex?: number;
-  readonly vertIndex?: number;
-};
-
-export class GridData extends Data<GridConfig, Float32Array> {
-  get(x: number, y: number): number {
-    const i = Math.floor(x) - this.props.x0;
-    const j = Math.floor(y) - this.props.y0;
-    if (i < 0 || i >= this.props.nx || j < 0 || j >= this.props.ny) {
-      return NaN;
-    }
-    const val = this.value[j * this.props.nx + i];
-    return val === undefined ? NaN : val;
-  }
   private bilinear(
     v00: number,
     v10: number,
@@ -32,6 +16,16 @@ export class GridData extends Data<GridConfig, Float32Array> {
     const top = v00 + u * (v10 - v00);
     const bottom = v01 + u * (v11 - v01);
     return top + v * (bottom - top);
+  }
+
+  get(x: number, y: number): number {
+    const i = Math.floor(x) - this.props.x0;
+    const j = Math.floor(y) - this.props.y0;
+    if (i < 0 || i >= this.props.nx || j < 0 || j >= this.props.ny) {
+      return NaN;
+    }
+    const val = this.value[j * this.props.nx + i];
+    return val === undefined ? NaN : val;
   }
 
   private bilinearInterpCtx(x: number, y: number, xwrap: boolean) {

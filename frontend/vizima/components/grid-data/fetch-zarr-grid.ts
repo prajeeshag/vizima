@@ -1,7 +1,9 @@
 import * as zarr from "zarrita";
 import { logger } from "../../logger";
-import { type GridConfig, GridData } from "./grid-data";
+import { type GridConfig, GridProduct } from "./product";
 import z from "zod";
+import { Grid } from "./grid";
+import equal from "fast-deep-equal";
 
 const ZarrAttrsSchema = z.looseObject({
   scale_factor: z.coerce.number().default(1),
@@ -11,7 +13,7 @@ const ZarrAttrsSchema = z.looseObject({
 export async function fetchZarrGrid(
   config: GridConfig,
   signal: AbortSignal,
-): Promise<GridData> {
+): Promise<GridProduct> {
   const log = logger.child({ component: "fetchZarrGrid" });
 
   let rootUrl = config.url;
@@ -38,12 +40,23 @@ export async function fetchZarrGrid(
     slice.push(config.vertIndex);
   }
 
-  slice.push(zarr.slice(config.y0, config.ny + config.y0));
-  slice.push(zarr.slice(config.x0, config.nx + config.x0));
+  const [x0, y0, nx, ny] = subsetGrid(config);
+
+  slice.push(zarr.slice(y0, ny + y0));
+  slice.push(zarr.slice(x0, nx + x0));
 
   const sliceArray = await zarr.get(arr, slice, { signal: signal } as any);
   const values = new Float32Array(sliceArray.data as any).map(
     (x) => x * attrs.scale_factor + attrs.add_offset,
   );
-  return new GridData(config, values);
+  return new GridProduct(config, new Grid({ x0, y0, nx, ny }, values));
+}
+
+function subsetGrid(config: GridConfig): [number, number, number, number] {
+  // TODO: Implement proper subset calculation
+  return [0, 0, config.lonAxis.count, config.latAxis.count];
+}
+
+function isNative(config: GridConfig): boolean {
+  return equal(config.proj.type, config.gridProj);
 }

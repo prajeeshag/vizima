@@ -1,10 +1,10 @@
 import * as d3 from "d3";
-import { type ProjectionName } from "./schemas";
+import { Projection } from "./schemas";
 import { D3PROJ_MAP } from "./constants";
 import { hasParallels } from "./utils";
 
 export type ProjectorState = {
-  readonly name: ProjectionName;
+  readonly type: Projection;
   readonly rotation: [number, number, number];
   readonly translation: [number, number];
   readonly scale: number;
@@ -26,7 +26,7 @@ export class Projector {
 }
 
 export function getProjector(config: ProjectorState): Projector {
-  const projection = D3PROJ_MAP[config.name]();
+  const projection = D3PROJ_MAP[config.type.name]();
   if (hasParallels(projection)) {
     projection.parallels(config.parallels);
   }

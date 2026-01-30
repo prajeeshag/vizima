@@ -1,10 +1,12 @@
 import { Globe } from "./components/projection/globe";
-import getgraticulePainter from "./components/graticule-painter";
-import getlandPainter from "./components/land-painter";
+import {
+  createGraticulePainter,
+  createLandPainter,
+  createPColorPainter,
+} from "./components/painters";
 import { jsonDataAgent } from "./components/json-data";
-import { gridAgent } from "./components/grid-data";
-import { createPixelFieldAgent } from "./components/pixel-field";
-import getPColorPainter from "./components/pcolor-painter";
+import { createGridAgent } from "./components/grid-data";
+import { createPixelAgent } from "./components/pixel-field";
 import { Canvas } from "./components/canvas";
 import * as d3 from "d3-selection";
 

@@ -27,6 +27,6 @@ class LandPainter extends Painter<LandProps> {
   }
 }
 
-export default function createLandPainter(props: LandProps) {
+export function createLandPainter(props: LandProps) {
   return new LandPainter(props, null);
 }

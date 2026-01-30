@@ -1,5 +1,5 @@
 import d3 from "d3";
-import { Data, Agent, Provider } from "./types";
+import { Product, Agent, Provider } from "./types";
 
 export type JsonDataProp = {
   readonly url: string;
@@ -7,7 +7,7 @@ export type JsonDataProp = {
 
 const DEFAULT_CACHE_SIZE = 10;
 
-export class JsonData extends Data<JsonDataProp, any> {}
+export class JsonData extends Product<JsonDataProp, any> {}
 
 class JsonDataProvider extends Provider<JsonDataProp, JsonData> {}
 

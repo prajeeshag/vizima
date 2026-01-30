@@ -1,15 +1,15 @@
 import { logger } from "../logger";
 import stringify from "json-stable-stringify";
 
-type Primitive = string | number | boolean | bigint | symbol | undefined | null;
+type Primitive = string | number | boolean | undefined | null;
 
 export type ConfigType =
   | Primitive
   | readonly Primitive[]
   | { readonly [key: string]: ConfigType }
-  | Data<any, any>;
+  | Product<any, any>;
 
-export class Data<Config extends ConfigType, Value> {
+export class Product<Config extends ConfigType, Value> {
   constructor(
     readonly props: Config,
     readonly value: Value,

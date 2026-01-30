@@ -1,12 +1,63 @@
+import type { LatAxis, LonAxis } from "../dataset";
+import { getProjector, type ProjectorState } from "../projection";
+import { logger as _logger } from "../../logger";
+
+export function getPixelNativeUtils(props: {
+  readonly proj: ProjectorState;
+  readonly viewSize: [number, number];
+  readonly latAxis: LatAxis;
+  readonly lonAxis: LonAxis;
+}): PixelNativeUtil {
+  const logger = _logger.child({ component: "getPixelNativeUtil" });
+  const proj = getProjector(props.proj);
+  const gsp: [number, number] = [
+    props.lonAxis.corners.lb,
+    props.latAxis.corners.lb,
+  ];
+  const gep: [number, number] = [
+    props.lonAxis.corners.rt,
+    props.latAxis.corners.rt,
+  ];
+  const gridStartPoint = gridToPixel(gsp);
+  const gridEndPoint = gridToPixel(gep);
+  const gridSize: [number, number] = [props.lonAxis.count, props.latAxis.count];
+
+  return new PixelNativeUtil({
+    gridEndPoint: gridEndPoint,
+    gridStartPoint: gridStartPoint,
+    gridSize: gridSize,
+    viewSize: props.viewSize,
+  });
+
+  function gridToPixel(gPoint: [number, number]): [number, number] {
+    const gpPoint = proj.project(gPoint);
+    if (!gpPoint) {
+      logger.error(`Invalid projection for point ${gPoint}`);
+      throw Error(`Invalid projection for point ${gPoint}`);
+    }
+    return gpPoint;
+  }
+}
+
 export class PixelNativeUtil {
+  logger = _logger.child({ component: this.constructor.name });
   constructor(
     private readonly props: {
+      readonly viewSize: [number, number];
       readonly gridStartPoint: [number, number];
       readonly gridEndPoint: [number, number];
       readonly gridSize: [number, number];
-      readonly viewSize: [number, number];
     },
   ) {}
+
+  private gridToPixel(gPoint: [number, number], proj: any): [number, number] {
+    const gpPoint = proj.project(gPoint);
+    if (!gpPoint) {
+      this.logger.error(`Invalid projection for point ${gPoint}`);
+      throw Error(`Invalid projection for point ${gPoint}`);
+    }
+    return gpPoint;
+  }
 
   canvasToGrid(px: number, py: number): [number, number] {
     const tx =
@@ -47,7 +98,11 @@ export class PixelNativeUtil {
   }
 }
 
-export function isPreriodicLon(lonStart: number, nlon: number, dlon: number) {
-  const lonEnd = lonStart + nlon * dlon;
-  return lonStart === lonEnd - 360;
+export function isPreriodicLon(lon: {
+  lon0: number;
+  nlon: number;
+  dlon: number;
+}) {
+  const lonEnd = lon.lon0 + lon.nlon * lon.dlon;
+  return lon.lon0 === lonEnd - 360;
 }

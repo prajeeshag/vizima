@@ -100,22 +100,22 @@ describe("PixelNativeUtil", () => {
 describe("is_preriodic_lon", () => {
   test("returns true for a standard 1-degree global grid", () => {
     // 0 to 360 span: 0 === (0 + 360*1) - 360
-    expect(isPreriodicLon(0, 360, 1)).toBe(true);
+    expect(isPreriodicLon({ lon0: 0, nlon: 360, dlon: 1 })).toBe(true);
   });
 
   test("returns true for a global grid starting at negative longitude", () => {
     // -180 to 180 span: -180 === (-180 + 360*1) - 360
-    expect(isPreriodicLon(-180, 360, 1)).toBe(true);
+    expect(isPreriodicLon({ lon0: -180, nlon: 360, dlon: 1 })).toBe(true);
   });
 
   test("returns false for a partial/regional grid", () => {
     // Only spans 100 degrees
-    expect(isPreriodicLon(0, 100, 1)).toBe(false);
+    expect(isPreriodicLon({ lon0: 0, nlon: 100, dlon: 1 })).toBe(false);
   });
 
   test("returns true for high-resolution global grids", () => {
     // 0.25 degree grid: 1440 * 0.25 = 360
-    expect(isPreriodicLon(0, 1440, 0.25)).toBe(true);
+    expect(isPreriodicLon({ lon0: 0, nlon: 1440, dlon: 0.25 })).toBe(true);
   });
 
   test("handles floating point precision roughly", () => {
@@ -123,11 +123,11 @@ describe("is_preriodic_lon", () => {
     // Note: If this fails, you may need a small epsilon check in your source code
     const nlon = 1080;
     const dlon = 360 / nlon;
-    expect(isPreriodicLon(0, nlon, dlon)).toBe(true);
+    expect(isPreriodicLon({ lon0: 0, nlon: nlon, dlon: dlon })).toBe(true);
   });
 
   test("returns false when the span is slightly less than 360", () => {
     // 359 degrees
-    expect(isPreriodicLon(0, 359, 1)).toBe(false);
+    expect(isPreriodicLon({ lon0: 0, nlon: 359, dlon: 1 })).toBe(false);
   });
 });

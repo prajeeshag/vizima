@@ -64,4 +64,6 @@ use-union-operator = true
 use-standard-collections = true
 use-annotated = true
 disable-future-imports = true
+use-tuple-for-fixed-items = true
+output-datetime-class = "datetime"
 formatters = ["ruff-format", "ruff-check"]

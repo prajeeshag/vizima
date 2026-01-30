@@ -62,6 +62,7 @@ export const DataProjection = z
   .meta({ title: "DataProjection" });
 
 export type DataProjection = z.infer<typeof DataProjection>;
+export type DataProjectionName = DataProjection["name"];
 
 export const Projection = z
   .discriminatedUnion("name", [
@@ -76,5 +77,4 @@ export const Projection = z
   .meta({ title: "Projection" });
 
 export type Projection = z.infer<typeof Projection>;
-
 export type ProjectionName = Projection["name"];

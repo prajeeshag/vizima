@@ -1,2 +1,2 @@
-export * from "./grid-data";
-export * from "./grid-agent";
+export * from "./product";
+export * from "./agent";

@@ -1,8 +1,8 @@
-import { Data } from "../types";
+import { Product } from "../types";
 
 type PainterProps = {};
 
-export abstract class Painter<Props extends PainterProps> extends Data<
+export abstract class Painter<Props extends PainterProps> extends Product<
   Props,
   null
 > {

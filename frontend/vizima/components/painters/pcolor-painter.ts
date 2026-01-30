@@ -1,10 +1,10 @@
 import { Painter } from "./painter";
-import type { PixelData } from "../pixel-field";
+import type { PixelProduct } from "../pixel-field";
 import { logger } from "../../logger";
 import * as d3 from "d3";
 
 type PColorProps = {
-  readonly field: PixelData<any>;
+  readonly field: PixelProduct;
 };
 
 class PColorPainter extends Painter<PColorProps> {
@@ -12,22 +12,23 @@ class PColorPainter extends Painter<PColorProps> {
 
   async draw(canvas: HTMLCanvasElement, signal: AbortSignal) {
     const pixelField = this.props.field;
-    canvas.width = pixelField.props.viewSize[0];
-    canvas.height = pixelField.props.viewSize[1];
+    canvas.width = pixelField.viewSize[0];
+    canvas.height = pixelField.viewSize[1];
     const ctx = canvas.getContext("2d");
     if (!ctx) {
       return;
     }
     const imgData = ctx.createImageData(canvas.width, canvas.height);
     const rgba = imgData.data;
+
     const min = pixelField.min();
     const max = pixelField.max();
 
     // This replaces manual normalization
     const colorScale = d3
       .scaleSequential(d3.interpolateViridis)
-      .domain([min, max]) // Set the data bounds here
-      .clamp(true); // Optional: keeps values outside domain from breaking
+      .domain([min, max])
+      .clamp(true);
 
     for (let i = 0; i < pixelField.value.length; i++) {
       const val = pixelField.value[i];
@@ -47,6 +48,6 @@ class PColorPainter extends Painter<PColorProps> {
   }
 }
 
-export default function createPColorPainter(props: PColorProps) {
+export function createPColorPainter(props: PColorProps) {
   return new PColorPainter(props, null);
 }
