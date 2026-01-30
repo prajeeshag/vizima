@@ -1,10 +1,13 @@
-import { MapViz } from "./js/mapviz.js";
+let injected = false;
 
 function injectStyles() {
-  const styleId = "gemini-canvas-styles";
+  if (injected) return;
 
-  // Check if we already injected it
-  if (document.getElementById(styleId)) return;
+  const styleId = "visima-canvas-styles";
+  if (document.getElementById(styleId)) {
+    injected = true;
+    return;
+  }
 
   const style = document.createElement("style");
   style.id = styleId;
@@ -27,9 +30,3 @@ function injectStyles() {
     `;
   document.head.appendChild(style);
 }
-
-injectStyles();
-// const myCanvas1 = document.getElementById("globe1");
-// const globe1 = new MapViz(myCanvas1, "lambert", [800, 600]);
-const myCanvas2 = document.getElementById("globe2");
-const globe2 = new MapViz(myCanvas2, "orthographic", [600, 400]);

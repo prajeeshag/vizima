@@ -24,6 +24,8 @@ class PColorPainter extends Painter<PColorProps> {
     const min = pixelField.min();
     const max = pixelField.max();
 
+    this.log.info(`min: ${min}, max: ${max}`);
+
     // This replaces manual normalization
     const colorScale = d3
       .scaleSequential(d3.interpolateViridis)

@@ -23,10 +23,10 @@ type DataVarConfig = {
   attrs: DataVarMeta;
 };
 
-export class DatasetProduct extends Product<DatasetConfig, DatasetMeta> {
-  getVarConfig(name: string): DataVarConfig | undefined {
+export class Dataset extends Product<DatasetConfig, DatasetMeta> {
+  getVarConfig(name: string): DataVarConfig {
     const attr = this.value.datavars[name];
-    if (!attr) return undefined;
+    if (!attr) throw new Error(`Variable ${name} not found`);
     const url = this.props.url + `/${attr.arrName}`;
     const vertAxis = attr.vertical ? this.value.verticals[attr.vertical] : [];
     const timeAxis = attr.time ? this.value.times[attr.time] : [];

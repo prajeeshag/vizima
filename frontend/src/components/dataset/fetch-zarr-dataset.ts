@@ -1,12 +1,12 @@
 import * as zarr from "zarrita";
 import { logger } from "../../logger";
 import { DatasetMeta } from ".";
-import { DatasetProduct, type DatasetConfig } from "./product";
+import { Dataset, type DatasetConfig } from "./product";
 
 export async function fetchZarrDataset(
   config: DatasetConfig,
   signal: AbortSignal,
-): Promise<DatasetProduct> {
+): Promise<Dataset> {
   const log = logger.child({ component: "fetchZarrDataset" });
 
   let rootUrl = config.url;
@@ -21,5 +21,5 @@ export async function fetchZarrDataset(
 
   const attrs = DatasetMeta.parse(arr.attrs);
 
-  return new DatasetProduct(config, attrs);
+  return new Dataset(config, attrs);
 }

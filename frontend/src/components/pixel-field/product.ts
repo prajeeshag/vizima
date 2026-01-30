@@ -29,7 +29,7 @@ export class PixelProduct extends Product<PixelConfig, Float32Array> {
   }
 
   max(): number {
-    const val = d3.min(this.value);
+    const val = d3.max(this.value);
     return val === undefined ? NaN : val;
   }
 }

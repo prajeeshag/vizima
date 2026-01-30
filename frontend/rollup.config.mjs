@@ -8,9 +8,9 @@ import json from "@rollup/plugin-json";
 
 const buildConfigs = [
   {
-    input: "src/mapviz.ts",
+    input: "src/demo.ts",
     output: {
-      file: "dist/mapviz.js",
+      file: "dist/demo.js",
     },
   },
 ];

@@ -1,13 +1,15 @@
-import { type Painter } from "./painters";
+interface IPainter {
+  draw(canvas: HTMLCanvasElement, signal?: AbortSignal): Promise<void>;
+}
 
 export class Canvas {
   readonly canvas: HTMLCanvasElement;
-  private painters: Painter<any>[];
+  private painters: IPainter[];
 
   constructor(
     protected width: number,
     protected height: number,
-    painters?: Painter<any>[],
+    painters?: IPainter[],
     canvas?: HTMLCanvasElement,
   ) {
     this.canvas = canvas || document.createElement("canvas");
@@ -16,22 +18,22 @@ export class Canvas {
     this.canvas.height = this.height;
   }
 
-  async render(signal?: AbortSignal): Promise<void> {
+  async paint(signal?: AbortSignal): Promise<void> {
     this.canvas.getContext("2d")?.clearRect(0, 0, this.width, this.height);
-    for (const renderer of this.painters) {
+    for (const painter of this.painters) {
       if (signal?.aborted) {
         throw new Error("Canvas creation aborted");
       }
-      renderer.draw(this.canvas, signal);
+      painter.draw(this.canvas, signal);
     }
   }
 
-  addPainter(painter: Painter<any>) {
+  addPainter(painter: IPainter) {
     this.painters.push(painter);
     return this;
   }
 
-  removePainter(painter: Painter<any>) {
+  removePainter(painter: IPainter) {
     this.painters = this.painters.filter((p) => p !== painter);
     return this;
   }

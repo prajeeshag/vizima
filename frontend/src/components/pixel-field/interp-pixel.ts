@@ -15,6 +15,7 @@ export async function interpPixel(
     logger.info("Using native projection");
     return await interpPixelNative(props, signal);
   }
+  logger.info("Data on different projection");
   return await interpPixelProjected(props, signal);
 }
 
@@ -31,17 +32,24 @@ export async function interpPixelProjected(
   const pixelFieldArray = new Float32Array(width * height);
 
   let lastYieldTime = performance.now();
+
   for (let y = 0; y < height; y += 1) {
     if (signal.aborted) throw new Error("Aborted");
     for (let x = 0; x < width; x += 1) {
-      if (mask[y * width + x] === 0) continue;
-      const point = proj.invert!([x, y]);
+      if (mask[y * width + x] === 0) {
+        pixelFieldArray[y * width + x] = NaN;
+        continue;
+      }
+      const [xg, yg] = getGridIndex([x, y]);
       const value = gridValue.interpolateBilinear(
-        point![0],
-        point![1],
+        xg,
+        yg,
         isPreriodicLonAxis(props.grid.props.lonAxis),
       );
       pixelFieldArray[y * width + x] = value;
+      if (value === 0) {
+        logger.warn(`Pixel at (${x}, ${y}) has value 0.`);
+      }
     }
 
     if (performance.now() - lastYieldTime > 16) {
@@ -50,6 +58,32 @@ export async function interpPixelProjected(
     }
   }
   return new PixelProduct(props, pixelFieldArray);
+
+  function getGridIndex(pixelPoint: [number, number]): [number, number] {
+    const coord: [number, number] | null = proj.invert(pixelPoint);
+    if (!coord) {
+      throw Error(`invert failed for pixel point ${pixelPoint}`);
+    }
+
+    const lon0 = props.grid.props.lonAxis.corners.lb;
+    const lon1 = props.grid.props.lonAxis.corners.rt;
+    const nlon = props.grid.props.lonAxis.count;
+
+    if (coord[0] < lon0) {
+      coord[0] += 360;
+    }
+
+    const dlon = (lon1 - lon0) / nlon;
+    const xg = (coord[0] - lon0) / dlon;
+
+    const lat0 = props.grid.props.latAxis.corners.lb;
+    const lat1 = props.grid.props.latAxis.corners.rt;
+    const nlat = props.grid.props.latAxis.count;
+    const dlat = (lat1 - lat0) / nlat;
+    const yg = (coord[1] - lat0) / dlat;
+
+    return [xg, yg];
+  }
 
   function createMask() {
     const canvas = document.createElement("canvas");

@@ -184,7 +184,8 @@ function dragTranslateWrapX(
       const dx = event.x - p0[0];
       const dy = event.y - p0[1];
 
-      const sensitivity = 0.25;
+      const scale = globe.getScale();
+      const sensitivity = 75 / scale;
       const newRotation: [number, number, number] = [
         r0[0] + dx * sensitivity,
         r0[1],
