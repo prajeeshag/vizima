@@ -5,13 +5,13 @@ export type JsonDataProp = {
   readonly url: string;
 };
 
-const DEFAULT_CACHE_SIZE = 10;
+const DEFAULT_CACHE_SIZE = 100;
 
 export class JsonData extends Product<JsonDataProp, any> {}
 
-class JsonDataProvider extends Provider<JsonDataProp, JsonData> {}
+export class JsonDataProvider extends Provider<JsonDataProp, JsonData> {}
 
-class JsonDataAgent extends Agent<JsonDataProp, JsonData> {}
+export class JsonDataAgent extends Agent<JsonDataProp, JsonData> {}
 
 async function jsonDataFetch(
   props: JsonDataProp,
@@ -21,6 +21,5 @@ async function jsonDataFetch(
   return new JsonData(props, data);
 }
 
-export const jsonDataAgent = new JsonDataAgent(
-  new JsonDataProvider(jsonDataFetch, DEFAULT_CACHE_SIZE),
-);
+export const createJsonDataAgent = () =>
+  new JsonDataAgent(new JsonDataProvider(jsonDataFetch, DEFAULT_CACHE_SIZE));

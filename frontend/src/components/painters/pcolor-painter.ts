@@ -7,7 +7,7 @@ type PColorProps = {
   readonly field: PixelProduct;
 };
 
-class PColorPainter extends Painter<PColorProps> {
+export class PColorPainter extends Painter<PColorProps> {
   private readonly log = logger.child({ component: "PColorPainter" });
 
   async draw(canvas: HTMLCanvasElement, signal: AbortSignal) {

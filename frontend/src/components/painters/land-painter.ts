@@ -3,14 +3,14 @@ import { feature } from "topojson-client";
 import { Painter } from "./painter";
 import { type ProjectorState, getProjector } from "../projection";
 
-type LandProps = {
+export type LandProps = {
   readonly landJson: JsonData;
   readonly proj: ProjectorState;
   readonly strokeStyle?: string;
   readonly lineWidth?: number;
 };
 
-class LandPainter extends Painter<LandProps> {
+export class LandPainter extends Painter<LandProps> {
   async draw(canvas: HTMLCanvasElement, signal?: AbortSignal): Promise<void> {
     const topoJson = this.props.landJson.value;
     const land = feature(topoJson, topoJson.objects.land);

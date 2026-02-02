@@ -34,6 +34,9 @@ export class Globe implements IGlobe {
     if (!this._proj.invert) return null;
     return this._proj.invert(point);
   }
+  project(point: [number, number]): [number, number] | null {
+    return this._proj(point);
+  }
 
   getRotation(): [number, number, number] {
     return this._proj.rotate();

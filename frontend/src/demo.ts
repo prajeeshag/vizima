@@ -2,26 +2,22 @@ import { Globe } from "./components/projection/globe";
 import {
   createGraticulePainter,
   createLandPainter,
-  createPColorPainter,
 } from "./components/painters";
-import { jsonDataAgent } from "./components/json-data";
-import { createGridAgent, GridAgent } from "./components/grid-data";
-import { createPixelAgent, PixelAgent } from "./components/pixel-field";
 import { Canvas } from "./components/canvas";
 import * as d3 from "d3-selection";
 import type { ProjectorState } from "./components/projection";
-import { Dataset, createZarrDatasetAgent } from "./components/dataset";
+import { createZarrDatasetAgent } from "./components/dataset";
 import { Projection } from "./components/projection";
+import { LandLayer, PColorLayer } from "./components/layers";
 
 const landUrl = "/land-110m.json";
 const datasetAgent = createZarrDatasetAgent();
 const dataset = await datasetAgent.get({ url: "/dataset.zarr" });
-const landJson = await jsonDataAgent.get({ url: landUrl });
 
 export class MapViz {
   canvas: Canvas;
-  gridAgent: GridAgent;
-  pixelAgent: PixelAgent;
+  pcolorLayer: PColorLayer;
+  landLayer: LandLayer;
   constructor(
     readonly container: HTMLDivElement,
     readonly viewSize: [number, number],
@@ -32,20 +28,20 @@ export class MapViz {
     const globe = new Globe(projection, viewSize);
     this.canvas = new Canvas(this.viewSize[0], this.viewSize[1], []);
     this.container.appendChild(this.canvas.canvas);
-    this.gridAgent = createGridAgent();
-    this.pixelAgent = createPixelAgent();
+    this.pcolorLayer = new PColorLayer();
+    this.landLayer = new LandLayer();
     this.setupInteractions(globe);
     this.render(globe.getProjState(), varName);
   }
 
   async renderStatic(proj: ProjectorState) {
-    const landPainter = createLandPainter({
-      proj: proj,
-      landJson: landJson,
-    });
-
     const graticulePainter = createGraticulePainter({
       proj: proj,
+    });
+
+    const landPainter = await this.landLayer.getPainter({
+      proj: proj,
+      landJsonUrl: landUrl,
     });
 
     this.canvas.clearPainters();
@@ -57,28 +53,20 @@ export class MapViz {
   async render(proj: ProjectorState, varName: string) {
     const varConfig = dataset.getVarConfig(varName);
 
-    const grid = await this.gridAgent.get({
+    const landPainter = await this.landLayer.getPainter({
       proj: proj,
-      viewSize: this.viewSize,
-      ...varConfig,
-      timeIndex: 0,
-    });
-
-    const landPainter = createLandPainter({
-      proj: proj,
-      landJson: landJson,
+      landJsonUrl: landUrl,
     });
 
     const graticulePainter = createGraticulePainter({
       proj: proj,
     });
 
-    const field = await this.pixelAgent.get({
-      grid: grid,
-    });
-
-    const pcolorPainter = createPColorPainter({
-      field: field,
+    const pcolorPainter = await this.pcolorLayer.getPainter({
+      proj: proj,
+      viewSize: this.viewSize,
+      ...varConfig,
+      timeIndex: 0,
     });
 
     this.canvas.clearPainters();
