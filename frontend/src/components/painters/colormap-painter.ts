@@ -1,30 +1,25 @@
 import { Painter } from "./painter";
-import type { PixelProduct } from "../pixel-field";
+import type { PixelField } from "../pixel-field";
 import { logger } from "../../logger";
 import * as d3 from "d3";
 
-type PColorProps = {
-  readonly field: PixelProduct;
+type colorMapProps = {
+  readonly field: PixelField;
 };
 
-export class PColorPainter extends Painter<PColorProps> {
+export class colorMapPainter extends Painter<colorMapProps> {
   private readonly log = logger.child({ component: "PColorPainter" });
 
-  async draw(canvas: HTMLCanvasElement, signal: AbortSignal) {
+  async draw(ctx: CanvasRenderingContext2D, signal: AbortSignal) {
     const pixelField = this.props.field;
-    canvas.width = pixelField.viewSize[0];
-    canvas.height = pixelField.viewSize[1];
-    const ctx = canvas.getContext("2d");
-    if (!ctx) {
-      return;
-    }
-    const imgData = ctx.createImageData(canvas.width, canvas.height);
+    const imgData = ctx.createImageData(
+      pixelField.viewSize[0],
+      pixelField.viewSize[1],
+    );
     const rgba = imgData.data;
 
     const min = pixelField.min();
     const max = pixelField.max();
-
-    this.log.info(`min: ${min}, max: ${max}`);
 
     // This replaces manual normalization
     const colorScale = d3
@@ -50,6 +45,6 @@ export class PColorPainter extends Painter<PColorProps> {
   }
 }
 
-export function createPColorPainter(props: PColorProps) {
-  return new PColorPainter(props, null);
+export function createPColorPainter(props: colorMapProps) {
+  return new colorMapPainter(props, null);
 }

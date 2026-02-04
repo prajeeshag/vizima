@@ -1,4 +1,4 @@
-import { PixelProduct, type PixelConfig } from "./product";
+import { PixelField, type PixelConfig } from "./pixel-field";
 import { getProjector } from "../projection";
 import { getPixelNativeUtils, isPreriodicLon } from "./pixel-utils";
 import equal from "fast-deep-equal";
@@ -10,7 +10,7 @@ const logger = _logger.child({ module: "interpPixel" });
 export async function interpPixel(
   props: PixelConfig,
   signal: AbortSignal,
-): Promise<PixelProduct> {
+): Promise<PixelField> {
   if (equal(props.grid.props.proj.type, props.grid.props.gridProj)) {
     logger.info("Using native projection");
     return await interpPixelNative(props, signal);
@@ -22,7 +22,7 @@ export async function interpPixel(
 export async function interpPixelProjected(
   props: PixelConfig,
   signal: AbortSignal,
-): Promise<PixelProduct> {
+): Promise<PixelField> {
   const width = props.grid.props.viewSize[0];
   const height = props.grid.props.viewSize[1];
   const proj = getProjector(props.grid.props.proj);
@@ -57,7 +57,7 @@ export async function interpPixelProjected(
       lastYieldTime = performance.now();
     }
   }
-  return new PixelProduct(props, pixelFieldArray);
+  return new PixelField(props, pixelFieldArray);
 
   function getGridIndex(pixelPoint: [number, number]): [number, number] {
     const coord: [number, number] | null = proj.invert(pixelPoint);
@@ -120,7 +120,7 @@ function isPreriodicLonAxis(lonAxis: LonAxis): boolean {
 export async function interpPixelNative(
   props: PixelConfig,
   signal: AbortSignal,
-): Promise<PixelProduct> {
+): Promise<PixelField> {
   const viewWidth = props.grid.props.viewSize[0]; // Canvas width
   const viewHeight = props.grid.props.viewSize[1]; // Canvas height
   const utils = getPixelNativeUtils(props.grid.props);
@@ -143,5 +143,5 @@ export async function interpPixelNative(
     }
   }
 
-  return new PixelProduct(props, pixelFieldArray);
+  return new PixelField(props, pixelFieldArray);
 }

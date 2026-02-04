@@ -1,12 +1,12 @@
-import { GridProduct } from "../grid-data";
-import { Product } from "../types";
+import { GridData } from "../grid-data";
+import { CachedResult } from "../types";
 import * as d3 from "d3";
 
 export type PixelConfig = {
-  readonly grid: GridProduct;
+  readonly grid: GridData;
 };
 
-export class PixelProduct extends Product<PixelConfig, Float32Array> {
+export class PixelField extends CachedResult<PixelConfig, Float32Array> {
   get viewSize(): [number, number] {
     return this.props.grid.props.viewSize;
   }

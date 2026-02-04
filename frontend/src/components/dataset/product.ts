@@ -7,7 +7,7 @@ import type {
   VertAxis,
 } from ".";
 import { DataProjection } from "../projection";
-import { Product } from "../types";
+import { CachedResult } from "../types";
 
 export type DatasetConfig = {
   url: string;
@@ -23,7 +23,7 @@ type DataVarConfig = {
   attrs: DataVarMeta;
 };
 
-export class Dataset extends Product<DatasetConfig, DatasetMeta> {
+export class Dataset extends CachedResult<DatasetConfig, DatasetMeta> {
   getVarConfig(name: string): DataVarConfig {
     const attr = this.value.datavars[name];
     if (!attr) throw new Error(`Variable ${name} not found`);

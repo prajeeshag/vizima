@@ -1,9 +1,9 @@
-import { Agent, Provider } from "../types";
-import { PixelProduct, type PixelConfig } from "./product";
+import { DataClient, CachingCompute } from "../types";
+import { PixelField, type PixelConfig } from "./pixel-field";
 import { interpPixel } from "./interp-pixel";
 
-export class PixelAgent extends Agent<PixelConfig, PixelProduct> {}
-export class PixelProvider extends Provider<PixelConfig, PixelProduct> {}
+export class PixelAgent extends DataClient<PixelConfig, PixelField> {}
+export class PixelProvider extends CachingCompute<PixelConfig, PixelField> {}
 
 const pixelProvider = new PixelProvider(interpPixel);
 

@@ -9,17 +9,17 @@ import {
   getProjectionInit,
 } from ".";
 
-import { type IGlobe } from ".";
+import { type IProjectionController } from "./drag-handlers";
 
 const DEFAULT_SCALE_EXTENT: [number, number] = [0.5, 8];
 
-export class Globe implements IGlobe {
+export class ProjectionController implements IProjectionController {
   private _proj: d3.GeoProjection;
   readonly projParams: Projection;
 
   constructor(
     projParams: Projection,
-    viewSize: [number, number],
+    readonly viewSize: [number, number],
     private scaleExtent: [number, number] = DEFAULT_SCALE_EXTENT,
     corners?: Corners,
     padding?: [number, number],
@@ -69,6 +69,7 @@ export class Globe implements IGlobe {
       translation: this._proj.translate(),
       rotation: this._proj.rotate(),
       parallels: hasParallels(this._proj) ? this._proj.parallels() : [0, 0],
+      extent: this.viewSize,
     };
   }
 

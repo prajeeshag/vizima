@@ -3,7 +3,7 @@ import versor from "versor";
 import { drag as d3drag } from "d3-drag";
 import { type ProjectorState, type ProjectionName } from ".";
 
-export interface IGlobe {
+export interface IProjectionController {
   getRotation(): [number, number, number];
   setRotation(r: [number, number, number]): void;
   getTranslate(): [number, number];
@@ -16,14 +16,14 @@ export interface IGlobe {
 
 interface DragHandler {
   (
-    globe: IGlobe,
+    globe: IProjectionController,
     renderDrag: (config: ProjectorState) => void,
     renderEnd: (config: ProjectorState) => void,
   ): DragBehavior<HTMLCanvasElement, unknown, unknown>;
 }
 
 function dragRotation(
-  globe: IGlobe,
+  globe: IProjectionController,
   renderDrag: (config: ProjectorState) => void,
   renderEnd: (config: ProjectorState) => void,
 ): DragBehavior<HTMLCanvasElement, unknown, unknown> {
@@ -84,7 +84,7 @@ function dragRotation(
 }
 
 function dragRotationSimple(
-  globe: IGlobe,
+  globe: IProjectionController,
   renderDrag: (projConfig: ProjectorState) => void,
   renderEnd: (projConfig: ProjectorState) => void,
 ): DragBehavior<HTMLCanvasElement, unknown, unknown> {
@@ -119,7 +119,7 @@ function dragRotationSimple(
 }
 
 function dragTranslate(
-  globe: IGlobe,
+  globe: IProjectionController,
   renderDrag: (projState: ProjectorState) => void,
   renderEnd: (projState: ProjectorState) => void,
 ): DragBehavior<HTMLCanvasElement, unknown, unknown> {
@@ -159,7 +159,7 @@ function dragTranslate(
 }
 
 function dragTranslateWrapX(
-  globe: IGlobe,
+  globe: IProjectionController,
   renderDrag: (projConfig: ProjectorState) => void,
   renderEnd: (projConfig: ProjectorState) => void,
 ): DragBehavior<HTMLCanvasElement, unknown, unknown> {

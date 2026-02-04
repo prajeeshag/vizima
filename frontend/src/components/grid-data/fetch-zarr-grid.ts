@@ -1,6 +1,6 @@
 import * as zarr from "zarrita";
 import { logger } from "../../logger";
-import { type GridConfig, GridProduct } from "./product";
+import { type GridConfig, GridData } from "./gird-data";
 import z from "zod";
 import { Grid } from "./grid";
 import equal from "fast-deep-equal";
@@ -13,7 +13,7 @@ const ZarrAttrsSchema = z.looseObject({
 export async function fetchZarrGrid(
   config: GridConfig,
   signal: AbortSignal,
-): Promise<GridProduct> {
+): Promise<GridData> {
   const log = logger.child({ component: "fetchZarrGrid" });
 
   let rootUrl = config.url;
@@ -49,7 +49,7 @@ export async function fetchZarrGrid(
   const values = new Float32Array(sliceArray.data as any).map(
     (x) => x * attrs.scale_factor + attrs.add_offset,
   );
-  return new GridProduct(config, new Grid({ x0, y0, nx, ny }, values));
+  return new GridData(config, new Grid({ x0, y0, nx, ny }, values));
 }
 
 function subsetGrid(config: GridConfig): [number, number, number, number] {

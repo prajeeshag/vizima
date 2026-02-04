@@ -7,9 +7,10 @@ export type ConfigType =
   | Primitive
   | readonly Primitive[]
   | { readonly [key: string]: ConfigType }
-  | Product<any, any>;
+  | CachedResult<any, any>
+  | readonly CachedResult<any, any>[];
 
-export class Product<Config extends ConfigType, Value> {
+export class CachedResult<Config extends ConfigType, Value> {
   constructor(
     readonly props: Config,
     readonly value: Value,
@@ -20,8 +21,8 @@ export class Product<Config extends ConfigType, Value> {
   }
 }
 
-export class Agent<Prop extends ConfigType, Value> {
-  constructor(readonly provider: Provider<Prop, Value>) {}
+export class DataClient<Prop extends ConfigType, Value> {
+  constructor(readonly provider: CachingCompute<Prop, Value>) {}
 
   get(props: Prop, args?: any): Promise<Value> {
     return this.provider.get(props, this, args);
@@ -34,10 +35,10 @@ type ComputeFn<Prop extends ConfigType, Value> = (
   args?: any,
 ) => Promise<Value>;
 
-export class Provider<Prop extends ConfigType, Value> {
+export class CachingCompute<Prop extends ConfigType, Value> {
   private cache = new Map<string, Value>();
   private pending = new Map<string, Promise<Value>>();
-  private controllers = new WeakMap<Agent<Prop, Value>, AbortController>();
+  private controllers = new WeakMap<DataClient<Prop, Value>, AbortController>();
   protected logger = logger.child({ component: this.constructor.name });
 
   constructor(
@@ -47,7 +48,7 @@ export class Provider<Prop extends ConfigType, Value> {
 
   async get(
     props: Prop,
-    agent: Agent<Prop, Value>,
+    agent: DataClient<Prop, Value>,
     args?: any,
   ): Promise<Value> {
     const stableKey = stringify(props);

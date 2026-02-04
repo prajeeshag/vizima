@@ -10,11 +10,7 @@ type GraticuleProp = {
 const defaultStrokeStyle: string = "rgba(255, 255, 255, 0.1)";
 
 class GraticulePainter extends Painter<GraticuleProp> {
-  async draw(canvas: HTMLCanvasElement, signal?: AbortSignal) {
-    const context = canvas.getContext("2d");
-    if (!context) {
-      throw Error("Canvas 2D context is null!");
-    }
+  async draw(context: CanvasRenderingContext2D, signal?: AbortSignal) {
     const proj = getProjector(this.props.proj);
     context.beginPath();
     const graticule = geoGraticule();

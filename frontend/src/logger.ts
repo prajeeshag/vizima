@@ -1,8 +1,5 @@
-import { pino } from 'pino';
-
-const isProduction = false;
-
+import { pino } from "pino";
 
 export const logger = pino({
-    level: isProduction ? 'info' : 'debug',
+  level: process.env.LOG_LEVEL || "info",
 });

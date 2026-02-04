@@ -1,6 +1,8 @@
 let injected = false;
 
-function injectStyles() {
+export const className = "vizima-view-canvas-stack";
+
+export function injectStyles() {
   if (injected) return;
 
   const styleId = "visima-canvas-styles";
@@ -12,19 +14,19 @@ function injectStyles() {
   const style = document.createElement("style");
   style.id = styleId;
   style.textContent = `
-    .canvas-stack {
+    .${className} {
         display: grid;
         grid-template-columns: 1fr;
         grid-template-rows: 1fr;
         /* Ensure the container matches the canvas size */
         width: fit-content;
     }
-    .canvas-stack > canvas {
+    .${className} > canvas {
         grid-area: 1 / 1 / 2 / 2; /* All canvases start at row 1, col 1 */
-        pointer-events: none;     /* Allow interaction with layers below */
+        pointer-events: none;     /* Do not allow interaction */
     }
-    /* If you want the bottom-most canvas to be interactive */
-    .canvas-stack > canvas:first-child {
+    /* Except for the first canvas */
+    .${className} > canvas:first-child {
       pointer-events: auto;
     }
     `;

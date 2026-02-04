@@ -1,5 +1,5 @@
 import type { DataProjection, ProjectorState } from "../projection";
-import { Product } from "../types";
+import { CachedResult } from "../types";
 import type { Grid } from "./grid";
 import { type LatAxis, type LonAxis } from "../dataset";
 
@@ -14,4 +14,4 @@ export type GridConfig = {
   readonly vertIndex?: number;
 };
 
-export class GridProduct extends Product<GridConfig, Grid> {}
+export class GridData extends CachedResult<GridConfig, Grid> {}

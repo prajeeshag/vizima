@@ -1,10 +1,13 @@
-import { Product } from "../types";
+import { CachedResult } from "../types";
 
-type PainterProps = {};
+export type PainterProps = {};
 
-export abstract class Painter<Props extends PainterProps> extends Product<
+export abstract class Painter<Props extends PainterProps> extends CachedResult<
   Props,
   null
 > {
-  abstract draw(canvas: HTMLCanvasElement, signal?: AbortSignal): Promise<void>;
+  abstract draw(
+    context: CanvasRenderingContext2D,
+    signal?: AbortSignal,
+  ): Promise<void>;
 }

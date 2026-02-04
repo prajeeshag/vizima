@@ -1,29 +1,29 @@
 import { JsonData } from "../json-data";
-import { feature } from "topojson-client";
+import { feature, mesh } from "topojson-client";
 import { Painter } from "./painter";
 import { type ProjectorState, getProjector } from "../projection";
 
 export type LandProps = {
-  readonly landJson: JsonData;
   readonly proj: ProjectorState;
+  readonly landJson: JsonData;
   readonly strokeStyle?: string;
   readonly lineWidth?: number;
 };
 
 export class LandPainter extends Painter<LandProps> {
-  async draw(canvas: HTMLCanvasElement, signal?: AbortSignal): Promise<void> {
+  async draw(
+    context: CanvasRenderingContext2D,
+    signal?: AbortSignal,
+  ): Promise<void> {
     const topoJson = this.props.landJson.value;
-    const land = feature(topoJson, topoJson.objects.land);
-    const ctx = canvas.getContext("2d");
-    if (!ctx) {
-      throw Error("Canvas 2D context is null!");
-    }
-    ctx.beginPath();
-    ctx.strokeStyle = this.props.strokeStyle || "#f7faf8ff";
-    ctx.lineWidth = this.props.lineWidth || 1;
+    // const land = feature(topoJson, topoJson.objects.land);
+    const land = mesh(topoJson, topoJson.objects.land);
+    context.beginPath();
+    context.strokeStyle = this.props.strokeStyle || "#f7faf8ff";
+    context.lineWidth = this.props.lineWidth || 1;
     const proj = getProjector(this.props.proj);
-    proj.geoPath(ctx)(land);
-    ctx.stroke();
+    proj.geoPath(context)(land);
+    context.stroke();
   }
 }
 

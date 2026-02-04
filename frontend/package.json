@@ -27,5 +27,10 @@
     "rollup-plugin-watch-globs": "^2.0.1",
     "topojson-client": "^3.1.0",
     "versor": "^0.2.0"
+  },
+  "scripts": {
+    "dev:build": "LOG_LEVEL=debug bun build src/demo.ts --outdir dist/ --watch --env inline",
+    "dev:server": "bun run serve.ts",
+    "dev": "bun run dev:build & bun run dev:server"
   }
 }

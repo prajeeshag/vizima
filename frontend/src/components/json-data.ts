@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import { Product, Agent, Provider } from "./types";
+import { CachedResult, DataClient, CachingCompute } from "./types";
 
 export type JsonDataProp = {
   readonly url: string;
@@ -7,11 +7,11 @@ export type JsonDataProp = {
 
 const DEFAULT_CACHE_SIZE = 100;
 
-export class JsonData extends Product<JsonDataProp, any> {}
+export class JsonData extends CachedResult<JsonDataProp, any> {}
 
-export class JsonDataProvider extends Provider<JsonDataProp, JsonData> {}
+export class JsonDataProvider extends CachingCompute<JsonDataProp, JsonData> {}
 
-export class JsonDataAgent extends Agent<JsonDataProp, JsonData> {}
+export class JsonDataAgent extends DataClient<JsonDataProp, JsonData> {}
 
 async function jsonDataFetch(
   props: JsonDataProp,
