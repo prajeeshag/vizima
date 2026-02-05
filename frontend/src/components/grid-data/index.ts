@@ -1,2 +1,3 @@
-export * from "./gird-data";
+export * from "./grid";
 export * from "./agent";
+export * from "./grid-utils";

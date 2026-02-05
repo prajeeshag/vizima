@@ -31,6 +31,7 @@
   "scripts": {
     "dev:build": "LOG_LEVEL=debug bun build src/demo.ts --outdir dist/ --watch --env inline",
     "dev:server": "bun run serve.ts",
-    "dev": "bun run dev:build & bun run dev:server"
+    "dev": "bun run dev:build & bun run dev:server",
+    "prod": "LOG_LEVEL=silent bun build src/demo.ts --outdir dist/ --env inline --minify"
   }
 }

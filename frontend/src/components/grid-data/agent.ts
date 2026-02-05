@@ -1,13 +1,13 @@
 import { DataClient, CachingCompute } from "../types";
 import { fetchZarrGrid } from "./fetch-zarr-grid";
-import { type GridConfig, GridData } from "./gird-data";
+import { type GridProps, Grid } from "./grid";
 
 const CACHE_SIZE = 50;
-export class GridAgent extends DataClient<GridConfig, GridData> {}
-export class GridScalarProvider extends CachingCompute<GridConfig, GridData> {}
+export class GridAgent extends DataClient<GridProps, Grid> {}
+export class GridProvider extends CachingCompute<GridProps, Grid> {}
 
-const gridScalarProvider = new GridScalarProvider(fetchZarrGrid, CACHE_SIZE);
+const gridProvider = new GridProvider(fetchZarrGrid, CACHE_SIZE);
 
 export const createGridAgent = () => {
-  return new GridAgent(gridScalarProvider);
+  return new GridAgent(gridProvider);
 };

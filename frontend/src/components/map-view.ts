@@ -37,20 +37,6 @@ type CanvasProps = {
 
 export type CanvasStack = readonly Expand<CanvasProps>[];
 
-type ExtractProps<T> = T extends readonly [
-  ...infer Layers extends readonly { painters: readonly unknown[] }[],
-]
-  ? {
-      [I in keyof Layers]: Layers[I]["painters"] extends readonly [...infer P]
-        ? {
-            [J in keyof P]: P[J] extends (props: infer Props) => any
-              ? Expand<Omit<Props, "proj" | "viewSize">>
-              : never;
-          }
-        : never;
-    }
-  : never;
-
 type ExtractPropsKeyed<T> = T extends readonly [
   ...infer Layers extends readonly {
     id: PropertyKey;

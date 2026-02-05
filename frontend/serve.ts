@@ -1,4 +1,3 @@
-// serve.ts
 import { serve } from "bun";
 const port = 3000;
 serve({

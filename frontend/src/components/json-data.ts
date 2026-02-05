@@ -1,4 +1,4 @@
-import * as d3 from "d3";
+import { json as d3json } from "d3";
 import { CachedResult, DataClient, CachingCompute } from "./types";
 
 export type JsonDataProp = {
@@ -17,7 +17,7 @@ async function jsonDataFetch(
   props: JsonDataProp,
   signal: AbortSignal,
 ): Promise<JsonData> {
-  const data = await d3.json(props.url, { signal });
+  const data = await d3json(props.url, { signal });
   return new JsonData(props, data);
 }
 

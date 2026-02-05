@@ -1,17 +1,23 @@
-import { createGridAgent, type GridConfig } from "../grid-data";
-import { createPixelAgent } from "../pixel-field";
+import { createGridAgent, getGridProps } from "../grid-data";
+import { createPixelAgent, type PixelProps } from "../pixel-field";
 import { createPColorPainter } from "../painters";
 import { type LayerRenderer } from "./layer-renderer";
 import type { Expand } from "../type-helpers";
 
-type ColorMapProps = GridConfig;
+type ColorMapProps = Expand<Omit<PixelProps, "grid">> & {
+  url: string;
+  timeIndex?: number;
+  vertIndex?: number;
+};
+
 export const createColorMapRenderer: LayerRenderer<ColorMapProps> = () => {
   const gridAgent = createGridAgent();
   const pixelAgent = createPixelAgent();
 
   return async (props: ColorMapProps) => {
-    const grid = await gridAgent.get(props);
-    const field = await pixelAgent.get({ grid: grid });
+    const gridProps = getGridProps(props);
+    const grid = await gridAgent.get(gridProps);
+    const field = await pixelAgent.get({ grid: grid, ...props });
     return createPColorPainter({ field: field });
   };
 };

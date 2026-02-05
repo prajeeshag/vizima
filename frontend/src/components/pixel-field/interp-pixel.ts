@@ -1,4 +1,4 @@
-import { PixelField, type PixelConfig } from "./pixel-field";
+import { PixelField, type PixelProps } from "./pixel-field";
 import { getProjector } from "../projection";
 import { getPixelNativeUtils, isPreriodicLon } from "./pixel-utils";
 import equal from "fast-deep-equal";
@@ -8,10 +8,10 @@ import { logger as _logger } from "../../logger";
 const logger = _logger.child({ module: "interpPixel" });
 
 export async function interpPixel(
-  props: PixelConfig,
+  props: PixelProps,
   signal: AbortSignal,
 ): Promise<PixelField> {
-  if (equal(props.grid.props.proj.type, props.grid.props.gridProj)) {
+  if (equal(props.proj.type, props.gridProj)) {
     logger.info("Using native projection");
     return await interpPixelNative(props, signal);
   }
@@ -20,15 +20,15 @@ export async function interpPixel(
 }
 
 export async function interpPixelProjected(
-  props: PixelConfig,
+  props: PixelProps,
   signal: AbortSignal,
 ): Promise<PixelField> {
-  const width = props.grid.props.viewSize[0];
-  const height = props.grid.props.viewSize[1];
-  const proj = getProjector(props.grid.props.proj);
+  const width = props.viewSize[0];
+  const height = props.viewSize[1];
+  const proj = getProjector(props.proj);
   const mask = createMask();
 
-  const gridValue = props.grid.value;
+  const grid = props.grid;
   const pixelFieldArray = new Float32Array(width * height);
 
   let lastYieldTime = performance.now();
@@ -41,10 +41,10 @@ export async function interpPixelProjected(
         continue;
       }
       const [xg, yg] = getGridIndex([x, y]);
-      const value = gridValue.interpolateBilinear(
+      const value = grid.interpolateBilinear(
         xg,
         yg,
-        isPreriodicLonAxis(props.grid.props.lonAxis),
+        isPreriodicLonAxis(props.lonAxis),
       );
       pixelFieldArray[y * width + x] = value;
       if (value === 0) {
@@ -65,9 +65,9 @@ export async function interpPixelProjected(
       throw Error(`invert failed for pixel point ${pixelPoint}`);
     }
 
-    const lon0 = props.grid.props.lonAxis.corners.lb;
-    const lon1 = props.grid.props.lonAxis.corners.rt;
-    const nlon = props.grid.props.lonAxis.count;
+    const lon0 = props.lonAxis.corners.lb;
+    const lon1 = props.lonAxis.corners.rt;
+    const nlon = props.lonAxis.count;
 
     if (coord[0] < lon0) {
       coord[0] += 360;
@@ -76,9 +76,9 @@ export async function interpPixelProjected(
     const dlon = (lon1 - lon0) / nlon;
     const xg = (coord[0] - lon0) / dlon;
 
-    const lat0 = props.grid.props.latAxis.corners.lb;
-    const lat1 = props.grid.props.latAxis.corners.rt;
-    const nlat = props.grid.props.latAxis.count;
+    const lat0 = props.latAxis.corners.lb;
+    const lat1 = props.latAxis.corners.rt;
+    const nlat = props.latAxis.count;
     const dlat = (lat1 - lat0) / nlat;
     const yg = (coord[1] - lat0) / dlat;
 
@@ -118,13 +118,13 @@ function isPreriodicLonAxis(lonAxis: LonAxis): boolean {
 }
 
 export async function interpPixelNative(
-  props: PixelConfig,
+  props: PixelProps,
   signal: AbortSignal,
 ): Promise<PixelField> {
-  const viewWidth = props.grid.props.viewSize[0]; // Canvas width
-  const viewHeight = props.grid.props.viewSize[1]; // Canvas height
-  const utils = getPixelNativeUtils(props.grid.props);
-  const gridValue = props.grid.value;
+  const viewWidth = props.viewSize[0]; // Canvas width
+  const viewHeight = props.viewSize[1]; // Canvas height
+  const utils = getPixelNativeUtils(props);
+  const grid = props.grid;
   const pixelFieldArray = new Float32Array(viewHeight * viewWidth);
   let lastYieldTime = performance.now();
   const { x0, x1, y0, y1 } = utils.canvasGridBounds();
@@ -133,7 +133,7 @@ export async function interpPixelNative(
     if (signal.aborted) throw new Error("Aborted");
     for (let px = x0; px <= x1; px += 1) {
       const point = utils.canvasToGrid(px, py);
-      const value = gridValue.interpolateBilinear(point[0], point[1], false);
+      const value = grid.interpolateBilinear(point[0], point[1], false);
       pixelFieldArray[py * viewWidth + px] = value;
     }
 

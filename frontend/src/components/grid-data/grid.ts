@@ -1,9 +1,16 @@
-export class Grid {
-  constructor(
-    readonly props: { x0: number; y0: number; nx: number; ny: number },
-    readonly value: Float32Array,
-  ) {}
+import { CachedResult } from "../types";
 
+export type GridProps = {
+  url: string;
+  x0: number;
+  y0: number;
+  nx: number;
+  ny: number;
+  z?: number;
+  t?: number;
+};
+
+export class Grid extends CachedResult<GridProps, Float32Array> {
   private bilinear(
     v00: number,
     v10: number,

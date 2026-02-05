@@ -1,14 +1,21 @@
-import { GridData } from "../grid-data";
+import type { LatAxis, LonAxis } from "../dataset";
+import { Grid, type GridProps } from "../grid-data";
+import type { DataProjection, ProjectorState } from "../projection";
 import { CachedResult } from "../types";
 import * as d3 from "d3";
 
-export type PixelConfig = {
-  readonly grid: GridData;
+export type PixelProps = {
+  readonly grid: Grid;
+  readonly viewSize: [number, number];
+  readonly gridProj: DataProjection;
+  readonly proj: ProjectorState;
+  readonly lonAxis: LonAxis;
+  readonly latAxis: LatAxis;
 };
 
-export class PixelField extends CachedResult<PixelConfig, Float32Array> {
+export class PixelField extends CachedResult<PixelProps, Float32Array> {
   get viewSize(): [number, number] {
-    return this.props.grid.props.viewSize;
+    return this.props.viewSize;
   }
 
   isDefined(x: number, y: number): boolean {
