@@ -20,7 +20,7 @@ const mapdiv1 = document.createElement("div");
 document.body.appendChild(mapdiv1);
 
 const colorbardiv = document.createElement("div");
-document.body.appendChild(colorbardiv);
+// document.body.appendChild(colorbardiv);
 
 const colorbardiv1 = document.createElement("div");
 document.body.appendChild(colorbardiv1);
@@ -30,13 +30,15 @@ const colorMapRenderer = createColorMapRenderer({
     renderColorBar(colorbardiv, {
       scale: props.colorScale,
       orientation: "vertical",
-      label: `${props.props.gridMeta.units}`,
+      units: `${props.props.gridMeta.units}`,
+      label: `${props.props.gridMeta.standard_name}`,
       ticks: 5,
     });
     renderColorBar(colorbardiv1, {
       scale: props.colorScale,
       orientation: "horizontal",
-      label: `${props.props.gridMeta.units}`,
+      units: `${props.props.gridMeta.units}`,
+      label: `${props.props.gridMeta.standard_name}`,
       ticks: 5,
     });
   },
@@ -60,7 +62,7 @@ const CS = [
   },
 ] as const;
 
-const view = new MapView([800, 600], { name: "Orthographic" }, CS, mapdiv1);
+const view = new MapView([800, 600], { name: "Mercator" }, CS, mapdiv1);
 
 type Props = ExtractProps<typeof CS>;
 
@@ -73,7 +75,7 @@ function minmax(array: Float32Array): [number, number] {
     if (value < min) min = value;
     if (value > max) max = value;
   }
-  return [Math.floor(min), Math.floor(max)];
+  return [min, max];
 }
 
 const colorScale: ColorScaleDynamic = defineColorScale({

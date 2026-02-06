@@ -5,9 +5,36 @@ import { styleRegistry } from "../styles";
 type ColorBarProps = {
   scale: ColorScaleStatic;
   orientation: "horizontal" | "vertical";
-  label: string;
+  units: string;
   ticks: number;
+  label: string;
 };
+
+function computeExponent(domain: number[]): number {
+  const maxAbs = d3.max(domain);
+  if (maxAbs === undefined || maxAbs === 0) return 0;
+
+  const exp = Math.floor(Math.log10(maxAbs));
+
+  return exp >= 3 || exp <= -3 ? exp : 0;
+}
+
+const tickFormat = (value: d3.NumberValue) => d3.format(".3~g")(Number(value));
+
+const superscript = (n: number) =>
+  n
+    .toString()
+    .replace(/-/g, "⁻")
+    .replace(/0/g, "⁰")
+    .replace(/1/g, "¹")
+    .replace(/2/g, "²")
+    .replace(/3/g, "³")
+    .replace(/4/g, "⁴")
+    .replace(/5/g, "⁵")
+    .replace(/6/g, "⁶")
+    .replace(/7/g, "⁷")
+    .replace(/8/g, "⁸")
+    .replace(/9/g, "⁹");
 
 export function createColorBarRender() {
   styleRegistry.register("colorbar", styles);
@@ -18,7 +45,7 @@ export function renderColorBar(
   mount: HTMLDivElement,
   props: ColorBarProps,
 ): void {
-  const { scale, orientation, label, ticks } = props;
+  const { scale, orientation, label, units, ticks } = props;
 
   mount.innerHTML = "";
 
@@ -37,10 +64,17 @@ export function renderColorBar(
   const colorScale = createColorScale(scale);
 
   // ---- axis scale ----
+  const exponent = computeExponent(scale.domain);
+  const exponentLabel = exponent === 0 ? "" : `×10${superscript(exponent)} `;
+  const unitsLabel = `${exponentLabel}${units}`;
+  const fullUnitsLabel = unitsLabel ? ` (${unitsLabel})` : "";
+  const fullLabel = `${label}${fullUnitsLabel}`;
+
+  const domain = scale.domain.map((d) => d / Math.pow(10, exponent));
   const axisScale =
     orientation === "horizontal"
-      ? d3.scaleLinear().domain(scale.domain).range([0, width])
-      : d3.scaleLinear().domain(scale.domain).range([height, 0]);
+      ? d3.scaleLinear().domain(domain).range([0, width])
+      : d3.scaleLinear().domain(domain).range([height, 0]);
 
   // ---- gradient ----
   const defs = svg.append("defs");
@@ -76,8 +110,8 @@ export function renderColorBar(
   // ---- axis ----
   const axis =
     orientation === "horizontal"
-      ? d3.axisBottom(axisScale).ticks(ticks)
-      : d3.axisRight(axisScale).ticks(ticks);
+      ? d3.axisBottom(axisScale).ticks(ticks).tickFormat(tickFormat)
+      : d3.axisRight(axisScale).ticks(ticks).tickFormat(tickFormat);
 
   g.append("g")
     .attr("class", "colorbar__axis")
@@ -103,7 +137,7 @@ export function renderColorBar(
           `rotate(-90, ${x}, ${y})`
         : null,
     )
-    .text(label);
+    .text(fullLabel);
 
   // g.append("text")
   //   .attr("class", "colorbar__label")
@@ -133,7 +167,7 @@ const styles = `
 
   /* label text */
   .colorbar__label {
-    fill: #222;
+    fill: #555;
     font-size: 12px;
     font-weight: 500;
   }
