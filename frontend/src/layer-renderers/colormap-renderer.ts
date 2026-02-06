@@ -1,10 +1,18 @@
-import { createGridAgent, getGridProps } from "../components/grid-data";
-import { createPixelAgent, type PixelProps } from "../components/pixel-field";
+import { createGridAgent, getGridProps, Grid } from "../components/grid-data";
+import {
+  createPixelAgent,
+  PixelField,
+  type PixelProps,
+} from "../components/pixel-field";
 import { createColorMapPainter } from "../components/painters";
 import { type CreateLayerRenderer, type LayerRenderer } from "./layer-renderer";
 import type { DataVarMeta, LatAxis, LonAxis } from "../components/dataset";
 import type { DataProjection, ProjectorState } from "../components/projection";
-import { type ColorScaleDynamic, buildColorScale } from "../colorscale";
+import {
+  type ColorScaleDynamic,
+  type ColorScaleStatic,
+  buildColorScale,
+} from "../colorscale";
 
 type ColorMapRendererProps = {
   proj: ProjectorState;
@@ -19,12 +27,21 @@ type ColorMapRendererProps = {
   colorScale: ColorScaleDynamic;
 };
 
-type CreateColorMapRenderer = CreateLayerRenderer<ColorMapRendererProps>;
 export type ColorMapRenderer = LayerRenderer<ColorMapRendererProps>;
 
-export const createColorMapRenderer: CreateColorMapRenderer = () => {
+type Props = {
+  callback?: (props: {
+    colorScale: ColorScaleStatic;
+    props: ColorMapRendererProps;
+    grid: Grid;
+    pixelField: PixelField;
+  }) => void;
+};
+
+export const createColorMapRenderer = (props: Props) => {
   const gridAgent = createGridAgent();
   const pixelAgent = createPixelAgent();
+  const callback = props.callback || (() => {});
   const colorMapRenderer = async (props: ColorMapRendererProps) => {
     const gridProps = getGridProps({
       url: props.url,
@@ -51,6 +68,12 @@ export const createColorMapRenderer: CreateColorMapRenderer = () => {
       grid: grid,
       pixelField: field,
       gridMeta: props.gridMeta,
+    });
+    callback({
+      colorScale: colorScale,
+      props: props,
+      grid: grid,
+      pixelField: field,
     });
     return createColorMapPainter({ field: field, colorScale: colorScale });
   };

@@ -9,15 +9,39 @@ import type { ExtractProps } from "./map-view/types";
 import { createGridSelector, createColorScaleController } from "./controllers";
 import { defineColorScale, type ColorScaleDynamic } from "./colorscale";
 import { styleRegistry } from "./styles";
+import { createColorBarRender } from "./colorbar/colorbar";
 
 const landUrl = "/land-110m.json";
 const datasetAgent = createZarrDatasetAgent();
 const dset = await datasetAgent.get({ url: "/dataset.zarr" });
+const renderColorBar = createColorBarRender();
 
 const mapdiv1 = document.createElement("div");
 document.body.appendChild(mapdiv1);
 
-const colorMapRenderer = createColorMapRenderer();
+const colorbardiv = document.createElement("div");
+document.body.appendChild(colorbardiv);
+
+const colorbardiv1 = document.createElement("div");
+document.body.appendChild(colorbardiv1);
+
+const colorMapRenderer = createColorMapRenderer({
+  callback: (props) => {
+    renderColorBar(colorbardiv, {
+      scale: props.colorScale,
+      orientation: "vertical",
+      label: `${props.props.gridMeta.units}`,
+      ticks: 5,
+    });
+    renderColorBar(colorbardiv1, {
+      scale: props.colorScale,
+      orientation: "horizontal",
+      label: `${props.props.gridMeta.units}`,
+      ticks: 5,
+    });
+  },
+});
+
 const landRenderer = createLandRenderer();
 const graticuleRenderer = createGraticuleRenderer();
 
@@ -49,14 +73,14 @@ function minmax(array: Float32Array): [number, number] {
     if (value < min) min = value;
     if (value > max) max = value;
   }
-  return [min, max];
+  return [Math.floor(min), Math.floor(max)];
 }
 
 const colorScale: ColorScaleDynamic = defineColorScale({
   name: "plasma",
   reverse: false,
   clamp: true,
-  domain: (props) => minmax(props.grid.value),
+  domain: (props) => minmax(props.pixelField.value),
 });
 
 let colorMapProps: Props["colormap"][0] = {

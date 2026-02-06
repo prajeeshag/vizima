@@ -5,5 +5,5 @@ export interface LayerRenderer<Props> {
 }
 
 export interface CreateLayerRenderer<Props> {
-  (): LayerRenderer<Props>;
+  (props?: any): LayerRenderer<Props>;
 }
