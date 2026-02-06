@@ -1,5 +1,5 @@
 import { DataClient, CachingCompute } from "../types";
-import { Dataset, type DatasetConfig } from "./product";
+import { Dataset, type DatasetConfig } from "./dataset";
 import { fetchZarrDataset } from "./fetch-zarr-dataset";
 
 export class DatasetProvider extends CachingCompute<DatasetConfig, Dataset> {}

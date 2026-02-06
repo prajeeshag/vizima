@@ -1,15 +1,14 @@
 {
   "compilerOptions": {
     // Environment setup & latest features
-    "lib": [
-      "ESNext",
-      "DOM"
-    ],
+    "lib": ["ESNext", "DOM"],
     "outDir": "dist",
     "target": "ESNext",
     "module": "Preserve",
     "moduleDetection": "force",
+    // "jsx": "preserve",
     "jsx": "react-jsx",
+    "jsxImportSource": "solid-js",
     "allowJs": true,
     // Bundler mode
     "moduleResolution": "bundler",
@@ -29,7 +28,5 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
   },
-  "include": [
-    "**/*.ts",
-  ]
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
 }

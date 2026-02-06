@@ -2,9 +2,11 @@ import { Painter } from "./painter";
 import type { PixelField } from "../pixel-field";
 import { logger } from "../../logger";
 import * as d3 from "d3";
+import { createColorScale, type ColorScaleStatic } from "../../colorscale";
 
 type colorMapProps = {
   readonly field: PixelField;
+  readonly colorScale: ColorScaleStatic;
 };
 
 export class colorMapPainter extends Painter<colorMapProps> {
@@ -18,14 +20,7 @@ export class colorMapPainter extends Painter<colorMapProps> {
     );
     const rgba = imgData.data;
 
-    const min = pixelField.min();
-    const max = pixelField.max();
-
-    // This replaces manual normalization
-    const colorScale = d3
-      .scaleSequential(d3.interpolateViridis)
-      .domain([min, max])
-      .clamp(true);
+    const colorScale = createColorScale(this.props.colorScale);
 
     for (let i = 0; i < pixelField.value.length; i++) {
       const val = pixelField.value[i];
@@ -45,6 +40,6 @@ export class colorMapPainter extends Painter<colorMapProps> {
   }
 }
 
-export function createPColorPainter(props: colorMapProps) {
+export function createColorMapPainter(props: colorMapProps) {
   return new colorMapPainter(props, null);
 }

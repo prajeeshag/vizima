@@ -1,34 +1,26 @@
-let injected = false;
+// style-registry.ts
+type StyleEntry = {
+  id: string;
+  css: string;
+};
 
-export const className = "vizima-view-canvas-stack";
+class StyleRegistry {
+  private styles = new Map<string, string>();
+  private injected = false;
 
-export function injectStyles() {
-  if (injected) return;
-
-  const styleId = "visima-canvas-styles";
-  if (document.getElementById(styleId)) {
-    injected = true;
-    return;
+  register(id: string, css: string): void {
+    if (this.styles.has(id)) return;
+    this.styles.set(id, css);
   }
 
-  const style = document.createElement("style");
-  style.id = styleId;
-  style.textContent = `
-    .${className} {
-        display: grid;
-        grid-template-columns: 1fr;
-        grid-template-rows: 1fr;
-        /* Ensure the container matches the canvas size */
-        width: fit-content;
-    }
-    .${className} > canvas {
-        grid-area: 1 / 1 / 2 / 2; /* All canvases start at row 1, col 1 */
-        pointer-events: none;     /* Do not allow interaction */
-    }
-    /* Except for the first canvas */
-    .${className} > canvas:first-child {
-      pointer-events: auto;
-    }
-    `;
-  document.head.appendChild(style);
+  inject(layer = "vizima"): void {
+    if (this.injected || this.styles.size === 0) return;
+
+    const style = document.createElement("style");
+    style.textContent = `@layer ${layer}\n {\n${[...this.styles.values()].join("\n")}\n}`;
+    document.head.appendChild(style);
+    this.injected = true;
+  }
 }
+
+export const styleRegistry = new StyleRegistry();

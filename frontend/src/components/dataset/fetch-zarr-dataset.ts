@@ -1,7 +1,7 @@
 import * as zarr from "zarrita";
 import { logger } from "../../logger";
 import { DatasetMeta } from ".";
-import { Dataset, type DatasetConfig } from "./product";
+import { Dataset, type DatasetConfig } from "./dataset";
 
 export async function fetchZarrDataset(
   config: DatasetConfig,

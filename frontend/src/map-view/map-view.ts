@@ -1,77 +1,48 @@
 import * as d3 from "d3";
-import { injectStyles, className } from "../styles";
-import { CanvasElement, createCanvas } from "./canvas-element";
-import { createPaintCanvasAgent } from "./canvas-renderer";
+import { styleRegistry } from "../styles";
+import { CanvasElement, createCanvas } from "../components/canvas-element";
+import { createPaintCanvasAgent } from "../components/canvas-renderer";
 import {
   ProjectionController,
   Projection,
   type ProjectorState,
-} from "./projection";
-import { Painter } from "./painters";
-import type { Expand } from "./type-helpers";
+} from "../components/projection";
+import { type UniqueCanvasStack, type ExtractProps } from "./types";
+import type {
+  ColorMapRenderer,
+  LandRenderer,
+  GraticuleRenderer,
+} from "../layer-renderers";
 
-type IdOf<T> = T extends { id: infer I } ? I : never;
+const className = "vizima-mapview-canvas-stack";
 
-type HasDuplicate<T extends readonly any[], Seen = never> = T extends readonly [
-  infer H,
-  ...infer R,
-]
-  ? IdOf<H> extends Seen
-    ? true
-    : HasDuplicate<R, Seen | IdOf<H>>
-  : false;
-
-type UniqueCanvasStack<T extends readonly { id: string }[]> =
-  HasDuplicate<T> extends true ? never : T;
-
-interface PainterFns {
-  (props: any): Promise<Painter<any>> | Painter<any>;
-}
+type Renderer = ColorMapRenderer | LandRenderer | GraticuleRenderer;
 
 type CanvasProps = {
   id: string;
-  painters: readonly PainterFns[];
+  renderers: readonly Renderer[];
   visibleOn: "interact" | "always" | "main";
   disable: boolean;
 };
 
-export type CanvasStack = readonly Expand<CanvasProps>[];
+export type CanvasStack = readonly CanvasProps[];
 
-type ExtractPropsKeyed<T> = T extends readonly [
-  ...infer Layers extends readonly {
-    id: PropertyKey;
-    painters: readonly unknown[];
-  }[],
-]
-  ? {
-      [L in Layers[number] as L["id"]]: L["painters"] extends readonly [
-        ...infer P,
-      ]
-        ? {
-            [J in keyof P]: P[J] extends (props: infer Props) => any
-              ? Expand<Omit<Props, "proj" | "viewSize">>
-              : never;
-          }
-        : never;
-    }
-  : never;
-
-export class MapView<CS extends CanvasStack> {
+export class MapView<CS extends UniqueCanvasStack<CanvasStack>> {
   readonly div;
   private paintCanvasAgent;
   private globe: ProjectionController;
   private canvases = new Map<string, CanvasElement>();
-  private painterProps?: ExtractPropsKeyed<CS>;
+  private painterProps?: ExtractProps<CS>;
 
   constructor(
     readonly viewSize: [number, number],
     readonly projection: Projection,
-    readonly canvasStack: CS,
+    readonly canvasStack: CS & UniqueCanvasStack<CS>,
     div?: HTMLDivElement,
   ) {
     this.div = div || document.createElement("div");
     this.div.classList.add(className);
-    injectStyles();
+    styleRegistry.register("mapview", styles);
     this.paintCanvasAgent = createPaintCanvasAgent();
     this.globe = new ProjectionController(projection, viewSize);
 
@@ -104,7 +75,7 @@ export class MapView<CS extends CanvasStack> {
     d3.select(canvas.value).call(dragHandler).call(zoomHandler);
   }
 
-  async render(props: ExtractPropsKeyed<CS>) {
+  async render(props: ExtractProps<CS>) {
     this.painterProps = props;
     await this.renderMain(this.globe.getProjState());
   }
@@ -118,7 +89,7 @@ export class MapView<CS extends CanvasStack> {
         canvas.hide();
         continue;
       }
-      await this._render(proj, canvas, props.painters, painterProps);
+      await this._render(proj, canvas, props.renderers, painterProps);
       canvas.show();
     }
   }
@@ -132,7 +103,7 @@ export class MapView<CS extends CanvasStack> {
         canvas.hide();
         continue;
       }
-      await this._render(proj, canvas, props.painters, painterProps);
+      await this._render(proj, canvas, props.renderers, painterProps);
       canvas.show();
     }
   }
@@ -140,7 +111,7 @@ export class MapView<CS extends CanvasStack> {
   private async _render(
     proj: ProjectorState,
     canvas: CanvasElement,
-    painterFns: readonly PainterFns[],
+    painterFns: readonly Renderer[],
     painterProps: any,
   ) {
     const painters = await Promise.all(
@@ -156,3 +127,21 @@ export class MapView<CS extends CanvasStack> {
     });
   }
 }
+
+const styles = `
+  .${className} {
+      display: grid;
+      grid-template-columns: 1fr;
+      grid-template-rows: 1fr;
+      /* Ensure the container matches the canvas size */
+      width: fit-content;
+  }
+  .${className} > canvas {
+      grid-area: 1 / 1 / 2 / 2; /* All canvases start at row 1, col 1 */
+      pointer-events: none;     /* Do not allow interaction */
+  }
+  /* Except for the first canvas */
+  .${className} > canvas:first-child {
+    pointer-events: auto;
+  }
+  `;
