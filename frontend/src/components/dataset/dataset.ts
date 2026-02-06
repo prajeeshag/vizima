@@ -6,7 +6,7 @@ import type {
   TimeAxis,
   VertAxis,
 } from ".";
-import { DataProjection } from "../projection";
+import { GridProjection } from "../projection";
 import { CachedResult } from "../types";
 
 export type DatasetConfig = {
@@ -49,7 +49,7 @@ export class Dataset extends CachedResult<DatasetConfig, DatasetMeta> {
     return url;
   }
 
-  getGridProj(): DataProjection {
+  getGridProj(): GridProjection {
     return this.value.projection;
   }
 

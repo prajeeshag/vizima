@@ -7,7 +7,7 @@ import {
 import { createColorMapPainter } from "../components/painters";
 import { type CreateLayerRenderer, type LayerRenderer } from "./layer-renderer";
 import type { DataVarMeta, LatAxis, LonAxis } from "../components/dataset";
-import type { DataProjection, ProjectorState } from "../components/projection";
+import type { GridProjection, ProjectorState } from "../components/projection";
 import {
   type ColorScaleDynamic,
   type ColorScaleStatic,
@@ -20,7 +20,7 @@ type ColorMapRendererProps = {
   url: string;
   latAxis: LatAxis;
   lonAxis: LonAxis;
-  gridProj: DataProjection;
+  gridProj: GridProjection;
   timeIndex?: number;
   vertIndex?: number;
   gridMeta: DataVarMeta;

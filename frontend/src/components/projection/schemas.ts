@@ -57,12 +57,23 @@ export type LonLat = z.infer<typeof LonLat>;
 export type Mercator = z.infer<typeof Mercator>;
 export type Polar = z.infer<typeof Polar>;
 
-export const DataProjection = z
+export const GridProjection = z
   .discriminatedUnion("name", [LonLat, Mercator, Lambert, Polar])
   .meta({ title: "DataProjection" });
 
-export type DataProjection = z.infer<typeof DataProjection>;
-export type DataProjectionName = DataProjection["name"];
+export const ViewProjection = z
+  .discriminatedUnion("name", [
+    Equirectangular,
+    Mercator,
+    Orthographic,
+    EqualEarth,
+  ])
+  .meta({ title: "ViewProjection" });
+
+export type GridProjection = z.infer<typeof GridProjection>;
+export type GridProjectionName = GridProjection["name"];
+
+export type ViewProjection = z.infer<typeof ViewProjection>;
 
 export const Projection = z
   .discriminatedUnion("name", [

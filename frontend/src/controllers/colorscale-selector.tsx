@@ -68,34 +68,35 @@ function ColorScaleController(props: RenderOptions) {
 
   return (
     <div class="vizima-csp">
-      <div class="vizima-csp-trigger" onClick={() => setOpen((o) => !o)}>
-        <div class="vizima-csp-trigger-label">{value().name}</div>
-        {renderPalettePreview(value().name)}
+      <div class="vizima-csp-dropdown">
+        <div class="vizima-csp-trigger" onClick={() => setOpen((o) => !o)}>
+          <div class="vizima-csp-trigger-label">{value().name}</div>
+          {renderPalettePreview(value().name)}
+        </div>
+
+        <Show when={open()}>
+          <div class="vizima-csp-menu">
+            <For each={Object.keys(PALETTES) as PaletteName[]}>
+              {(name) => (
+                <PaletteOption
+                  name={name}
+                  selected={name === value().name}
+                  onSelect={() => {
+                    update({ name });
+                    setOpen(false);
+                  }}
+                />
+              )}
+            </For>
+          </div>
+        </Show>
       </div>
 
-      <Show when={open()}>
-        <div class="vizima-csp-menu">
-          <For each={Object.keys(PALETTES) as PaletteName[]}>
-            {(name) => (
-              <PaletteOption
-                name={name}
-                selected={name === value().name}
-                onSelect={() => {
-                  update({ name });
-                  setOpen(false);
-                }}
-              />
-            )}
-          </For>
-        </div>
-      </Show>
-
-      {/* toggles */}
       <div class="vizima-csp-controls">
         <label class="vizima-csp-checkbox">
           <input
             type="checkbox"
-            checked={props.value.reverse}
+            checked={value().reverse}
             onInput={(e) => update({ reverse: e.currentTarget.checked })}
           />
           reverse
@@ -118,7 +119,7 @@ export function createColorScaleController(
   container: HTMLElement,
   options: RenderOptions,
 ) {
-  styleRegistry.register("colorscale", styles);
+  styleRegistry.register("colorscale-selector", styles);
   const unmount = render(
     () => (
       <ColorScaleController
@@ -142,6 +143,24 @@ const styles = `
     color: #333;
   }
 
+  .vizima-csp-dropdown {
+    position: relative;
+  }
+
+  .vizima-csp-menu {
+    border: 1px solid #ccc;
+    max-height: 200px;
+    width: 100%;
+    overflow: auto;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 1000;
+    background: rgba(255, 255, 255, 0.3); /* translucent */
+     backdrop-filter: blur(6px);
+     -webkit-backdrop-filter: blur(6px);
+  }
+
   .vizima-csp-trigger {
     border: 1px solid #ccc;
     padding: 6px;
@@ -153,19 +172,13 @@ const styles = `
     margin-bottom: 4px;
   }
 
-  .vizima-csp-menu {
-    border: 1px solid #ccc;
-    max-height: 200px;
-    overflow: auto;
-  }
-
   .vizima-csp-option {
     padding: 6px;
     cursor: pointer;
   }
 
   .vizima-csp-option.is-selected {
-    background: #eee;
+    background: rgba(255, 255, 255, 0.7);
   }
 
   .vizima-csp-option-label {

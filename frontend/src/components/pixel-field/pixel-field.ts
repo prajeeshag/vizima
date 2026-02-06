@@ -1,13 +1,13 @@
 import type { LatAxis, LonAxis } from "../dataset";
 import { Grid, type GridProps } from "../grid-data";
-import type { DataProjection, ProjectorState } from "../projection";
+import type { GridProjection, ProjectorState } from "../projection";
 import { CachedResult } from "../types";
 import * as d3 from "d3";
 
 export type PixelProps = {
   readonly grid: Grid;
   readonly viewSize: [number, number];
-  readonly gridProj: DataProjection;
+  readonly gridProj: GridProjection;
   readonly proj: ProjectorState;
   readonly lonAxis: LonAxis;
   readonly latAxis: LatAxis;

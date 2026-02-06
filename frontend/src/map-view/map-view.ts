@@ -33,6 +33,7 @@ export class MapView<CS extends UniqueCanvasStack<CanvasStack>> {
   private globe: ProjectionController;
   private canvases = new Map<string, CanvasElement>();
   private painterProps?: ExtractProps<CS>;
+  private interactCanvas: CanvasElement;
 
   constructor(
     readonly viewSize: [number, number],
@@ -44,7 +45,11 @@ export class MapView<CS extends UniqueCanvasStack<CanvasStack>> {
     this.div.classList.add(className);
     styleRegistry.register("mapview", styles);
     this.paintCanvasAgent = createPaintCanvasAgent();
+
     this.globe = new ProjectionController(projection, viewSize);
+
+    this.interactCanvas = createCanvas();
+    this.div.appendChild(this.interactCanvas.value);
 
     this.setupInteractions();
 
@@ -55,14 +60,17 @@ export class MapView<CS extends UniqueCanvasStack<CanvasStack>> {
     }
   }
 
+  setProjection(projection: Projection) {
+    this.globe = new ProjectionController(projection, this.viewSize);
+    this.setupInteractions();
+  }
+
   private setupInteractions() {
-    const canvas = createCanvas();
     this.paintCanvasAgent.get({
-      canvas: canvas,
+      canvas: this.interactCanvas,
       painters: [],
       viewSize: this.viewSize,
     });
-    this.div.appendChild(canvas.value);
 
     const dragHandler = this.globe.dragHandler(
       (proj) => this.renderInteract(proj),
@@ -72,7 +80,7 @@ export class MapView<CS extends UniqueCanvasStack<CanvasStack>> {
       (proj) => this.renderInteract(proj),
       (proj) => this.renderMain(proj),
     );
-    d3.select(canvas.value).call(dragHandler).call(zoomHandler);
+    d3.select(this.interactCanvas.value).call(dragHandler).call(zoomHandler);
   }
 
   async render(props: ExtractProps<CS>) {

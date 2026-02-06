@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { DataProjection } from "../projection";
+import { GridProjection } from "../projection";
 
 const lon = z.number().min(-180).max(360);
 const lat = z.number().min(-90).max(90);
@@ -58,7 +58,7 @@ export const DatasetMeta = z
     verticals: z.record(z.string(), VertAxis),
     datavars: z.record(z.string(), DataVarMeta),
     vectors: z.record(z.string(), VectorVarMeta),
-    projection: DataProjection,
+    projection: GridProjection,
     title: z.string().max(100),
     subtitle: z.string().max(150),
     description: z.string(),
