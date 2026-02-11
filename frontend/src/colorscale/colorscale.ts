@@ -6,20 +6,47 @@ import type { DataVarMeta } from "../components/dataset";
 
 export const PALETTES = {
   // sequential
-  viridis: { kind: "sequential", interpolate: chromatic.interpolateViridis },
-  plasma: { kind: "sequential", interpolate: chromatic.interpolatePlasma },
-  inferno: { kind: "sequential", interpolate: chromatic.interpolateInferno },
-  cividis: { kind: "sequential", interpolate: chromatic.interpolateCividis },
+  Turbo: { kind: "sequential", interpolate: chromatic.interpolateTurbo },
+  Viridis: { kind: "sequential", interpolate: chromatic.interpolateViridis },
+  Plasma: { kind: "sequential", interpolate: chromatic.interpolatePlasma },
+  Magma: { kind: "sequential", interpolate: chromatic.interpolateMagma },
+  Inferno: { kind: "sequential", interpolate: chromatic.interpolateInferno },
+  Cividis: { kind: "sequential", interpolate: chromatic.interpolateCividis },
+  Warm: { kind: "sequential", interpolate: chromatic.interpolateWarm },
+  Cool: { kind: "sequential", interpolate: chromatic.interpolateCool },
+  Cubehelix: {
+    kind: "sequential",
+    interpolate: chromatic.interpolateCubehelixDefault,
+  },
+  BuGn: { kind: "sequential", interpolate: chromatic.interpolateBuGn },
+  BuPu: { kind: "sequential", interpolate: chromatic.interpolateBuPu },
+  GnBu: { kind: "sequential", interpolate: chromatic.interpolateGnBu },
+  OrRd: { kind: "sequential", interpolate: chromatic.interpolateOrRd },
+  PuBuGn: { kind: "sequential", interpolate: chromatic.interpolatePuBuGn },
+  PuRd: { kind: "sequential", interpolate: chromatic.interpolatePuRd },
+  RdPu: { kind: "sequential", interpolate: chromatic.interpolateRdPu },
+  YlGnBu: { kind: "sequential", interpolate: chromatic.interpolateYlGnBu },
+  YlOrBr: { kind: "sequential", interpolate: chromatic.interpolateYlOrBr },
+  YlOrRd: { kind: "sequential", interpolate: chromatic.interpolateYlOrRd },
+  YlGn: { kind: "sequential", interpolate: chromatic.interpolateYlGn },
+  Blues: { kind: "sequential", interpolate: chromatic.interpolateBlues },
+  Greens: { kind: "sequential", interpolate: chromatic.interpolateGreens },
+  Greys: { kind: "sequential", interpolate: chromatic.interpolateGreys },
+  Oranges: { kind: "sequential", interpolate: chromatic.interpolateOranges },
+  Reds: { kind: "sequential", interpolate: chromatic.interpolateReds },
+  Purples: { kind: "sequential", interpolate: chromatic.interpolatePurples },
 
-  // diverging
-  rdBu: { kind: "diverging", interpolate: chromatic.interpolateRdBu },
-  brBG: { kind: "diverging", interpolate: chromatic.interpolateBrBG },
+  RdBu: { kind: "diverging", interpolate: chromatic.interpolateRdBu },
+  BrBG: { kind: "diverging", interpolate: chromatic.interpolateBrBG },
+  PiYG: { kind: "diverging", interpolate: chromatic.interpolatePiYG },
+  PRGn: { kind: "diverging", interpolate: chromatic.interpolatePRGn },
+  RdYlGn: { kind: "diverging", interpolate: chromatic.interpolateRdYlGn },
+  RdYlBu: { kind: "diverging", interpolate: chromatic.interpolateRdYlBu },
+  Spectral: { kind: "diverging", interpolate: chromatic.interpolateSpectral },
 
-  // cyclic
   sinebow: { kind: "cyclic", interpolate: chromatic.interpolateSinebow },
   rainbow: { kind: "cyclic", interpolate: chromatic.interpolateRainbow },
 
-  // categorical
   tableau10: { kind: "categorical", colors: chromatic.schemeTableau10 },
   set2: { kind: "categorical", colors: chromatic.schemeSet2 },
 } as const;
