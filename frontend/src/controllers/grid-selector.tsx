@@ -1,110 +1,96 @@
 /** @jsxImportSource solid-js */
-import {
-  createSignal,
-  createMemo,
-  For,
-  Show,
-  createEffect,
-  batch,
-} from "solid-js";
+import { createMemo, For, Show } from "solid-js";
 import { Dataset } from "../components/dataset";
-import { render } from "solid-js/web";
+import { styleRegistry } from "../styles";
+import { mountController } from "./_internal/mount-controller";
 
-interface Selection {
+export interface Selection {
   varKey: string;
   level: string;
   time: string;
 }
 
-interface RenderOptions {
+export interface RenderOptions {
   dataset: Dataset;
+  /** Controlled selection (required). Must be valid for the given dataset. */
+  value: () => Selection;
   onChange: (selection: Selection) => void;
 }
 
-export const GridSelector = (props: RenderOptions) => {
-  const [selectedVarKey, setSelectedVarKey] = createSignal<string>("");
-  const [selectedLevel, setSelectedLevel] = createSignal<string>("");
-  const [selectedTime, setSelectedTime] = createSignal<string>("");
+function firstOrEmpty(list: readonly string[]): string {
+  return list.length > 0 ? list[0]! : "";
+}
 
+export const GridSelector = (props: RenderOptions) => {
   const ds = () => props.dataset;
 
+  const selection = createMemo(() => props.value());
+
   const currentVar = createMemo(() => {
-    const key = selectedVarKey();
+    const key = selection().varKey;
     const data = ds();
-    return key && data ? data.value.datavars[key] : null;
+    return key && data ? data.value.datavars[key] : undefined;
   });
 
-  const availableLevels = createMemo(() => {
+  const availableLevels = createMemo<string[]>(() => {
     const vKey = currentVar()?.vertical;
     const data = ds();
-    if (!vKey || !data) return [];
+    if (!data || !vKey) return [];
     return data.value.verticals[vKey] ?? [];
   });
 
-  const availableTimes = createMemo(() => {
+  const availableTimes = createMemo<string[]>(() => {
     const tKey = currentVar()?.time;
     const data = ds();
-    if (!tKey || !data) return [];
+    if (!data || !tKey) return [];
     return data.value.times[tKey] ?? [];
   });
 
-  createEffect(() => {
-    const data = ds()?.value;
-    if (!data) return;
+  const commit = (patch: Partial<Selection>) => {
+    const base = selection();
+    const next: Selection = { ...base, ...patch };
 
-    // auto-select first variable
-    if (!selectedVarKey()) {
-      const firstVar = Object.keys(data.datavars)[0];
-      if (firstVar) setSelectedVarKey(firstVar);
+    // If var changes, reset dependent fields to first available option (if any).
+    if (patch.varKey !== undefined && patch.varKey !== base.varKey) {
+      const data = ds();
+      const dv = data?.value.datavars[next.varKey];
+
+      const levels = dv?.vertical
+        ? (data?.value.verticals[dv.vertical] ?? [])
+        : [];
+      const times = dv?.time ? (data?.value.times[dv.time] ?? []) : [];
+
+      next.level = firstOrEmpty(levels);
+      next.time = firstOrEmpty(times);
     }
-  });
 
-  createEffect(() => {
-    const levels = availableLevels();
-    if (!selectedLevel() && levels.length > 0) {
-      setSelectedLevel(levels[0]!);
-    }
-  });
-
-  createEffect(() => {
-    const times = availableTimes();
-    if (!selectedTime() && times.length > 0) {
-      setSelectedTime(times[0]!);
-    }
-  });
-
-  createEffect(() => {
-    const selection = {
-      varKey: selectedVarKey(),
-      level: selectedLevel(),
-      time: selectedTime(),
-    };
-    batch(() => {
-      props.onChange?.(selection);
-    });
-  });
+    props.onChange(next);
+  };
 
   return (
-    <div class="dataset-container">
-      <Show when={ds()} fallback={<p>Loading Dataset...</p>}>
+    <div class="vizima-grid-selector">
+      <Show
+        when={ds()}
+        fallback={
+          <p class="vizima-grid-selector__loading">Loading Dataset...</p>
+        }
+      >
         <select
-          value={selectedVarKey()}
-          onChange={(e) => {
-            setSelectedVarKey(e.currentTarget.value);
-            setSelectedLevel("");
-            setSelectedTime("");
-          }}
+          class="vizima-grid-selector__select"
+          value={selection().varKey}
+          onChange={(e) => commit({ varKey: e.currentTarget.value })}
         >
           <option value="">Select Variable</option>
-          <For each={Object.entries(ds()!.value.datavars)}>
-            {([key, meta]) => <option value={key}>{key}</option>}
+          <For each={Object.keys(ds()!.value.datavars)}>
+            {(key) => <option value={key}>{key}</option>}
           </For>
         </select>
 
         <Show when={availableLevels().length > 0}>
           <select
-            value={selectedLevel()}
-            onInput={(e) => setSelectedLevel(e.currentTarget.value)}
+            class="vizima-grid-selector__select"
+            value={selection().level}
+            onInput={(e) => commit({ level: e.currentTarget.value })}
           >
             <option value="">Select Level</option>
             <For each={availableLevels()}>
@@ -115,14 +101,13 @@ export const GridSelector = (props: RenderOptions) => {
 
         <Show when={availableTimes().length > 0}>
           <select
-            value={selectedTime()}
-            onInput={(e) => setSelectedTime(e.currentTarget.value)}
+            class="vizima-grid-selector__select"
+            value={selection().time}
+            onInput={(e) => commit({ time: e.currentTarget.value })}
           >
             <option value="">Select Time</option>
             <For each={availableTimes()}>
-              {(t) => (
-                <option value={t}>{t.endsWith("Z") ? t : `${t}Z`}</option>
-              )}
+              {(t) => <option value={t}>{t}</option>}
             </For>
           </select>
         </Show>
@@ -131,28 +116,46 @@ export const GridSelector = (props: RenderOptions) => {
   );
 };
 
-/**
- * Programmatically renders the Dataset Selector into a target element.
- * Returns a cleanup function to unmount the component.
- */
 export function createGridSelector(
   container: HTMLElement,
-  options: RenderOptions,
+  options: RenderOptions & {
+    subscribe: (listener: () => void) => () => void;
+  },
 ) {
-  // We use render() to start the Solid reactivity tree inside the user's div
-  const unmount = render(
-    () => (
-      <GridSelector
-        dataset={options.dataset}
-        onChange={(selection) => {
-          if (options.onChange) {
-            options.onChange(selection);
-          }
-        }}
-      />
-    ),
-    container,
-  );
+  styleRegistry.register("grid-selector", styles);
 
-  return unmount;
+  return mountController(container, options, ({ value, onChange }) => (
+    <GridSelector dataset={options.dataset} value={value} onChange={onChange} />
+  ));
 }
+
+const styles = `
+  .vizima-grid-selector {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    font-family: system-ui, sans-serif;
+    color: #333;
+  }
+
+  .vizima-grid-selector__select {
+    padding: 6px 8px;
+    font-size: 13px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    cursor: pointer;
+  }
+
+  .vizima-grid-selector__select:focus {
+    outline: none;
+    border-color: #2684ff;
+  }
+
+  .vizima-grid-selector__loading {
+    font-size: 12px;
+    color: #666;
+  }
+`;

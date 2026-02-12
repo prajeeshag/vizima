@@ -5,17 +5,16 @@ import {
   PALETTES,
 } from "../colorscale";
 import { createSignal, For, Show } from "solid-js";
-import { render } from "solid-js/web";
 import { styleRegistry } from "../styles";
+import { mountController } from "./_internal/mount-controller";
 
 function renderPalettePreview(name: PaletteName): JSX.Element {
   const p = PALETTES[name];
 
   if (p.kind === "categorical") {
-    const colors = p.colors;
     return (
       <div class="vizima-csp-preview vizima-csp-preview--categorical">
-        {colors.map((c) => (
+        {p.colors.map((c: string) => (
           <div class="vizima-csp-swatch" style={{ "--c": c }} />
         ))}
       </div>
@@ -50,20 +49,19 @@ function PaletteOption(props: {
 }
 
 type RenderOptions = {
-  value: ColorScaleDynamic;
+  /** Controlled value accessor (e.g. from your store). */
+  value: () => ColorScaleDynamic;
   onChange: (value: ColorScaleDynamic) => void;
 };
 
 function ColorScaleController(props: RenderOptions) {
   const [open, setOpen] = createSignal(false);
-  const [value, setValue] = createSignal(props.value);
+
+  const value = () => props.value();
 
   const update = (patch: Partial<ColorScaleDynamic>) => {
-    setValue((v) => {
-      const next = { ...v, ...patch };
-      props.onChange(next);
-      return next;
-    });
+    const next = { ...value(), ...patch };
+    props.onChange(next);
   };
 
   return (
@@ -117,23 +115,14 @@ function ColorScaleController(props: RenderOptions) {
 
 export function createColorScaleController(
   container: HTMLElement,
-  options: RenderOptions,
+  options: RenderOptions & {
+    subscribe: (listener: () => void) => () => void;
+  },
 ) {
   styleRegistry.register("colorscale-selector", styles);
-  const unmount = render(
-    () => (
-      <ColorScaleController
-        value={options.value}
-        onChange={(selection) => {
-          if (options.onChange) {
-            options.onChange(selection);
-          }
-        }}
-      />
-    ),
-    container,
-  );
-  return unmount;
+  return mountController(container, options, ({ value, onChange }) => (
+    <ColorScaleController value={value} onChange={onChange} />
+  ));
 }
 
 const styles = `

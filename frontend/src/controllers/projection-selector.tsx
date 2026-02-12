@@ -1,22 +1,31 @@
-import { For } from "solid-js";
+import { For, createMemo } from "solid-js";
 import { ViewProjection } from "../components/projection";
-import { render } from "solid-js/web";
 import { styleRegistry } from "../styles";
+import { mountController } from "./_internal/mount-controller";
 
 type ProjectionName = ViewProjection["name"];
 
 type RenderProps = {
-  value: ProjectionName;
+  value: () => ViewProjection;
   onChange: (p: ViewProjection) => void;
 };
 
 const PROJECTIONS = ViewProjection.options.map((o) => o.shape.name.value);
 
 export function ProjectionSelect(props: RenderProps) {
+  const current = createMemo(() => props.value());
+
+  const safeValue = createMemo<ProjectionName>(() => {
+    const v = current().name;
+    return (PROJECTIONS as ProjectionName[]).includes(v)
+      ? v
+      : (PROJECTIONS[0] as ProjectionName);
+  });
+
   return (
     <select
       class="projection-select"
-      value={props.value}
+      value={safeValue()}
       onChange={(e) =>
         props.onChange({
           name: e.currentTarget.value as ViewProjection["name"],
@@ -30,23 +39,14 @@ export function ProjectionSelect(props: RenderProps) {
 
 export function createProjectionSelector(
   container: HTMLElement,
-  options: RenderProps,
+  options: RenderProps & {
+    subscribe: (listener: () => void) => () => void;
+  },
 ) {
   styleRegistry.register("projection-selector", styles);
-  const unmount = render(
-    () => (
-      <ProjectionSelect
-        value={options.value}
-        onChange={(selection) => {
-          if (options.onChange) {
-            options.onChange(selection);
-          }
-        }}
-      />
-    ),
-    container,
-  );
-  return unmount;
+  return mountController(container, options, (props) => (
+    <ProjectionSelect value={props.value} onChange={props.onChange} />
+  ));
 }
 
 const styles = `
