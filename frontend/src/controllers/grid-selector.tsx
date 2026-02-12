@@ -2,7 +2,10 @@
 import { createMemo, For, Show } from "solid-js";
 import { Dataset } from "../components/dataset";
 import { styleRegistry } from "../styles";
-import { mountController } from "./_internal/mount-controller";
+import {
+  mountController,
+  type ExternalSubscribe,
+} from "./_internal/mount-controller";
 
 export interface Selection {
   varKey: string;
@@ -119,7 +122,7 @@ export const GridSelector = (props: RenderOptions) => {
 export function createGridSelector(
   container: HTMLElement,
   options: RenderOptions & {
-    subscribe: (listener: () => void) => () => void;
+    subscribe: ExternalSubscribe;
   },
 ) {
   styleRegistry.register("grid-selector", styles);

@@ -6,7 +6,10 @@ import {
 } from "../colorscale";
 import { createSignal, For, Show } from "solid-js";
 import { styleRegistry } from "../styles";
-import { mountController } from "./_internal/mount-controller";
+import {
+  mountController,
+  type ExternalSubscribe,
+} from "./_internal/mount-controller";
 
 function renderPalettePreview(name: PaletteName): JSX.Element {
   const p = PALETTES[name];
@@ -116,7 +119,7 @@ function ColorScaleController(props: RenderOptions) {
 export function createColorScaleController(
   container: HTMLElement,
   options: RenderOptions & {
-    subscribe: (listener: () => void) => () => void;
+    subscribe: ExternalSubscribe;
   },
 ) {
   styleRegistry.register("colorscale-selector", styles);
