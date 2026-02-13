@@ -7,13 +7,12 @@ import {
   type ExternalSubscribe,
 } from "./_internal/mount-controller";
 
-export interface Selection {
+interface Selection {
   varKey: string;
   level: string;
-  time: string;
 }
 
-export interface RenderOptions {
+interface RenderOptions {
   dataset: Dataset;
   /** Controlled selection (required). Must be valid for the given dataset. */
   value: () => Selection;
@@ -64,7 +63,6 @@ export const GridSelector = (props: RenderOptions) => {
       const times = dv?.time ? (data?.value.times[dv.time] ?? []) : [];
 
       next.level = firstOrEmpty(levels);
-      next.time = firstOrEmpty(times);
     }
 
     props.onChange(next);
@@ -98,19 +96,6 @@ export const GridSelector = (props: RenderOptions) => {
             <option value="">Select Level</option>
             <For each={availableLevels()}>
               {(lvl) => <option value={lvl}>{lvl}</option>}
-            </For>
-          </select>
-        </Show>
-
-        <Show when={availableTimes().length > 0}>
-          <select
-            class="vizima-grid-selector__select"
-            value={selection().time}
-            onInput={(e) => commit({ time: e.currentTarget.value })}
-          >
-            <option value="">Select Time</option>
-            <For each={availableTimes()}>
-              {(t) => <option value={t}>{t}</option>}
             </For>
           </select>
         </Show>

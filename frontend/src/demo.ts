@@ -13,6 +13,7 @@ import {
   createGridSelector,
   createColorScaleController,
   createProjectionSelector,
+  createTimeSlider,
 } from "./controllers";
 import { createStore } from "./state/store";
 
@@ -82,22 +83,26 @@ const initialProjection: ViewProjection = { name: "Orthographic" };
 
 const view = new MapView([800, 600], initialProjection, CS, mapdiv1);
 
-type GridSelection = { varKey: string; time: string; level: string };
+type GridSelection = { varKey: string; level: string };
 
 type AppState = {
   landUrl: string;
+  timeStep: number;
   projection: ViewProjection;
   selection: GridSelection;
   colorScale: ColorScaleDynamic;
 };
 
 type Action =
+  | { type: "time/changed"; timeStep: number }
   | { type: "grid/changed"; selection: GridSelection }
   | { type: "projection/changed"; projection: ViewProjection }
   | { type: "colorscale/changed"; colorScale: ColorScaleDynamic };
 
 function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
+    case "time/changed":
+      return { ...state, timeStep: action.timeStep };
     case "grid/changed":
       return { ...state, selection: action.selection };
     case "projection/changed":
@@ -122,6 +127,7 @@ const seedSelection: GridSelection = {
 const store = createStore<AppState, Action>({
   initialState: {
     landUrl,
+    timeStep: 0,
     projection: initialProjection,
     selection: seedSelection,
     colorScale: initialColorScale,
@@ -142,7 +148,7 @@ store.subscribe((state) => {
   const timeAxis = dset.getTimeAxis(varKey);
   const vertAxis = dset.getVertAxis(varKey);
 
-  const timeIndex = timeAxis ? timeAxis.indexOf(time) : undefined;
+  const timeIndex = state.timeStep;
   const vertIndex = vertAxis ? vertAxis.indexOf(level) : undefined;
 
   const url = dset.getUrl(varKey);
@@ -178,7 +184,7 @@ const projdiv = document.createElement("div");
 document.body.appendChild(projdiv);
 
 createProjectionSelector(projdiv, {
-  value: () => store.getState().projection.name,
+  value: () => store.getState().projection,
   subscribe: subscribeBridge,
   onChange: (projection) =>
     store.dispatch({ type: "projection/changed", projection }),
@@ -200,6 +206,22 @@ createColorScaleController(csdiv, {
   subscribe: subscribeBridge,
   onChange: (colorScale) =>
     store.dispatch({ type: "colorscale/changed", colorScale }),
+});
+
+const formatTime = (iso: string) =>
+  new Date(iso).toLocaleString("en-US", {
+    month: "short",
+  });
+
+const timediv = document.createElement("div");
+document.body.appendChild(timediv);
+createTimeSlider(timediv, {
+  numTimes: () => dset.getTimeAxis("prate")!.length,
+  ticks: () => dset.getTimeAxis("prate")!.map((t, i) => i),
+  tickLabels: () => dset.getTimeAxis("prate")!.map((t) => formatTime(t)),
+  value: () => store.getState().timeStep,
+  subscribe: subscribeBridge,
+  onChange: (timeStep) => store.dispatch({ type: "time/changed", timeStep }),
 });
 
 styleRegistry.inject();
