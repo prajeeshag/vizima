@@ -14,6 +14,7 @@ import {
   createColorScaleController,
   createProjectionSelector,
   createTimeSlider,
+  createPlayButton,
 } from "./controllers";
 import { createStore } from "./state/store";
 
@@ -91,9 +92,11 @@ type AppState = {
   projection: ViewProjection;
   selection: GridSelection;
   colorScale: ColorScaleDynamic;
+  playing: boolean;
 };
 
 type Action =
+  | { type: "play/changed"; playing: boolean }
   | { type: "time/changed"; timeStep: number }
   | { type: "grid/changed"; selection: GridSelection }
   | { type: "projection/changed"; projection: ViewProjection }
@@ -101,6 +104,8 @@ type Action =
 
 function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
+    case "play/changed":
+      return { ...state, playing: action.playing };
     case "time/changed":
       return { ...state, timeStep: action.timeStep };
     case "grid/changed":
@@ -115,7 +120,6 @@ function reducer(state: AppState, action: Action): AppState {
 }
 
 const seedVarKey = "air";
-const seedTimeAxis = dset.getTimeAxis(seedVarKey);
 const seedVertAxis = dset.getVertAxis(seedVarKey);
 
 const seedSelection: GridSelection = {
@@ -130,34 +134,25 @@ const store = createStore<AppState, Action>({
     projection: initialProjection,
     selection: seedSelection,
     colorScale: initialColorScale,
+    playing: false,
   },
   reducer,
 });
 
-let lastProjectionName: string | undefined;
+const numTimes = () => dset.getTimeAxis("prate")!.length;
 
-store.subscribe((state) => {
-  if (state.projection.name !== lastProjectionName) {
-    view.setProjection(state.projection);
-    lastProjectionName = state.projection.name;
-  }
-
+const render = async (state: AppState) => {
+  view.setProjection(state.projection);
   const { varKey, level } = state.selection;
-
-  const timeAxis = dset.getTimeAxis(varKey);
   const vertAxis = dset.getVertAxis(varKey);
-
-  const timeIndex = state.timeStep;
   const vertIndex = vertAxis ? vertAxis.indexOf(level) : undefined;
-
   const url = dset.getUrl(varKey);
   const latAxis = dset.getLatAxis(varKey);
   const lonAxis = dset.getLonAxis(varKey);
   const gridMeta = dset.getGridMeta(varKey);
 
   if (!url || !latAxis || !lonAxis || !gridMeta) return;
-
-  view.render({
+  await view.render({
     landgraticule: [{}, { landJsonUrl: state.landUrl }],
     colormap: [
       {
@@ -166,12 +161,61 @@ store.subscribe((state) => {
         lonAxis,
         gridProj: dset.getGridProj(),
         gridMeta,
-        timeIndex,
+        timeIndex: state.timeStep,
         vertIndex,
         colorScale: state.colorScale,
       },
     ],
   });
+};
+
+let rafId: number | null = null;
+let lastFrameTime: number | null = null;
+let playbackRate = 1;
+
+const animate = async (now: number) => {
+  const state = store.getState(); // or however you access current state
+  if (!state.playing) {
+    rafId = null;
+    lastFrameTime = null;
+    return;
+  }
+
+  if (!lastFrameTime) {
+    lastFrameTime = now;
+  }
+
+  const dt = (now - lastFrameTime) / 1000; // seconds
+  lastFrameTime = now;
+
+  const nextTime = (state.timeStep + playbackRate * dt) % numTimes();
+
+  store.dispatch({ type: "time/changed", timeStep: nextTime });
+
+  await render({ ...state, timeStep: nextTime });
+
+  rafId = requestAnimationFrame(animate);
+};
+
+store.subscribe((state, action) => {
+  const isAnimationTick = action.type === "time/changed";
+  const isPlayToggle = action.type === "play/changed";
+  // any non-animation action while playing → stop playback
+  if (state.playing && !isAnimationTick && !isPlayToggle) {
+    store.dispatch({ type: "play/changed", playing: false });
+    return;
+  }
+  if (state.playing) {
+    if (rafId === null) {
+      rafId = requestAnimationFrame(animate);
+    }
+  } else {
+    if (rafId !== null) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    }
+    render(state);
+  }
 });
 
 store.dispatch({ type: "grid/changed", selection: seedSelection });
@@ -215,7 +259,7 @@ const formatTime = (iso: string) =>
 const timediv = document.createElement("div");
 document.body.appendChild(timediv);
 createTimeSlider(timediv, {
-  numTimes: () => dset.getTimeAxis("prate")!.length,
+  numTimes: numTimes,
   ticks: () => dset.getTimeAxis("prate")!.map((t, i) => i),
   tickLabels: () => dset.getTimeAxis("prate")!.map((t) => formatTime(t)),
   value: () => store.getState().timeStep,
@@ -223,4 +267,11 @@ createTimeSlider(timediv, {
   onChange: (timeStep) => store.dispatch({ type: "time/changed", timeStep }),
 });
 
+const playButtondiv = document.createElement("div");
+document.body.appendChild(playButtondiv);
+createPlayButton(playButtondiv, {
+  value: () => store.getState().playing,
+  subscribe: subscribeBridge,
+  onChange: (playing) => store.dispatch({ type: "play/changed", playing }),
+});
 styleRegistry.inject();

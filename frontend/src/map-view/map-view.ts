@@ -13,6 +13,7 @@ import type {
   LandRenderer,
   GraticuleRenderer,
 } from "../layer-renderers";
+import equal from "fast-deep-equal";
 
 const className = "vizima-mapview-canvas-stack";
 
@@ -36,9 +37,9 @@ export class MapView<CS extends UniqueCanvasStack<CanvasStack>> {
   private interactCanvas: CanvasElement;
 
   constructor(
-    readonly viewSize: [number, number],
-    readonly projection: Projection,
-    readonly canvasStack: CS & UniqueCanvasStack<CS>,
+    private viewSize: [number, number],
+    private projection: Projection,
+    private canvasStack: CS & UniqueCanvasStack<CS>,
     div?: HTMLDivElement,
   ) {
     this.div = div || document.createElement("div");
@@ -61,8 +62,11 @@ export class MapView<CS extends UniqueCanvasStack<CanvasStack>> {
   }
 
   setProjection(projection: Projection) {
-    this.globe = new ProjectionController(projection, this.viewSize);
-    this.setupInteractions();
+    if (!equal(this.projection, projection)) {
+      this.projection = projection;
+      this.globe = new ProjectionController(projection, this.viewSize);
+      this.setupInteractions();
+    }
   }
 
   private setupInteractions() {

@@ -14,15 +14,20 @@ interface RenderOptions {
   onChange: (value: number) => void;
 }
 
+function clamp(n: number, min: number, max: number) {
+  if (!Number.isFinite(n)) return min;
+  return Math.min(max, Math.max(min, n));
+}
+
 function clampInt(n: number, min: number, max: number) {
   if (!Number.isFinite(n)) return min;
-  return Math.min(max, Math.max(min, Math.round(n)));
+  return Math.min(max, Math.max(min, Math.floor(n + 0.5)));
 }
 
 export const TimeSlider = (props: RenderOptions) => {
   const maxIndex = Math.max(0, props.numTimes() - 1);
 
-  const safeValue = createMemo(() => clampInt(props.value(), 0, maxIndex));
+  const safeValue = createMemo(() => clamp(props.value(), 0, maxIndex));
 
   const tickItems = createMemo(() => {
     const t = props.ticks() ?? [];
@@ -32,7 +37,7 @@ export const TimeSlider = (props: RenderOptions) => {
     return (
       t
         .map((tick, i) => ({
-          tick: clampInt(tick, 0, maxIndex),
+          tick: clamp(tick, 0, maxIndex),
           label: labels[i] ?? String(tick),
         }))
         // Remove duplicates after clamping, keep first occurrence
@@ -42,13 +47,6 @@ export const TimeSlider = (props: RenderOptions) => {
         .sort((a, b) => a.tick - b.tick)
     );
   });
-
-  const onRangeInput = (
-    e: InputEvent & { currentTarget: HTMLInputElement },
-  ) => {
-    const next = clampInt(Number(e.currentTarget.value), 0, maxIndex);
-    props.onChange(next);
-  };
 
   const onRangeChange = (e: Event & { currentTarget: HTMLInputElement }) => {
     const next = clampInt(Number(e.currentTarget.value), 0, maxIndex);
@@ -70,9 +68,9 @@ export const TimeSlider = (props: RenderOptions) => {
           type="range"
           min="0"
           max={String(maxIndex)}
-          step="0.1"
+          step="0.01"
           value={String(safeValue())}
-          onInput={onRangeInput}
+          onInput={onRangeChange}
           onChange={onRangeChange}
           aria-label="Time"
           aria-valuemin={0}
