@@ -7,11 +7,11 @@ import {
 
 interface RenderOptions {
   value: () => boolean;
-  onChange: (value: boolean) => void;
+  onChange?: (value: boolean) => void;
 }
 
-export const PlayButton = (props: RenderOptions) => {
-  const toggle = () => props.onChange(!props.value());
+const PlayButton = (props: RenderOptions) => {
+  const toggle = () => props.onChange?.(!props.value());
 
   return (
     <button

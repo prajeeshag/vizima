@@ -12,10 +12,10 @@ export async function interpPixel(
   signal: AbortSignal,
 ): Promise<PixelField> {
   if (equal(props.proj.type, props.gridProj)) {
-    logger.info("Using native projection");
+    logger.debug("Using native projection");
     return await interpPixelNative(props, signal);
   }
-  logger.info("Data on different projection");
+  logger.debug("Data on different projection");
   return await interpPixelProjected(props, signal);
 }
 

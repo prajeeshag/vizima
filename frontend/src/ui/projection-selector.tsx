@@ -10,7 +10,7 @@ type ProjectionName = ViewProjection["name"];
 
 type RenderProps = {
   value: () => ViewProjection;
-  onChange: (p: ViewProjection) => void;
+  onChange?: (p: ViewProjection) => void;
 };
 
 const PROJECTIONS = ViewProjection.options.map((o) => o.shape.name.value);
@@ -30,7 +30,7 @@ export function ProjectionSelect(props: RenderProps) {
       class="projection-select"
       value={safeValue()}
       onChange={(e) =>
-        props.onChange({
+        props.onChange?.({
           name: e.currentTarget.value as ViewProjection["name"],
         })
       }

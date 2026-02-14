@@ -54,7 +54,7 @@ function PaletteOption(props: {
 type RenderOptions = {
   /** Controlled value accessor (e.g. from your store). */
   value: () => ColorScaleDynamic;
-  onChange: (value: ColorScaleDynamic) => void;
+  onChange?: (value: ColorScaleDynamic) => void;
 };
 
 function ColorScaleController(props: RenderOptions) {
@@ -64,7 +64,7 @@ function ColorScaleController(props: RenderOptions) {
 
   const update = (patch: Partial<ColorScaleDynamic>) => {
     const next = { ...value(), ...patch };
-    props.onChange(next);
+    props.onChange?.(next);
   };
 
   return (

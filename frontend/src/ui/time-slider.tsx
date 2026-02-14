@@ -11,7 +11,7 @@ interface RenderOptions {
   ticks: () => number[];
   tickLabels: () => string[];
   value: () => number;
-  onChange: (value: number) => void;
+  onChange?: (value: number) => void;
 }
 
 function clamp(n: number, min: number, max: number) {
@@ -50,7 +50,7 @@ export const TimeSlider = (props: RenderOptions) => {
 
   const onRangeChange = (e: Event & { currentTarget: HTMLInputElement }) => {
     const next = clampInt(Number(e.currentTarget.value), 0, maxIndex);
-    props.onChange(next);
+    props.onChange?.(next);
   };
 
   return (

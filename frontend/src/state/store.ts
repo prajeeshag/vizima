@@ -57,3 +57,35 @@ export function createStore<S, A>(options: {
     },
   };
 }
+
+export function shallowEqual<T extends Record<string, any>>(a: T, b: T) {
+  if (a === b) return true;
+  for (const k in a) if (a[k] !== b[k]) return false;
+  return true;
+}
+
+export function watchSelector<S, A, T>(
+  store: Store<S, A>,
+  selector: (state: S) => T,
+  effect: (curr: T, prev: T | undefined, action: A) => void | (() => void),
+  isEqual: (a: T, b: T) => boolean = Object.is,
+  options?: { fireImmediately?: boolean },
+): Unsubscribe {
+  let prev = selector(store.getState());
+  let cleanup: (() => void) | void;
+
+  if (options?.fireImmediately) {
+    cleanup = effect(prev, undefined, undefined as any);
+  }
+
+  return store.subscribe((state, action) => {
+    const next = selector(state);
+
+    if (isEqual(prev, next)) return;
+
+    if (cleanup) cleanup();
+
+    cleanup = effect(next, prev, action);
+    prev = next;
+  });
+}

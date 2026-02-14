@@ -16,7 +16,7 @@ interface RenderOptions {
   dataset: Dataset;
   /** Controlled selection (required). Must be valid for the given dataset. */
   value: () => Selection;
-  onChange: (selection: Selection) => void;
+  onChange?: (selection: Selection) => void;
 }
 
 function firstOrEmpty(list: readonly string[]): string {
@@ -65,7 +65,7 @@ export const GridSelector = (props: RenderOptions) => {
       next.level = firstOrEmpty(levels);
     }
 
-    props.onChange(next);
+    props.onChange?.(next);
   };
 
   return (
