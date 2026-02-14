@@ -120,7 +120,6 @@ const seedVertAxis = dset.getVertAxis(seedVarKey);
 
 const seedSelection: GridSelection = {
   varKey: seedVarKey,
-  time: seedTimeAxis?.[0] ?? "",
   level: seedVertAxis?.[0] ?? "",
 };
 
@@ -143,7 +142,7 @@ store.subscribe((state) => {
     lastProjectionName = state.projection.name;
   }
 
-  const { varKey, time, level } = state.selection;
+  const { varKey, level } = state.selection;
 
   const timeAxis = dset.getTimeAxis(varKey);
   const vertAxis = dset.getVertAxis(varKey);
