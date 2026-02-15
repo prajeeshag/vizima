@@ -47,6 +47,10 @@ function minmax(array: Float32Array): [number, number] {
   return [min, max];
 }
 
+function minmaxManual(array: Float32Array): [number, number] {
+  return [210, 310];
+}
+
 const initialColorScale: ColorScaleDynamic = defineColorScale({
   name: "Plasma",
   reverse: false,
@@ -204,6 +208,7 @@ const render = async (state: AppState) => {
         timeIndex: state.timeStep,
         vertIndex,
         colorScale: state.colorMap.colorScale,
+        numTimeSteps: numTimes(),
       },
     ],
   });
@@ -216,7 +221,14 @@ function createAnimationManager(
 ) {
   let rafId: number | null = null;
   let lastFrameTime: number | null = null;
-  const playbackRate = 1;
+
+  const playbackRate = 0.5;
+
+  // fixed simulation step (seconds of animation time per real second)
+  const FIXED_STEP = 1 / 60; // controls smoothness
+  const MAX_ACCUM = 0.5; // prevents spiral of death if rendering stalls
+
+  let accumulator = 0;
 
   const animate = async (now: number) => {
     const state = store.getState();
@@ -224,15 +236,26 @@ function createAnimationManager(
     if (!state.playing) {
       rafId = null;
       lastFrameTime = null;
+      accumulator = 0;
       return;
     }
 
-    if (!lastFrameTime) lastFrameTime = now;
+    if (lastFrameTime === null) lastFrameTime = now;
 
-    const dt = (now - lastFrameTime) / 1000;
+    const frameDt = (now - lastFrameTime) / 1000;
     lastFrameTime = now;
 
-    const nextTime = (state.timeStep + playbackRate * dt) % (numTimes() - 1);
+    accumulator += frameDt;
+    if (accumulator > MAX_ACCUM) accumulator = MAX_ACCUM;
+
+    let nextTime = state.timeStep;
+
+    while (accumulator >= FIXED_STEP) {
+      nextTime += playbackRate * FIXED_STEP;
+      accumulator -= FIXED_STEP;
+    }
+
+    nextTime = nextTime % (numTimes() - 1);
 
     store.dispatch({ type: "time/changed", timeStep: nextTime });
     await render({ ...state, timeStep: nextTime });
@@ -248,6 +271,7 @@ function createAnimationManager(
       if (rafId !== null) cancelAnimationFrame(rafId);
       rafId = null;
       lastFrameTime = null;
+      accumulator = 0;
     },
     isRunning() {
       return rafId !== null;
@@ -283,7 +307,7 @@ document.body.appendChild(colorbardiv);
 
 createColorBar(colorbardiv, {
   ticks: 5,
-  orientation: "vertical",
+  orientation: "horizontal",
   value: () => store.getState().colorBar,
   subscribe: subscribeBridge,
 });

@@ -28,6 +28,7 @@ type ColorMapRendererProps = {
   gridProj: GridProjection;
   timeIndex?: number;
   vertIndex?: number;
+  numTimeSteps: number;
   gridMeta: DataVarMeta;
   colorScale: ColorScaleDynamic;
 };
@@ -44,7 +45,8 @@ type Props = {
 };
 
 export const createColorMapRenderer = (props: Props) => {
-  const gridAgents: [GridAgent, GridAgent] = [
+  const gridAgents: [GridAgent, GridAgent, GridAgent] = [
+    createGridAgent(),
     createGridAgent(),
     createGridAgent(),
   ];
@@ -101,7 +103,16 @@ export const createColorMapRenderer = (props: Props) => {
         });
         return grid;
       }
-      console.log(props.timeIndex);
+
+      const t2 = (t1 + 1) % props.numTimeSteps;
+
+      // prefetch next time step
+      gridAgents[2].get({
+        ...gridProps,
+        t: t2,
+        z: props.vertIndex,
+      });
+
       const alpha = props.timeIndex - t0;
       const [g0, g1] = await Promise.all([
         gridAgents[0].get({
@@ -128,7 +139,7 @@ function tInterpolateGrids(g0: Grid, g1: Grid, alpha: number): Grid {
   const w0 = 1 - alpha;
   const w1 = alpha;
   const props = { ...g0.props, t: g0.props.t! + alpha };
-  const value = g0.value;
+  const value = new Float32Array(g0.value.length);
   for (let i = 0; i < value.length; i++) {
     value[i] = g0.value[i]! * w0 + g1.value[i]! * w1;
   }
