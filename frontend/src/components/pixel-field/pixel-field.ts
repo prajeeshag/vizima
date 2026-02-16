@@ -1,5 +1,5 @@
 import type { LatAxis, LonAxis } from "../dataset";
-import { Grid, type GridProps } from "../grid-data";
+import { Grid } from "../grid-data";
 import type { GridProjection, ProjectorState } from "../projection";
 import { CachedResult } from "../types";
 import * as d3 from "d3";
@@ -12,6 +12,15 @@ export type PixelProps = {
   readonly lonAxis: LonAxis;
   readonly latAxis: LatAxis;
 };
+
+export const pixelPropKeys = [
+  "grid",
+  "viewSize",
+  "gridProj",
+  "proj",
+  "lonAxis",
+  "latAxis",
+] as const;
 
 export class PixelField extends CachedResult<PixelProps, Float32Array> {
   get viewSize(): [number, number] {

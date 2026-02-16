@@ -1,14 +1,16 @@
-import { logger } from "../logger";
+import { logger, type Level } from "../logger";
 import stringify from "json-stable-stringify";
 
 type Primitive = string | number | boolean | undefined | null;
 
-export type ConfigType =
-  | Primitive
-  | readonly Primitive[]
-  | { readonly [key: string]: ConfigType }
-  | CachedResult<any, any>
-  | readonly CachedResult<any, any>[];
+export type ConfigType = {
+  readonly [key: string]:
+    | ConfigType
+    | Primitive
+    | Primitive[]
+    | CachedResult<any, any>
+    | readonly CachedResult<any, any>[];
+};
 
 export class CachedResult<Config extends ConfigType, Value> {
   constructor(
@@ -22,7 +24,7 @@ export class CachedResult<Config extends ConfigType, Value> {
 }
 
 export class DataClient<Prop extends ConfigType, Value> {
-  constructor(readonly provider: CachingCompute<Prop, Value>) {}
+  constructor(readonly provider: CachingCompute<Prop, Value, any>) {}
 
   get(props: Prop, args?: any): Promise<Value> {
     return this.provider.get(props, this, args);
@@ -35,23 +37,46 @@ type ComputeFn<Prop extends ConfigType, Value> = (
   args?: any,
 ) => Promise<Value>;
 
-export class CachingCompute<Prop extends ConfigType, Value> {
+type CachingComputeOptions = {
+  maxCacheSize?: number;
+  logLevel?: Level;
+};
+
+export class CachingCompute<
+  Prop extends ConfigType,
+  Value,
+  K extends readonly (keyof Prop)[],
+> {
   private cache = new Map<string, Value>();
   private pending = new Map<string, Promise<Value>>();
   private controllers = new WeakMap<DataClient<Prop, Value>, AbortController>();
-  protected logger = logger.child({ component: this.constructor.name });
+  private logger = logger.child({ component: this.constructor.name });
+  private maxCacheSize: number;
 
   constructor(
     private compute: ComputeFn<Prop, Value>,
-    private maxCacheSize: number = 1,
-  ) {}
+    readonly keys: [keyof Prop] extends [K[number]] ? K : never,
+    { maxCacheSize = 1, logLevel }: CachingComputeOptions = {},
+  ) {
+    this.maxCacheSize = maxCacheSize;
+    if (logLevel) {
+      this.logger.level = logLevel;
+    }
+  }
 
   async get(
     props: Prop,
     agent: DataClient<Prop, Value>,
     args?: any,
   ): Promise<Value> {
-    const stableKey = stringify(props);
+    const propsClean = this.keys.reduce((acc, key) => {
+      if (key in props) {
+        acc[key] = props[key];
+      }
+      return acc;
+    }, {} as Prop);
+
+    const stableKey = stringify(propsClean);
 
     if (stableKey && this.cache.has(stableKey)) {
       const value = this.cache.get(stableKey)!;
@@ -75,7 +100,7 @@ export class CachingCompute<Prop extends ConfigType, Value> {
     this.logger.debug(`Computing value for ${stableKey}`);
     const computePromise = (async () => {
       try {
-        const value = await this.compute(props, controller.signal, args);
+        const value = await this.compute(propsClean, controller.signal, args);
 
         if (this.maxCacheSize > 0 && stableKey) {
           this.cache.set(stableKey, value);
@@ -93,9 +118,5 @@ export class CachingCompute<Prop extends ConfigType, Value> {
 
     this.pending.set(stableKey!, computePromise);
     return computePromise;
-  }
-
-  setCacheSize(size: number) {
-    this.maxCacheSize = size;
   }
 }

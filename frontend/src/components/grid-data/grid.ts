@@ -10,6 +10,8 @@ export type GridProps = {
   t?: number;
 };
 
+export const gridPropsKeys = ["url", "x0", "y0", "nx", "ny", "z", "t"] as const;
+
 export class Grid extends CachedResult<GridProps, Float32Array> {
   private bilinear(
     v00: number,

@@ -9,7 +9,7 @@
     "zod": "^4.3.5"
   },
   "peerDependencies": {
-    "typescript": "^5"
+    "typescript": "^5.9.3"
   },
   "dependencies": {
     "@types/d3": "^7.4.3",
@@ -26,6 +26,7 @@
   "scripts": {
     "dev:build": "vite build --watch --mode development",
     "dev:server": "bun run serve.ts",
+    "typecheck": "bun x tsc --noEmit",
     "dev": "bun run dev:build & bun run dev:server",
     "prod": "LOG_LEVEL=silent bun build src/demo.ts --outdir dist/ --env inline --minify"
   }

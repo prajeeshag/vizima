@@ -55,7 +55,8 @@ const initialColorScale: ColorScaleDynamic = defineColorScale({
   name: "Plasma",
   reverse: false,
   clamp: true,
-  domain: (props) => minmax(props.grid.value),
+  // domain: (props) => minmax(props.grid.value),
+  domain: (props) => [210, 310],
 });
 
 const initialProjection: ViewProjection = { name: "Orthographic" };

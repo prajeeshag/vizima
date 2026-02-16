@@ -63,26 +63,27 @@ export const createColorMapRenderer = (props: Props) => {
     const grid = await getGrid();
 
     const pixelProps: PixelProps = {
-      grid: grid,
-      viewSize: props.viewSize,
-      gridProj: props.gridProj,
-      proj: props.proj,
-      lonAxis: props.lonAxis,
-      latAxis: props.latAxis,
+      grid,
+      ...props,
     };
-    const field = await pixelAgent.get(pixelProps);
-    const colorScale = buildColorScale(props.colorScale, {
-      grid: grid,
-      pixelField: field,
+    const pixelField = await pixelAgent.get(pixelProps);
+    const staticColorScale = buildColorScale(props.colorScale, {
+      grid,
+      pixelField,
       gridMeta: props.gridMeta,
     });
+
     callback({
-      colorScale: colorScale,
+      colorScale: staticColorScale,
       props: props,
-      grid: grid,
-      pixelField: field,
+      grid,
+      pixelField,
     });
-    return createColorMapPainter({ field: field, colorScale: colorScale });
+
+    return createColorMapPainter({
+      pixelField,
+      colorScale: staticColorScale,
+    });
 
     async function getGrid() {
       if (props.timeIndex === undefined) {

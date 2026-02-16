@@ -13,6 +13,8 @@ export type DatasetConfig = {
   url: string;
 };
 
+export const datasetConfigKeys = ["url"] as const;
+
 export class Dataset extends CachedResult<DatasetConfig, DatasetMeta> {
   getLonAxis(vname: string): LonAxis | undefined {
     const attr = this.value.datavars[vname];

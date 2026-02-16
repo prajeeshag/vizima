@@ -4,16 +4,16 @@ import { logger } from "../../logger";
 import * as d3 from "d3";
 import { createColorScale, type ColorScaleStatic } from "../../colorscale";
 
-type colorMapProps = {
-  readonly field: PixelField;
+type ColorMapProps = {
+  readonly pixelField: PixelField;
   readonly colorScale: ColorScaleStatic;
 };
 
-export class colorMapPainter extends Painter<colorMapProps> {
-  private readonly log = logger.child({ component: "PColorPainter" });
+export class ColorMapPainter extends Painter<ColorMapProps> {
+  private readonly logger = logger.child({ component: "ColorMapPainter" });
 
   async draw(ctx: CanvasRenderingContext2D, signal: AbortSignal) {
-    const pixelField = this.props.field;
+    const pixelField = this.props.pixelField;
     const imgData = ctx.createImageData(
       pixelField.viewSize[0],
       pixelField.viewSize[1],
@@ -26,7 +26,7 @@ export class colorMapPainter extends Painter<colorMapProps> {
       const val = pixelField.value[i];
       const pos = i * 4;
 
-      if (!val || isNaN(val)) {
+      if (val === undefined || isNaN(val)) {
         rgba[pos + 3] = 0;
         continue;
       }
@@ -40,6 +40,6 @@ export class colorMapPainter extends Painter<colorMapProps> {
   }
 }
 
-export function createColorMapPainter(props: colorMapProps) {
-  return new colorMapPainter(props, null);
+export function createColorMapPainter(props: ColorMapProps) {
+  return new ColorMapPainter(props, null);
 }

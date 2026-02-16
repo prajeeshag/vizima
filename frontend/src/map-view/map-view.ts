@@ -1,7 +1,10 @@
 import * as d3 from "d3";
 import { styleRegistry } from "../styles";
 import { CanvasElement, createCanvas } from "../components/canvas-element";
-import { createPaintCanvasAgent } from "../components/canvas-renderer";
+import {
+  createRenderedCanvasAgent,
+  RenderedCanvasAgent,
+} from "../components/rendered-canvas";
 import {
   ProjectionController,
   Projection,
@@ -30,9 +33,9 @@ export type CanvasStack = readonly CanvasProps[];
 
 export class MapView<CS extends UniqueCanvasStack<CanvasStack>> {
   readonly div;
-  private paintCanvasAgent;
   private globe: ProjectionController;
   private canvases = new Map<string, CanvasElement>();
+  private renderedCanvasAgents = new Map<string, RenderedCanvasAgent>();
   private painterProps?: ExtractProps<CS>;
   private interactCanvas: CanvasElement;
 
@@ -45,7 +48,6 @@ export class MapView<CS extends UniqueCanvasStack<CanvasStack>> {
     this.div = div || document.createElement("div");
     this.div.classList.add(className);
     styleRegistry.register("mapview", styles);
-    this.paintCanvasAgent = createPaintCanvasAgent();
 
     this.globe = new ProjectionController(projection, viewSize);
 
@@ -56,7 +58,9 @@ export class MapView<CS extends UniqueCanvasStack<CanvasStack>> {
 
     for (const props of canvasStack) {
       const canvas = createCanvas();
+      const renderedCanvasAgent = createRenderedCanvasAgent();
       this.canvases.set(props.id, canvas);
+      this.renderedCanvasAgents.set(props.id, renderedCanvasAgent);
       this.div.appendChild(canvas.value);
     }
   }
@@ -70,7 +74,8 @@ export class MapView<CS extends UniqueCanvasStack<CanvasStack>> {
   }
 
   private setupInteractions() {
-    this.paintCanvasAgent.get({
+    const renderedCanvasAgent = createRenderedCanvasAgent();
+    renderedCanvasAgent.get({
       canvas: this.interactCanvas,
       painters: [],
       viewSize: this.viewSize,
@@ -96,12 +101,19 @@ export class MapView<CS extends UniqueCanvasStack<CanvasStack>> {
     for (let i = 0; i < this.canvasStack.length; i++) {
       const props = this.canvasStack[i]!;
       const canvas = this.canvases.get(props.id)!;
+      const renderedCanvasAgent = this.renderedCanvasAgents.get(props.id)!;
       const painterProps = this.painterProps![props.id];
       if (props.visibleOn === "interact" || props.disable) {
         canvas.hide();
         continue;
       }
-      await this._render(proj, canvas, props.renderers, painterProps);
+      await this._render(
+        proj,
+        canvas,
+        renderedCanvasAgent,
+        props.renderers,
+        painterProps,
+      );
       canvas.show();
     }
   }
@@ -110,12 +122,19 @@ export class MapView<CS extends UniqueCanvasStack<CanvasStack>> {
     for (let i = 0; i < this.canvasStack.length; i++) {
       const props = this.canvasStack[i]!;
       const canvas = this.canvases.get(props.id)!;
+      const renderedCanvasAgent = this.renderedCanvasAgents.get(props.id)!;
       const painterProps = this.painterProps![props.id];
       if (props.visibleOn === "main") {
         canvas.hide();
         continue;
       }
-      await this._render(proj, canvas, props.renderers, painterProps);
+      await this._render(
+        proj,
+        canvas,
+        renderedCanvasAgent,
+        props.renderers,
+        painterProps,
+      );
       canvas.show();
     }
   }
@@ -123,6 +142,7 @@ export class MapView<CS extends UniqueCanvasStack<CanvasStack>> {
   private async _render(
     proj: ProjectorState,
     canvas: CanvasElement,
+    renderedCanvasAgent: RenderedCanvasAgent,
     painterFns: readonly Renderer[],
     painterProps: any,
   ) {
@@ -132,7 +152,7 @@ export class MapView<CS extends UniqueCanvasStack<CanvasStack>> {
       ),
     );
 
-    await this.paintCanvasAgent.get({
+    await renderedCanvasAgent.get({
       canvas: canvas,
       painters: painters,
       viewSize: this.viewSize,
