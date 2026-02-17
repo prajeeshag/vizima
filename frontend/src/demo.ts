@@ -3,7 +3,10 @@ import {
   createLandRenderer,
   createColorMapRenderer,
   createGraticuleRenderer,
-} from "./layer-renderers";
+  type LandRendererProps,
+  type GraticuleRendererProps,
+  type ColorMapRendererProps,
+} from "./static-renderers";
 import { MapView } from "./map-view/map-view";
 import {
   defineColorScale,
@@ -11,7 +14,7 @@ import {
   type ColorScaleStatic,
 } from "./colorscale";
 import { styleRegistry } from "./styles";
-import type { ViewProjection } from "./components/projection";
+import type { ProjectorState, ViewProjection } from "./components/projection";
 import {
   createGridSelector,
   createColorScaleController,
@@ -19,12 +22,8 @@ import {
   createTimeSlider,
   createPlayButton,
 } from "./ui";
-import {
-  createStore,
-  shallowEqual,
-  watchSelector,
-  type Store,
-} from "./state/store";
+
+import { createStore, watchSelector, type Store } from "./state/store";
 import { createColorBar } from "./ui/colorbar";
 
 const landUrl = "/land-110m.json";
@@ -55,8 +54,8 @@ const initialColorScale: ColorScaleDynamic = defineColorScale({
   name: "Plasma",
   reverse: false,
   clamp: true,
-  // domain: (props) => minmax(props.grid.value),
-  domain: (props) => [210, 310],
+  domain: (props) => minmax(props.grid.value),
+  // domain: (props) => [210, 310],
 });
 
 const initialProjection: ViewProjection = { name: "Orthographic" };
@@ -80,22 +79,19 @@ type AppState = {
   colorMap: ColorMapProps;
   colorBar: ColorBarProps | null;
   playing: boolean;
+  projectorState: ProjectorState | null;
+  mapInteracting: boolean;
 };
-
-const selectVisualState = (s: AppState) => ({
-  projection: s.projection,
-  timeStep: s.timeStep,
-  colorMap: s.colorMap,
-  landUrl: s.landUrl,
-});
 
 type Action =
   | { type: "play/changed"; playing: boolean }
   | { type: "time/changed"; timeStep: number }
   | { type: "projection/changed"; projection: ViewProjection }
+  | { type: "projectorState/changed"; projectorState: ProjectorState }
   | { type: "colormap/grid/changed"; selection: GridSelection }
   | { type: "colormap/colorscale/changed"; colorScale: ColorScaleDynamic }
-  | { type: "colorbar/changed"; colorBar: ColorBarProps };
+  | { type: "colorbar/changed"; colorBar: ColorBarProps }
+  | { type: "mapInteracting/changed"; mapInteracting: boolean };
 
 function assertNever(x: never): never {
   throw new Error(`Unhandled action: ${JSON.stringify(x)}`);
@@ -124,6 +120,16 @@ function reducer(state: AppState, action: Action): AppState {
         ...state,
         colorBar: action.colorBar,
       };
+    case "projectorState/changed":
+      return {
+        ...state,
+        projectorState: action.projectorState,
+      };
+    case "mapInteracting/changed":
+      return {
+        ...state,
+        mapInteracting: action.mapInteracting,
+      };
     default:
       return assertNever(action);
   }
@@ -148,13 +154,122 @@ const store = createStore<AppState, Action>({
       selection: seedSelection,
     },
     colorBar: null,
+    projectorState: null,
+    mapInteracting: false,
   },
   reducer,
 });
 
 const numTimes = () => dset.getTimeAxis("prate")!.length;
 
+const viewSize: [number, number] = [800, 600];
+const view = new MapView(viewSize, mapdiv1);
+
+const onMapInteract = (e: ProjectorState) => {
+  store.dispatch({
+    type: "mapInteracting/changed",
+    mapInteracting: true,
+  });
+  store.dispatch({
+    type: "projectorState/changed",
+    projectorState: e,
+  });
+};
+
+const onMapInteractEnd = (e: ProjectorState) => {
+  store.dispatch({
+    type: "mapInteracting/changed",
+    mapInteracting: false,
+  });
+  store.dispatch({
+    type: "projectorState/changed",
+    projectorState: e,
+  });
+};
+
+view.on("drag", onMapInteract);
+view.on("dragEnd", onMapInteractEnd);
+view.on("zoom", onMapInteract);
+view.on("zoomEnd", onMapInteractEnd);
+view.on("projectionUpdate", onMapInteractEnd);
+
+watchSelector(
+  store,
+  (s) => ({ projection: s.projection }),
+  ({ projection }) => {
+    view.setProjection(projection);
+  },
+);
+
+const selectLandGraticuleState = (s: AppState) => ({
+  landUrl: s.landUrl,
+  projectorState: s.projectorState,
+});
+
+function getLandRendererProps(): LandRendererProps {
+  const { landUrl, projectorState } = selectLandGraticuleState(
+    store.getState(),
+  );
+  if (!projectorState) {
+    throw new Error("Projector state is not defined");
+  }
+  return {
+    projectorState,
+    landJsonUrl: landUrl,
+  };
+}
+
+function getGraticuleRendererProps(): GraticuleRendererProps {
+  const { projectorState } = selectLandGraticuleState(store.getState());
+  if (!projectorState) {
+    throw new Error("Projector state is not defined");
+  }
+  return {
+    projectorState,
+  };
+}
+
+const selectColorMapState = (s: AppState) => ({
+  timeStep: s.timeStep,
+  colorMap: s.colorMap,
+  projectorState: s.projectorState,
+});
+
+function getColorMapRendererProps(): ColorMapRendererProps {
+  const { colorMap, projectorState, timeStep } = selectColorMapState(
+    store.getState(),
+  );
+  const { varKey, level } = colorMap.selection;
+  const vertAxis = dset.getVertAxis(varKey);
+  const vertIndex = vertAxis ? vertAxis.indexOf(level) : undefined;
+  const url = dset.getUrl(varKey);
+  const latAxis = dset.getLatAxis(varKey);
+  const lonAxis = dset.getLonAxis(varKey);
+  const gridMeta = dset.getGridMeta(varKey);
+  if (!gridMeta || !latAxis || !lonAxis || !url || !projectorState) {
+    throw new Error("Missing required data for color map rendering");
+  }
+  return {
+    url,
+    projectorState,
+    viewSize,
+    latAxis,
+    lonAxis,
+    gridProj: dset.getGridProj(),
+    gridMeta,
+    timeIndex: timeStep,
+    vertIndex,
+    colorScale: colorMap.colorScale,
+    numTimeSteps: numTimes(),
+  };
+}
+
+const landRenderer = createLandRenderer({ getProps: getLandRendererProps });
+const graticuleRenderer = createGraticuleRenderer({
+  getProps: getGraticuleRendererProps,
+});
 const colorMapRenderer = createColorMapRenderer({
+  getProps: getColorMapRendererProps,
   callback: (props) => {
     store.dispatch({
       type: "colorbar/changed",
@@ -166,59 +281,37 @@ const colorMapRenderer = createColorMapRenderer({
   },
 });
 
-const landRenderer = createLandRenderer();
-const graticuleRenderer = createGraticuleRenderer();
+const colorMapLayer = view.addLayer([colorMapRenderer]);
+const landGraticuleLayer = view.addLayer([landRenderer, graticuleRenderer]);
 
-const CS = [
-  {
-    id: "colormap",
-    visibleOn: "main",
-    renderers: [colorMapRenderer],
-    disable: false,
+watchSelector(store, selectColorMapState, () => {
+  const { playing, mapInteracting } = store.getState();
+  if (!playing && !mapInteracting) {
+    colorMapLayer.render();
+  }
+});
+
+watchSelector(
+  store,
+  (s: AppState) => ({
+    mapInteracting: s.mapInteracting,
+  }),
+  ({ mapInteracting }) => {
+    if (mapInteracting) {
+      colorMapLayer.hide();
+    }
   },
-  {
-    id: "landgraticule",
-    disable: false,
-    visibleOn: "always",
-    renderers: [graticuleRenderer, landRenderer],
-  },
-] as const;
+);
 
-const view = new MapView([800, 600], initialProjection, CS, mapdiv1);
+watchSelector(store, selectLandGraticuleState, () => {
+  landGraticuleLayer.render();
+});
 
-const render = async (state: AppState) => {
-  view.setProjection(state.projection);
-  const { varKey, level } = state.colorMap.selection;
-  const vertAxis = dset.getVertAxis(varKey);
-  const vertIndex = vertAxis ? vertAxis.indexOf(level) : undefined;
-  const url = dset.getUrl(varKey);
-  const latAxis = dset.getLatAxis(varKey);
-  const lonAxis = dset.getLonAxis(varKey);
-  const gridMeta = dset.getGridMeta(varKey);
-
-  if (!url || !latAxis || !lonAxis || !gridMeta) return;
-  await view.render({
-    landgraticule: [{}, { landJsonUrl: state.landUrl }],
-    colormap: [
-      {
-        url,
-        latAxis,
-        lonAxis,
-        gridProj: dset.getGridProj(),
-        gridMeta,
-        timeIndex: state.timeStep,
-        vertIndex,
-        colorScale: state.colorMap.colorScale,
-        numTimeSteps: numTimes(),
-      },
-    ],
-  });
-};
-
-function createAnimationManager(
-  store: Store<AppState, Action>,
-  render: (s: AppState) => Promise<void>,
+function createTimeAnimationManager(
+  layers: { render: () => Promise<void> }[],
   numTimes: () => number,
+  currentTime: () => number,
+  updateTime: (time: number) => void,
 ) {
   let rafId: number | null = null;
   let lastFrameTime: number | null = null;
@@ -230,17 +323,9 @@ function createAnimationManager(
   const MAX_ACCUM = 0.5; // prevents spiral of death if rendering stalls
 
   let accumulator = 0;
+  let running = false;
 
   const animate = async (now: number) => {
-    const state = store.getState();
-
-    if (!state.playing) {
-      rafId = null;
-      lastFrameTime = null;
-      accumulator = 0;
-      return;
-    }
-
     if (lastFrameTime === null) lastFrameTime = now;
 
     const frameDt = (now - lastFrameTime) / 1000;
@@ -249,7 +334,7 @@ function createAnimationManager(
     accumulator += frameDt;
     if (accumulator > MAX_ACCUM) accumulator = MAX_ACCUM;
 
-    let nextTime = state.timeStep;
+    let nextTime = currentTime();
 
     while (accumulator >= FIXED_STEP) {
       nextTime += playbackRate * FIXED_STEP;
@@ -258,47 +343,53 @@ function createAnimationManager(
 
     nextTime = nextTime % (numTimes() - 1);
 
+    updateTime(nextTime);
     store.dispatch({ type: "time/changed", timeStep: nextTime });
-    await render({ ...state, timeStep: nextTime });
-
+    await Promise.all(layers.map((layer) => layer.render()));
+    if (!running) return;
     rafId = requestAnimationFrame(animate);
   };
 
   return {
     start() {
-      if (rafId === null) rafId = requestAnimationFrame(animate);
+      if (!running) {
+        running = true;
+        rafId = requestAnimationFrame(animate);
+      }
     },
     stop() {
+      running = false;
       if (rafId !== null) cancelAnimationFrame(rafId);
       rafId = null;
       lastFrameTime = null;
       accumulator = 0;
     },
     isRunning() {
-      return rafId !== null;
+      return running;
     },
   };
 }
 
-const animation = createAnimationManager(store, render, numTimes);
-
-const selectPlayback = (s: AppState) => s.playing;
+const timeAnimation = createTimeAnimationManager(
+  [colorMapLayer],
+  numTimes,
+  () => store.getState().timeStep,
+  (time) => store.dispatch({ type: "time/changed", timeStep: time }),
+);
 
 watchSelector(
   store,
-  selectVisualState,
-  () => {
-    if (!store.getState().playing) {
-      render(store.getState());
+  (s) => {
+    return { playing: s.playing };
+  },
+  ({ playing }) => {
+    if (playing) {
+      timeAnimation.start();
+    } else {
+      timeAnimation.stop();
     }
   },
-  shallowEqual,
 );
-
-watchSelector(store, selectPlayback, (playing) => {
-  if (playing) animation.start();
-  else animation.stop();
-});
 
 const subscribeBridge = (listener: () => void) =>
   store.subscribe(() => listener());
@@ -366,6 +457,5 @@ createPlayButton(playButtondiv, {
   onChange: (playing) => store.dispatch({ type: "play/changed", playing }),
 });
 
-store.dispatch({ type: "colormap/grid/changed", selection: seedSelection });
-
 styleRegistry.inject();
+view.setProjection(initialProjection);

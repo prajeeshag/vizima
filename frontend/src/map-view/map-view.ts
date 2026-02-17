@@ -1,162 +1,140 @@
 import * as d3 from "d3";
 import { styleRegistry } from "../styles";
-import { CanvasElement, createCanvas } from "../components/canvas-element";
-import {
-  createRenderedCanvasAgent,
-  RenderedCanvasAgent,
-} from "../components/rendered-canvas";
 import {
   ProjectionController,
   Projection,
   type ProjectorState,
 } from "../components/projection";
-import { type UniqueCanvasStack, type ExtractProps } from "./types";
-import type {
-  ColorMapRenderer,
-  LandRenderer,
-  GraticuleRenderer,
-} from "../layer-renderers";
-import equal from "fast-deep-equal";
+import type { StaticRenderer } from "../static-renderers";
+import { createCanvas } from "../components/canvas-element";
+import { createRenderedCanvasAgent } from "../components/rendered-canvas";
+
+interface Layer {
+  render: () => Promise<void>;
+  show: () => void;
+  hide: () => void;
+}
 
 const className = "vizima-mapview-canvas-stack";
 
-type Renderer = ColorMapRenderer | LandRenderer | GraticuleRenderer;
-
-type CanvasProps = {
-  id: string;
-  renderers: readonly Renderer[];
-  visibleOn: "interact" | "always" | "main";
-  disable: boolean;
+type MapViewEvents = {
+  projectionUpdate: ProjectorState;
+  drag: ProjectorState;
+  dragEnd: ProjectorState;
+  zoom: ProjectorState;
+  zoomEnd: ProjectorState;
+  resize: [number, number];
+  resizeEnd: [number, number];
 };
 
-export type CanvasStack = readonly CanvasProps[];
+type Listener<T> = (value: T) => void;
+type Unsubscribe = () => void;
 
-export class MapView<CS extends UniqueCanvasStack<CanvasStack>> {
-  readonly div;
-  private globe: ProjectionController;
-  private canvases = new Map<string, CanvasElement>();
-  private renderedCanvasAgents = new Map<string, RenderedCanvasAgent>();
-  private painterProps?: ExtractProps<CS>;
-  private interactCanvas: CanvasElement;
+class TypedEmitter<E extends Record<string, any>> {
+  private listeners = new Map<keyof E, Set<Listener<any>>>();
+
+  on<K extends keyof E>(type: K, fn: Listener<E[K]>): Unsubscribe {
+    let set = this.listeners.get(type);
+    if (!set) {
+      set = new Set();
+      this.listeners.set(type, set);
+    }
+    set.add(fn);
+    return () => set!.delete(fn);
+  }
+
+  emit<K extends keyof E>(type: K, value: E[K]): void {
+    this.listeners.get(type)?.forEach((fn) => fn(value));
+  }
+}
+
+export class MapView {
+  private readonly div;
+  private interactCanvas: HTMLCanvasElement;
+  private resizeObserver?: ResizeObserver;
+  private resizeRAF: number | null = null;
+  private resizeEndTimer: number | null = null;
+  private readonly events = new TypedEmitter<MapViewEvents>();
 
   constructor(
     private viewSize: [number, number],
-    private projection: Projection,
-    private canvasStack: CS & UniqueCanvasStack<CS>,
     div?: HTMLDivElement,
   ) {
     this.div = div || document.createElement("div");
     this.div.classList.add(className);
     styleRegistry.register("mapview", styles);
+    this.interactCanvas = document.createElement("canvas");
+    this.div.appendChild(this.interactCanvas);
+  }
 
-    this.globe = new ProjectionController(projection, viewSize);
+  on = this.events.on.bind(this.events);
 
-    this.interactCanvas = createCanvas();
-    this.div.appendChild(this.interactCanvas.value);
-
-    this.setupInteractions();
-
-    for (const props of canvasStack) {
-      const canvas = createCanvas();
-      const renderedCanvasAgent = createRenderedCanvasAgent();
-      this.canvases.set(props.id, canvas);
-      this.renderedCanvasAgents.set(props.id, renderedCanvasAgent);
-      this.div.appendChild(canvas.value);
-    }
+  addLayer(renderers: StaticRenderer[]): Layer {
+    const canvasElement = createCanvas();
+    this.div.appendChild(canvasElement.value);
+    const canvasRendererAgent = createRenderedCanvasAgent();
+    return {
+      render: async ({ show }: { show: boolean } = { show: true }) => {
+        const painters = await Promise.all(
+          renderers.map((renderer) => renderer()),
+        );
+        await canvasRendererAgent.get({
+          painters,
+          canvas: canvasElement,
+          viewSize: this.viewSize,
+        });
+        if (show) {
+          canvasElement.show();
+        }
+      },
+      show: () => {
+        canvasElement.show();
+      },
+      hide: () => {
+        canvasElement.hide();
+      },
+    };
   }
 
   setProjection(projection: Projection) {
-    if (!equal(this.projection, projection)) {
-      this.projection = projection;
-      this.globe = new ProjectionController(projection, this.viewSize);
-      this.setupInteractions();
-    }
+    const globe = new ProjectionController(projection, this.viewSize);
+    const canvas = this.interactCanvas;
+    canvas.width = this.viewSize[0];
+    canvas.height = this.viewSize[1];
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas context not available");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const dragHandler = globe.dragHandler(
+      (proj) => this.events.emit("drag", proj),
+      (proj) => this.events.emit("dragEnd", proj),
+    );
+    const zoomHandler = globe.zoomHandler(
+      (proj) => this.events.emit("zoom", proj),
+      (proj) => this.events.emit("zoomEnd", proj),
+    );
+    d3.select(this.interactCanvas).call(dragHandler).call(zoomHandler);
+
+    this.events.emit("projectionUpdate", globe.getProjState());
   }
 
-  private setupInteractions() {
-    const renderedCanvasAgent = createRenderedCanvasAgent();
-    renderedCanvasAgent.get({
-      canvas: this.interactCanvas,
-      painters: [],
-      viewSize: this.viewSize,
+  private observeResize() {
+    this.resizeObserver = new ResizeObserver((entries) => {
+      const { width, height } = entries[0]!.contentRect;
+
+      if (this.resizeRAF === null) {
+        this.resizeRAF = requestAnimationFrame(() => {
+          this.resizeRAF = null;
+          this.events.emit("resize", [Math.round(width), Math.round(height)]);
+        });
+      }
+
+      if (this.resizeEndTimer) clearTimeout(this.resizeEndTimer);
+      this.resizeEndTimer = window.setTimeout(() => {
+        this.events.emit("resizeEnd", [Math.round(width), Math.round(height)]);
+      }, 150);
     });
 
-    const dragHandler = this.globe.dragHandler(
-      (proj) => this.renderInteract(proj),
-      (proj) => this.renderMain(proj),
-    );
-    const zoomHandler = this.globe.zoomHandler(
-      (proj) => this.renderInteract(proj),
-      (proj) => this.renderMain(proj),
-    );
-    d3.select(this.interactCanvas.value).call(dragHandler).call(zoomHandler);
-  }
-
-  async render(props: ExtractProps<CS>) {
-    this.painterProps = props;
-    await this.renderMain(this.globe.getProjState());
-  }
-
-  private async renderMain(proj: ProjectorState) {
-    for (let i = 0; i < this.canvasStack.length; i++) {
-      const props = this.canvasStack[i]!;
-      const canvas = this.canvases.get(props.id)!;
-      const renderedCanvasAgent = this.renderedCanvasAgents.get(props.id)!;
-      const painterProps = this.painterProps![props.id];
-      if (props.visibleOn === "interact" || props.disable) {
-        canvas.hide();
-        continue;
-      }
-      await this._render(
-        proj,
-        canvas,
-        renderedCanvasAgent,
-        props.renderers,
-        painterProps,
-      );
-      canvas.show();
-    }
-  }
-
-  private async renderInteract(proj: ProjectorState) {
-    for (let i = 0; i < this.canvasStack.length; i++) {
-      const props = this.canvasStack[i]!;
-      const canvas = this.canvases.get(props.id)!;
-      const renderedCanvasAgent = this.renderedCanvasAgents.get(props.id)!;
-      const painterProps = this.painterProps![props.id];
-      if (props.visibleOn === "main") {
-        canvas.hide();
-        continue;
-      }
-      await this._render(
-        proj,
-        canvas,
-        renderedCanvasAgent,
-        props.renderers,
-        painterProps,
-      );
-      canvas.show();
-    }
-  }
-
-  private async _render(
-    proj: ProjectorState,
-    canvas: CanvasElement,
-    renderedCanvasAgent: RenderedCanvasAgent,
-    painterFns: readonly Renderer[],
-    painterProps: any,
-  ) {
-    const painters = await Promise.all(
-      painterFns.map((fn, i) =>
-        fn({ viewSize: this.viewSize, proj: proj, ...painterProps[i] }),
-      ),
-    );
-
-    await renderedCanvasAgent.get({
-      canvas: canvas,
-      painters: painters,
-      viewSize: this.viewSize,
-    });
+    this.resizeObserver.observe(this.div);
   }
 }
 

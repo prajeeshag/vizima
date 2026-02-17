@@ -10,7 +10,7 @@ import {
   type PixelProps,
 } from "../components/pixel-field";
 import { createColorMapPainter } from "../components/painters";
-import { type LayerRenderer } from "./layer-renderer";
+import { type StaticRenderer } from "./static-renderer";
 import type { DataVarMeta, LatAxis, LonAxis } from "../components/dataset";
 import type { GridProjection, ProjectorState } from "../components/projection";
 import {
@@ -19,8 +19,8 @@ import {
   buildColorScale,
 } from "../colorscale";
 
-type ColorMapRendererProps = {
-  proj: ProjectorState;
+export type ColorMapRendererProps = {
+  projectorState: ProjectorState;
   viewSize: [number, number];
   url: string;
   latAxis: LatAxis;
@@ -33,9 +33,8 @@ type ColorMapRendererProps = {
   colorScale: ColorScaleDynamic;
 };
 
-export type ColorMapRenderer = LayerRenderer<ColorMapRendererProps>;
-
 type Props = {
+  getProps: () => ColorMapRendererProps;
   callback?: (props: {
     colorScale: ColorScaleStatic;
     props: ColorMapRendererProps;
@@ -44,16 +43,18 @@ type Props = {
   }) => void;
 };
 
-export const createColorMapRenderer = (props: Props) => {
+export const createColorMapRenderer = (kwrgs: Props) => {
   const gridAgents: [GridAgent, GridAgent, GridAgent] = [
     createGridAgent(),
     createGridAgent(),
     createGridAgent(),
   ];
   const pixelAgent = createPixelAgent();
-  const callback = props.callback || (() => {});
+  const callback = kwrgs.callback || (() => {});
+  const getProps = kwrgs.getProps;
 
-  const colorMapRenderer = async (props: ColorMapRendererProps) => {
+  const colorMapRenderer: StaticRenderer = async () => {
+    const props = getProps();
     const gridProps = getGridProps({
       url: props.url,
       latAxis: props.latAxis,

@@ -54,9 +54,6 @@ export function createRenderedCanvasAgent(): RenderedCanvasAgent {
   const renderedCanvasProvider = new RenderedCanvasProvider(
     paint,
     canvasRendererPropsKeys,
-    {
-      logLevel: "debug",
-    },
   );
   return new RenderedCanvasAgent(renderedCanvasProvider);
 }

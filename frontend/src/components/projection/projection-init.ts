@@ -155,7 +155,7 @@ class LonLatInit extends DataProjectionInit<LonLat> {
   }
 }
 
-class MercatorInit extends DataProjectionInit<Mercator> {
+class MercatorInit extends GlobalProjectionInit<Mercator> {
   override setConfig(): void {}
 }
 

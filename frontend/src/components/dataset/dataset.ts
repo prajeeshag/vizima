@@ -1,6 +1,7 @@
 import type {
   DatasetMeta,
   DataVarMeta,
+  VectorVarMeta,
   LatAxis,
   LonAxis,
   TimeAxis,
@@ -57,5 +58,9 @@ export class Dataset extends CachedResult<DatasetConfig, DatasetMeta> {
 
   getGridMeta(vname: string): DataVarMeta | undefined {
     return this.value.datavars[vname];
+  }
+
+  getVectorMeta(vname: string): VectorVarMeta | undefined {
+    return this.value.vectors[vname];
   }
 }

@@ -11,7 +11,7 @@ export async function interpPixel(
   props: PixelProps,
   signal: AbortSignal,
 ): Promise<PixelField> {
-  if (equal(props.proj.type, props.gridProj)) {
+  if (equal(props.projectorState.type, props.gridProj)) {
     logger.debug("Using native projection");
     return await interpPixelNative(props, signal);
   }
@@ -25,7 +25,7 @@ export async function interpPixelProjected(
 ): Promise<PixelField> {
   const width = props.viewSize[0];
   const height = props.viewSize[1];
-  const proj = getProjector(props.proj);
+  const proj = getProjector(props.projectorState);
   const mask = createMask();
 
   const grid = props.grid;

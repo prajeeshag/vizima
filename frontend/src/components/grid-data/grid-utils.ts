@@ -21,10 +21,6 @@ export function subsetGrid(
   return [0, 0, config.lonAxis.count, config.latAxis.count];
 }
 
-// export function isNative(config: GridConfig): boolean {
-//   return equal(config.proj.type, config.gridProj);
-// }
-
 export function getGridProps(config: GridConfig): GridProps {
   const [x0, y0, nx, ny] = subsetGrid(config);
   return {

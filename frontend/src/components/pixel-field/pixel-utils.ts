@@ -3,13 +3,13 @@ import { getProjector, type ProjectorState } from "../projection";
 import { logger as _logger } from "../../logger";
 
 export function getPixelNativeUtils(props: {
-  readonly proj: ProjectorState;
+  readonly projectorState: ProjectorState;
   readonly viewSize: [number, number];
   readonly latAxis: LatAxis;
   readonly lonAxis: LonAxis;
 }): PixelNativeUtil {
   const logger = _logger.child({ component: "getPixelNativeUtil" });
-  const proj = getProjector(props.proj);
+  const proj = getProjector(props.projectorState);
   const gsp: [number, number] = [
     props.lonAxis.corners.lb,
     props.latAxis.corners.lb,

@@ -4,7 +4,7 @@ import { Painter } from "./painter";
 import { type ProjectorState, getProjector } from "../projection";
 
 export type LandProps = {
-  readonly proj: ProjectorState;
+  readonly projectorState: ProjectorState;
   readonly landJson: JsonData;
   readonly strokeStyle?: string;
   readonly lineWidth?: number;
@@ -21,7 +21,7 @@ export class LandPainter extends Painter<LandProps> {
     context.beginPath();
     context.strokeStyle = this.props.strokeStyle || "#f7faf8ff";
     context.lineWidth = this.props.lineWidth || 1;
-    const proj = getProjector(this.props.proj);
+    const proj = getProjector(this.props.projectorState);
     proj.geoPath(context)(land);
     context.stroke();
   }

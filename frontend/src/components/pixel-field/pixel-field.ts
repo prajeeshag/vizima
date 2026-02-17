@@ -8,7 +8,7 @@ export type PixelProps = {
   readonly grid: Grid;
   readonly viewSize: [number, number];
   readonly gridProj: GridProjection;
-  readonly proj: ProjectorState;
+  readonly projectorState: ProjectorState;
   readonly lonAxis: LonAxis;
   readonly latAxis: LatAxis;
 };
@@ -17,7 +17,7 @@ export const pixelPropKeys = [
   "grid",
   "viewSize",
   "gridProj",
-  "proj",
+  "projectorState",
   "lonAxis",
   "latAxis",
 ] as const;
