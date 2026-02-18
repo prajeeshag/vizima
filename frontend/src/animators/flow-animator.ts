@@ -2,25 +2,7 @@ import type { PixelField } from "../components/pixel-field";
 import { logger } from "../logger";
 import { randomInt } from "d3-random";
 import type { Animator } from "./animator";
-
-type FlowAnimatorProps = {
-  readonly ufld: PixelField;
-  readonly vfld: PixelField;
-  readonly mfld: PixelField;
-  readonly maxWind: number;
-  readonly colorScaleSteps?: number;
-  readonly particleCountFactor?: number;
-  readonly maxAge?: number;
-  readonly fps?: number;
-};
-
-const COLOR_SCALE_STEPS = 10;
-const PARTICLE_COUNT_FACTOR = 7;
-const PARTICLE_MAX_AGE = 100;
-const PARTICLE_LINE_WIDTH = 1;
-const FADE_FILL_STYLE = "rgba(0, 0, 0, 0.97)";
-const FPS = 25;
-const VELOCITY_SCALE = 1 / 60000;
+import { getProjector, type ProjectorState } from "../components/projection";
 
 type Particle = {
   x: number;
@@ -102,62 +84,78 @@ function createRandomPoints(
 }
 
 export type FlowAnimator = Animator & {
-  updateFields: (fields: {
-    ufld: PixelField;
-    vfld: PixelField;
-    mfld: PixelField;
-  }) => void;
+  updateFields: (fields: { ufld: PixelField; vfld: PixelField }) => void;
 };
 
-export function createFlowAnimator(props: FlowAnimatorProps): FlowAnimator {
+const PARTICLE_LINE_WIDTH = 1;
+const FADE_FILL_STYLE = "rgba(0, 0, 0, 0.97)";
+const FPS = 25;
+const VELOCITY_SCALE = 1 / 6000;
+
+type FlowAnimatorProps = {
+  readonly ufield: PixelField;
+  readonly vfield: PixelField;
+  readonly maxWind: number;
+  readonly colorScaleSteps?: number;
+  readonly particleCountFactor?: number;
+  readonly particleMaxAge?: number;
+  readonly fps?: number;
+};
+
+export function createFlowAnimator({
+  ufield,
+  vfield,
+  maxWind,
+  colorScaleSteps = 12,
+  particleCountFactor = 7,
+  particleMaxAge = 100,
+  fps = 25,
+}: FlowAnimatorProps): FlowAnimator {
   let rafId: number | null = null;
-  let lastFrameTime = 0;
+  let lastFrameTime: number | null = null;
   let ctxRef: CanvasRenderingContext2D | null = null;
+  let numFrames = 0;
+  let d1, d2, d3, d4;
 
   const log = logger.child({ component: "FlowAnimator" });
 
-  let { ufld, vfld, mfld } = props;
+  let ufld = ufield;
+  let vfld = vfield;
 
-  const particleMaxAge = props.maxAge || PARTICLE_MAX_AGE;
   const randomAge = randomInt(0, particleMaxAge);
-  const colorScale = windSpeedColorScale(
-    props.colorScaleSteps || COLOR_SCALE_STEPS,
-    props.maxWind,
-  );
+  const colorScale = windSpeedColorScale(colorScaleSteps, maxWind);
 
-  const particleCountFactor =
-    props.particleCountFactor || PARTICLE_COUNT_FACTOR;
-
-  const particleCount = Math.floor(
-    particleCountFactor * Math.max(...ufld.viewSize),
-  );
-
-  const frameInterval = 1000 / (props.fps || FPS);
-
-  const velocityScale = Math.max(...ufld.viewSize) * VELOCITY_SCALE;
+  const frameInterval = 1000 / fps;
 
   const particles: Particle[] = [];
   const buckets: Particle[][] = colorScale.colors.map(() => []);
+  let projector = getProjector(ufld.props.projectorState);
   let extent = extentNonNaN(ufld);
-  if (!extent) {
-    log.warn("No valid extent found");
-    return {
-      animate,
-      start,
-      stop,
-      updateFields,
-    };
-  }
-  let randomPos = createRandomPoints(extent);
-  for (let i = 0; i < particleCount; i++) {
-    particles.push(initParticle());
-  }
-  return {
+
+  const animator = {
     animate,
     start,
     stop,
+    destroy,
     updateFields,
   };
+
+  if (!extent) {
+    log.warn("No valid extent found");
+    return animator;
+  }
+  let randomPos = createRandomPoints(extent);
+  const extentWidth = extent[0][1] - extent[0][0];
+  const extentHeight = extent[1][1] - extent[1][0];
+  const extentScale = Math.sqrt(extentWidth * extentHeight);
+
+  const particleCount = Math.floor(particleCountFactor * extentScale);
+  const velocityScale = extentScale * VELOCITY_SCALE;
+
+  for (let i = 0; i < particleCount; i++) {
+    particles.push(initParticle());
+  }
+  return animator;
 
   function animate(htmlCanvas: HTMLCanvasElement) {
     stop();
@@ -174,7 +172,6 @@ export function createFlowAnimator(props: FlowAnimatorProps): FlowAnimator {
 
   function start() {
     if (rafId !== null) return;
-    lastFrameTime = performance.now();
     rafId = requestAnimationFrame(frame);
   }
 
@@ -184,32 +181,35 @@ export function createFlowAnimator(props: FlowAnimatorProps): FlowAnimator {
     rafId = null;
   }
 
-  function updateFields(fields: {
-    ufld: PixelField;
-    vfld: PixelField;
-    mfld: PixelField;
-  }) {
+  function destroy() {
+    stop();
+    particles.length = 0;
+    buckets.forEach((b) => (b.length = 0));
+  }
+
+  function updateFields(fields: { ufld: PixelField; vfld: PixelField }) {
     ufld = fields.ufld;
     vfld = fields.vfld;
-    mfld = fields.mfld;
 
     extent = extentNonNaN(ufld);
     if (!extent) {
       return;
     }
     randomPos = createRandomPoints(extent);
+    projector = getProjector(ufld.props.projectorState);
   }
 
   function frame(currentTime: number) {
     if (!ctxRef) return;
-
-    const deltaTime = currentTime - lastFrameTime;
-    if (deltaTime >= frameInterval) {
+    if (
+      lastFrameTime === null ||
+      currentTime - lastFrameTime >= frameInterval
+    ) {
       evolve();
       draw(ctxRef);
       lastFrameTime = currentTime;
+      numFrames++;
     }
-
     rafId = requestAnimationFrame(frame);
   }
 
@@ -221,18 +221,14 @@ export function createFlowAnimator(props: FlowAnimatorProps): FlowAnimator {
       if (particle.age > particleMaxAge) resetParticle(particle);
       const x: number = particle.x;
       const y: number = particle.y;
-      const v: [number, number, number] = [
-        ufld.get(x, y),
-        vfld.get(x, y),
-        mfld.get(x, y),
-      ];
+      const v: [number, number, number] = getWind(x, y);
 
       if (isNaN(v[2])) {
         particle.age = particleMaxAge;
       } else {
         const m = v[2];
-        const xt = x + v[0] * velocityScale;
-        const yt = y + v[1] * velocityScale;
+        const xt = x + v[0];
+        const yt = y + v[1];
         if (ufld.isDefined(xt, yt)) {
           // Path from (x,y) to (xt,yt) is visible, so add this particle to the appropriate draw bucket.
           particle.xt = xt;
@@ -268,6 +264,7 @@ export function createFlowAnimator(props: FlowAnimatorProps): FlowAnimator {
           particle.y = particle.yt;
         });
         g.stroke();
+        // debugger;
       }
     });
   }
@@ -290,5 +287,49 @@ export function createFlowAnimator(props: FlowAnimatorProps): FlowAnimator {
     }
     const age = randomAge();
     return { x: pos[0], y: pos[1], xt: pos[0], yt: pos[1], age: age };
+  }
+
+  function getWind(x: number, y: number): [number, number, number] {
+    const u = ufld.get(x, y);
+    const v = vfld.get(x, y);
+    const isNaN = Number.isNaN;
+    if (isNaN(u) || isNaN(v)) return [NaN, NaN, NaN];
+    if (anyNeighborIsNaN(x, y)) return [NaN, NaN, NaN];
+    const d = distortion(x, y);
+    const mag = Math.sqrt(u * u + v * v);
+    const uval = (d[0] * u + d[2] * v) * velocityScale;
+    const vval = (d[1] * u + d[3] * v) * velocityScale;
+    return [uval, vval, mag];
+  }
+
+  function anyNeighborIsNaN(x: number, y: number): boolean {
+    const isNaN = Number.isNaN;
+    return (
+      isNaN(ufld.get(x + 1, y)) ||
+      isNaN(ufld.get(x - 1, y)) ||
+      isNaN(ufld.get(x, y + 1)) ||
+      isNaN(ufld.get(x, y - 1)) ||
+      isNaN(ufld.get(x + 1, y + 1)) ||
+      isNaN(ufld.get(x + 1, y - 1)) ||
+      isNaN(ufld.get(x - 1, y + 1)) ||
+      isNaN(ufld.get(x - 1, y - 1))
+    );
+  }
+
+  function distortion(x: number, y: number): [number, number, number, number] {
+    const H = 0.000036;
+    const [lon, lat] = projector.invert([x, y])!;
+    const plon = projector.project([lon + H, lat])!;
+    const plat = projector.project([lon, lat + H])!;
+
+    // Meridian scale factor (see Snyder, equation 4-3), where R = 1. This handles issue where length of 1° λ
+    // changes depending on φ. Without this, there is a pinching effect at the poles.
+    const k = Math.cos((lat / 180) * Math.PI);
+
+    d1 = plon[0] - x;
+    d2 = plon[1] - y;
+    d3 = plat[0] - x;
+    d4 = plat[1] - y;
+    return [d1 / H / k, d2 / H / k, d3 / H, d4 / H];
   }
 }

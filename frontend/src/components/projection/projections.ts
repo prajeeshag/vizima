@@ -15,7 +15,7 @@ export type ProjectorState = {
 export class Projector {
   constructor(private _projection: d3.GeoProjection) {}
 
-  project([lat, lon]: [number, number]): [number, number] | null {
+  project([lon, lat]: [number, number]): [number, number] | null {
     return this._projection([lon, lat]);
   }
   invert([x, y]: [number, number]): [number, number] | null {

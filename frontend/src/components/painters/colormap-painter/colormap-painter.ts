@@ -1,13 +1,15 @@
-import { Painter } from "./painter";
-import type { PixelField } from "../pixel-field";
-import { logger } from "../../logger";
+import { Painter } from "../painter";
+import type { PixelField } from "../../pixel-field";
+import { logger } from "../../../logger";
 import * as d3 from "d3";
-import { createColorScale, type ColorScaleStatic } from "../../colorscale";
+import { createColorScale, type ColorScaleStatic } from "./colorscale";
 
 type ColorMapProps = {
   readonly pixelField: PixelField;
   readonly colorScale: ColorScaleStatic;
 };
+
+const ALPHA = 0.5;
 
 export class ColorMapPainter extends Painter<ColorMapProps> {
   private readonly logger = logger.child({ component: "ColorMapPainter" });
@@ -34,7 +36,7 @@ export class ColorMapPainter extends Painter<ColorMapProps> {
       rgba[pos] = r;
       rgba[pos + 1] = g;
       rgba[pos + 2] = b;
-      rgba[pos + 3] = 255;
+      rgba[pos + 3] = Math.round(255 * ALPHA);
     }
     ctx.putImageData(imgData, 0, 0);
   }

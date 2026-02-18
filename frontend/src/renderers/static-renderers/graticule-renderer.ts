@@ -3,7 +3,7 @@ import {
   createGraticulePainter,
   type GraticuleProp,
   GraticulePainter,
-} from "../components/painters";
+} from "../../components/painters";
 
 export type GraticuleRendererProps = GraticuleProp;
 

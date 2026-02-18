@@ -4,6 +4,7 @@ import type {
   Lambert,
   LonLat,
   Mercator,
+  Orthographic,
   Polar,
   ProjectionName,
 } from "./schemas";
@@ -155,20 +156,20 @@ class LonLatInit extends DataProjectionInit<LonLat> {
   }
 }
 
-class MercatorInit extends GlobalProjectionInit<Mercator> {
+class OrthographicInit extends GlobalProjectionInit<Orthographic> {
   override setConfig(): void {}
 }
 
 export function getProjectionInit(config: Projection): ProjectionInit<any> {
   switch (config.name) {
     case "Equirectangular":
-    case "Orthographic":
     case "EqualEarth":
+    case "Mercator":
       return new GlobalProjectionInit(config);
+    case "Orthographic":
+      return new OrthographicInit(config);
     case "LonLat":
       return new LonLatInit(config);
-    case "Mercator":
-      return new MercatorInit(config);
     case "Lambert":
       return new LambertInit(config);
     case "Polar":

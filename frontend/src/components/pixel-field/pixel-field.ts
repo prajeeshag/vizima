@@ -32,10 +32,12 @@ export class PixelField extends CachedResult<PixelProps, Float32Array> {
   }
 
   get(x: number, y: number): number {
-    if (x < 0 || x >= this.viewSize[0] || y < 0 || y >= this.viewSize[1]) {
+    const xr = Math.round(x);
+    const yr = Math.round(y);
+    if (xr < 0 || xr >= this.viewSize[0] || yr < 0 || yr >= this.viewSize[1]) {
       return NaN;
     }
-    const val = this.value[x + y * this.viewSize[0]];
+    const val = this.value[xr + yr * this.viewSize[0]];
     return val === undefined ? NaN : val;
   }
 

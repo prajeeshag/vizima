@@ -1,5 +1,8 @@
 /** @jsxImportSource solid-js */
-import { type ColorScaleStatic, createColorScale } from "../colorscale";
+import {
+  type ColorScaleStatic,
+  createColorScale,
+} from "../components/painters/colormap-painter";
 import * as d3 from "d3";
 import { styleRegistry } from "../styles";
 import {

@@ -3,7 +3,7 @@ import {
   type ColorScaleDynamic,
   type PaletteName,
   PALETTES,
-} from "../colorscale";
+} from "../components/painters/colormap-painter";
 import { createSignal, For, Show } from "solid-js";
 import { styleRegistry } from "../styles";
 import {

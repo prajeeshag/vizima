@@ -1,8 +1,7 @@
 import * as d3 from "d3-scale";
 import * as chromatic from "d3-scale-chromatic";
-import type { Grid } from "../components/grid-data";
-import type { PixelField } from "../components/pixel-field";
-import type { DataVarMeta } from "../components/dataset";
+import type { PixelField } from "../../pixel-field";
+import type { DataVarMeta } from "../../dataset";
 
 export const PALETTES = {
   // sequential
@@ -55,7 +54,6 @@ export type PaletteName = keyof typeof PALETTES;
 type PaletteKind<N extends PaletteName> = (typeof PALETTES)[N]["kind"];
 
 type DomainFnProps = {
-  grid: Grid;
   pixelField: PixelField;
   gridMeta: DataVarMeta;
 };

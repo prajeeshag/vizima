@@ -5,10 +5,9 @@ import {
   Projection,
   type ProjectorState,
 } from "../components/projection";
-import type { StaticRenderer } from "../static-renderers";
 import { createCanvas } from "../components/canvas-element";
 import { createRenderedCanvasAgent } from "../components/rendered-canvas";
-import type { AnimationRenderer } from "../animation-renderers/animation-renderer";
+import type { AnimationRenderer, StaticRenderer } from "../renderers";
 
 interface Layer {
   render: (e?: any) => Promise<void>;

@@ -10,8 +10,14 @@ export class PixelProvider extends CachingCompute<
   typeof pixelPropKeys
 > {}
 
-const pixelProvider = new PixelProvider(interpPixel, pixelPropKeys);
+export const createPixelProvider = (cacheSize: number = 1) => {
+  return new PixelProvider(interpPixel, pixelPropKeys, {
+    maxCacheSize: cacheSize,
+  });
+};
 
-export const createPixelAgent = () => {
+export const createPixelAgent = (pixelProvider?: PixelProvider | undefined) => {
+  pixelProvider =
+    pixelProvider || new PixelProvider(interpPixel, pixelPropKeys);
   return new PixelAgent(pixelProvider);
 };

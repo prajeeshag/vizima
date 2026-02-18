@@ -56,6 +56,7 @@ export type Lambert = z.infer<typeof Lambert>;
 export type LonLat = z.infer<typeof LonLat>;
 export type Mercator = z.infer<typeof Mercator>;
 export type Polar = z.infer<typeof Polar>;
+export type Orthographic = z.infer<typeof Orthographic>;
 
 export const GridProjection = z
   .discriminatedUnion("name", [LonLat, Mercator, Lambert, Polar])

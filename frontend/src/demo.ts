@@ -6,13 +6,13 @@ import {
   type LandRendererProps,
   type GraticuleRendererProps,
   type ColorMapRendererProps,
-} from "./static-renderers";
+} from "./renderers/static-renderers";
 import { MapView } from "./map-view/map-view";
 import {
   defineColorScale,
   type ColorScaleDynamic,
   type ColorScaleStatic,
-} from "./colorscale";
+} from "./components/painters/colormap-painter";
 import { styleRegistry } from "./styles";
 import type { ProjectorState, ViewProjection } from "./components/projection";
 import {
@@ -25,6 +25,10 @@ import {
 
 import { createStore, watchSelector, type Store } from "./state/store";
 import { createColorBar } from "./ui/colorbar";
+import {
+  createFlowRenderer,
+  type FlowRendererProps,
+} from "./renderers/animation-renderers";
 
 const landUrl = "/land-110m.json";
 
@@ -54,8 +58,7 @@ const initialColorScale: ColorScaleDynamic = defineColorScale({
   name: "Plasma",
   reverse: false,
   clamp: true,
-  domain: (props) => minmax(props.grid.value),
-  // domain: (props) => [210, 310],
+  domain: (props) => minmax(props.pixelField.value),
 });
 
 const initialProjection: ViewProjection = { name: "Orthographic" };
@@ -65,6 +68,10 @@ type GridSelection = { name: string; level: string };
 type ColorMapProps = {
   selection: GridSelection;
   colorScale: ColorScaleDynamic;
+};
+
+type FlowAnimationProps = {
+  selection: GridSelection;
 };
 
 type ColorBarProps = {
@@ -77,6 +84,7 @@ type AppState = {
   timeStep: number;
   projection: ViewProjection;
   colorMap: ColorMapProps;
+  flowAnimation: FlowAnimationProps;
   colorBar: ColorBarProps | null;
   playing: boolean;
   projectorState: ProjectorState | null;
@@ -89,6 +97,7 @@ type Action =
   | { type: "projection/changed"; projection: ViewProjection }
   | { type: "projectorState/changed"; projectorState: ProjectorState }
   | { type: "colormap/grid/changed"; selection: GridSelection }
+  | { type: "flowanimation/grid/changed"; selection: GridSelection }
   | { type: "colormap/colorscale/changed"; colorScale: ColorScaleDynamic }
   | { type: "colorbar/changed"; colorBar: ColorBarProps }
   | { type: "mapInteracting/changed"; mapInteracting: boolean };
@@ -130,17 +139,28 @@ function reducer(state: AppState, action: Action): AppState {
         ...state,
         mapInteracting: action.mapInteracting,
       };
+    case "flowanimation/grid/changed":
+      return {
+        ...state,
+        flowAnimation: { ...state.flowAnimation, selection: action.selection },
+      };
     default:
       return assertNever(action);
   }
 }
 
-const seedVarKey = "air";
-const seedVertAxis = dset.getVertAxis(seedVarKey);
+const cmVar = "air";
+const cmVertAxis = dset.getVertAxis(cmVar);
+const cmSelection: GridSelection = {
+  name: cmVar,
+  level: cmVertAxis?.[0] ?? "",
+};
 
-const seedSelection: GridSelection = {
-  name: seedVarKey,
-  level: seedVertAxis?.[0] ?? "",
+const flowVar = "wind";
+const flowVertAxis = dset.getVertAxis(flowVar);
+const flowSelection: GridSelection = {
+  name: flowVar,
+  level: flowVertAxis?.[0] ?? "",
 };
 
 const store = createStore<AppState, Action>({
@@ -151,7 +171,10 @@ const store = createStore<AppState, Action>({
     playing: false,
     colorMap: {
       colorScale: initialColorScale,
-      selection: seedSelection,
+      selection: cmSelection,
+    },
+    flowAnimation: {
+      selection: flowSelection,
     },
     colorBar: null,
     projectorState: null,
@@ -166,6 +189,10 @@ const viewSize: [number, number] = [800, 600];
 const view = new MapView(viewSize, mapdiv1);
 
 const onMapInteract = (e: ProjectorState) => {
+  store.dispatch({
+    type: "play/changed",
+    playing: false,
+  });
   store.dispatch({
     type: "mapInteracting/changed",
     mapInteracting: true,
@@ -264,10 +291,6 @@ function getColorMapRendererProps(): ColorMapRendererProps {
   };
 }
 
-const landRenderer = createLandRenderer({ getProps: getLandRendererProps });
-const graticuleRenderer = createGraticuleRenderer({
-  getProps: getGraticuleRendererProps,
-});
 const colorMapRenderer = createColorMapRenderer({
   getProps: getColorMapRendererProps,
   callback: (props) => {
@@ -281,6 +304,70 @@ const colorMapRenderer = createColorMapRenderer({
   },
 });
 
+const selectFlowAnimationState = (s: AppState) => ({
+  timeStep: s.timeStep,
+  flowAnimation: s.flowAnimation,
+  projectorState: s.projectorState,
+});
+
+function getFlowRendererProps(): FlowRendererProps {
+  const { projectorState, timeStep, flowAnimation } = selectFlowAnimationState(
+    store.getState(),
+  );
+  const { name: vKey, level } = flowAnimation.selection;
+  const gridMeta = dset.getVectorMeta(vKey)!;
+  const { uArrName, vArrName } = gridMeta;
+  const vertAxis = dset.getVertAxis(vKey);
+  const vertIndex = vertAxis ? vertAxis.indexOf(level) : undefined;
+  const uUrl = dset.getUrl(uArrName);
+  const vUrl = dset.getUrl(vArrName);
+  const uLatAxis = dset.getLatAxis(uArrName);
+  const uLonAxis = dset.getLonAxis(uArrName);
+  const vLatAxis = dset.getLatAxis(vArrName);
+  const vLonAxis = dset.getLonAxis(vArrName);
+  if (
+    !gridMeta ||
+    !uUrl ||
+    !vUrl ||
+    !uLatAxis ||
+    !uLonAxis ||
+    !vLatAxis ||
+    !vLonAxis ||
+    !projectorState
+  ) {
+    throw new Error("Missing required data for Flow rendering");
+  }
+  return {
+    u: {
+      url: uUrl,
+      latAxis: uLatAxis,
+      lonAxis: uLonAxis,
+    },
+    v: {
+      url: vUrl,
+      latAxis: vLatAxis,
+      lonAxis: vLonAxis,
+    },
+    projectorState,
+    viewSize,
+    gridProj: dset.getGridProj(),
+    timeIndex: timeStep,
+    vertIndex,
+    numTimeSteps: numTimes(),
+    gridMeta,
+    maxWind: () => 17,
+  };
+}
+const flowRenderer = createFlowRenderer({
+  getProps: getFlowRendererProps,
+});
+
+const landRenderer = createLandRenderer({ getProps: getLandRendererProps });
+const graticuleRenderer = createGraticuleRenderer({
+  getProps: getGraticuleRendererProps,
+});
+
+const flowLayer = view.addAnimationLayer(flowRenderer);
 const colorMapLayer = view.addLayer([colorMapRenderer]);
 const landGraticuleLayer = view.addLayer([landRenderer, graticuleRenderer]);
 
@@ -288,6 +375,13 @@ watchSelector(store, selectColorMapState, () => {
   const { playing, mapInteracting } = store.getState();
   if (!playing && !mapInteracting) {
     colorMapLayer.render();
+  }
+});
+
+watchSelector(store, selectFlowAnimationState, () => {
+  const { playing, mapInteracting } = store.getState();
+  if (!playing && !mapInteracting) {
+    flowLayer.render();
   }
 });
 
@@ -299,6 +393,7 @@ watchSelector(
   ({ mapInteracting }) => {
     if (mapInteracting) {
       colorMapLayer.hide();
+      flowLayer.hide();
     }
   },
 );
@@ -308,7 +403,7 @@ watchSelector(store, selectLandGraticuleState, () => {
 });
 
 function createTimeAnimationManager(
-  layers: { render: () => Promise<void> }[],
+  layers: { update: () => Promise<void> }[],
   numTimes: () => number,
   currentTime: () => number,
   updateTime: (time: number) => void,
@@ -345,7 +440,7 @@ function createTimeAnimationManager(
 
     updateTime(nextTime);
     store.dispatch({ type: "time/changed", timeStep: nextTime });
-    await Promise.all(layers.map((layer) => layer.render()));
+    await Promise.all(layers.map((layer) => layer.update()));
     if (!running) return;
     rafId = requestAnimationFrame(animate);
   };
@@ -371,7 +466,7 @@ function createTimeAnimationManager(
 }
 
 const timeAnimation = createTimeAnimationManager(
-  [colorMapLayer],
+  [colorMapLayer, flowLayer],
   numTimes,
   () => store.getState().timeStep,
   (time) => store.dispatch({ type: "time/changed", timeStep: time }),
@@ -428,10 +523,10 @@ const vecdiv = document.createElement("div");
 document.body.appendChild(vecdiv);
 createGridSelector(vecdiv, {
   varset: { vars: dset.vectorVars(), verticals: dset.verticals() },
-  value: () => store.getState().colorMap.selection,
+  value: () => store.getState().flowAnimation.selection,
   subscribe: subscribeBridge,
   onChange: (selection) =>
-    store.dispatch({ type: "colormap/grid/changed", selection }),
+    store.dispatch({ type: "flowanimation/grid/changed", selection }),
 });
 
 const csdiv = document.createElement("div");

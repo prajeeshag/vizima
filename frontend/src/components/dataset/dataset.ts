@@ -32,14 +32,18 @@ export class Dataset extends CachedResult<DatasetConfig, DatasetMeta> {
   }
 
   getVertAxis(vname: string): VertAxis | undefined {
-    const attr = this.value.datavars[vname];
+    const attr = this.value.datavars[vname] ?? this.value.vectors[vname];
     if (!attr) return undefined;
     const vertAxis = this.value.verticals[attr.vertical];
     return vertAxis;
   }
 
-  getTimeAxis(vname: string): TimeAxis | undefined {
-    const attr = this.value.datavars[vname];
+  getTimeAxis(vname: string | undefined): TimeAxis | undefined {
+    if (!vname) {
+      const values = Object.values(this.value.times);
+      return values[0];
+    }
+    const attr = this.value.datavars[vname] ?? this.value.vectors[vname];
     if (!attr) return undefined;
     const timeAxis = this.value.times[attr.time];
     return timeAxis;
