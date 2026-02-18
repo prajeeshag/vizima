@@ -89,7 +89,6 @@ export type FlowAnimator = Animator & {
 
 const PARTICLE_LINE_WIDTH = 1;
 const FADE_FILL_STYLE = "rgba(0, 0, 0, 0.97)";
-const FPS = 25;
 const VELOCITY_SCALE = 1 / 6000;
 
 type FlowAnimatorProps = {
@@ -108,7 +107,7 @@ export function createFlowAnimator({
   maxWind,
   colorScaleSteps = 12,
   particleCountFactor = 7,
-  particleMaxAge = 100,
+  particleMaxAge = 120,
   fps = 25,
 }: FlowAnimatorProps): FlowAnimator {
   let rafId: number | null = null;
@@ -275,7 +274,7 @@ export function createFlowAnimator({
     particle.y = p.y;
     particle.xt = p.xt;
     particle.yt = p.yt;
-    particle.age = 0;
+    particle.age = p.age;
   }
 
   function initParticle(): Particle {
