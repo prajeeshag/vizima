@@ -8,11 +8,13 @@ import {
 import type { StaticRenderer } from "../static-renderers";
 import { createCanvas } from "../components/canvas-element";
 import { createRenderedCanvasAgent } from "../components/rendered-canvas";
+import type { AnimationRenderer } from "../animation-renderers/animation-renderer";
 
 interface Layer {
-  render: () => Promise<void>;
+  render: (e?: any) => Promise<void>;
   show: () => void;
   hide: () => void;
+  update: () => Promise<void>;
 }
 
 const className = "vizima-mapview-canvas-stack";
@@ -73,25 +75,53 @@ export class MapView {
     const canvasElement = createCanvas();
     this.div.appendChild(canvasElement.value);
     const canvasRendererAgent = createRenderedCanvasAgent();
+    const render = async ({ show }: { show: boolean } = { show: true }) => {
+      const painters = await Promise.all(
+        renderers.map((renderer) => renderer()),
+      );
+      await canvasRendererAgent.get({
+        painters,
+        canvas: canvasElement,
+        viewSize: this.viewSize,
+      });
+      if (show) {
+        canvasElement.show();
+      }
+    };
     return {
-      render: async ({ show }: { show: boolean } = { show: true }) => {
-        const painters = await Promise.all(
-          renderers.map((renderer) => renderer()),
-        );
-        await canvasRendererAgent.get({
-          painters,
-          canvas: canvasElement,
-          viewSize: this.viewSize,
-        });
-        if (show) {
-          canvasElement.show();
-        }
-      },
+      render: render,
       show: () => {
         canvasElement.show();
       },
       hide: () => {
         canvasElement.hide();
+      },
+      update: async () => {
+        await render();
+      },
+    };
+  }
+
+  addAnimationLayer(renderer: AnimationRenderer): Layer {
+    const canvasElement = createCanvas();
+    this.div.appendChild(canvasElement.value);
+    return {
+      render: async ({ show }: { show: boolean } = { show: true }) => {
+        await renderer.render(canvasElement.value);
+        if (show) {
+          canvasElement.show();
+        }
+      },
+      show: () => {
+        renderer.start();
+        canvasElement.show();
+      },
+      hide: () => {
+        renderer.stop();
+        canvasElement.hide();
+      },
+      update: async () => {
+        await renderer.update();
       },
     };
   }

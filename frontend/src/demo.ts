@@ -60,7 +60,7 @@ const initialColorScale: ColorScaleDynamic = defineColorScale({
 
 const initialProjection: ViewProjection = { name: "Orthographic" };
 
-type GridSelection = { varKey: string; level: string };
+type GridSelection = { name: string; level: string };
 
 type ColorMapProps = {
   selection: GridSelection;
@@ -139,7 +139,7 @@ const seedVarKey = "air";
 const seedVertAxis = dset.getVertAxis(seedVarKey);
 
 const seedSelection: GridSelection = {
-  varKey: seedVarKey,
+  name: seedVarKey,
   level: seedVertAxis?.[0] ?? "",
 };
 
@@ -239,7 +239,7 @@ function getColorMapRendererProps(): ColorMapRendererProps {
   const { colorMap, projectorState, timeStep } = selectColorMapState(
     store.getState(),
   );
-  const { varKey, level } = colorMap.selection;
+  const { name: varKey, level } = colorMap.selection;
   const vertAxis = dset.getVertAxis(varKey);
   const vertIndex = vertAxis ? vertAxis.indexOf(level) : undefined;
   const url = dset.getUrl(varKey);
@@ -417,7 +417,17 @@ createProjectionSelector(projdiv, {
 const contdiv = document.createElement("div");
 document.body.appendChild(contdiv);
 createGridSelector(contdiv, {
-  dataset: dset,
+  varset: { vars: dset.dataVars(), verticals: dset.verticals() },
+  value: () => store.getState().colorMap.selection,
+  subscribe: subscribeBridge,
+  onChange: (selection) =>
+    store.dispatch({ type: "colormap/grid/changed", selection }),
+});
+
+const vecdiv = document.createElement("div");
+document.body.appendChild(vecdiv);
+createGridSelector(vecdiv, {
+  varset: { vars: dset.vectorVars(), verticals: dset.verticals() },
   value: () => store.getState().colorMap.selection,
   subscribe: subscribeBridge,
   onChange: (selection) =>

@@ -35,14 +35,14 @@ const Var = z.strictObject({
   units: z.string(),
   long_name: z.string(),
   standard_name: z.string(),
+  vertical: z.string(),
+  time: z.string(),
 });
 
 export const DataVarMeta = Var.extend({
   arrName: z.string(),
   lon: z.string(),
   lat: z.string(),
-  vertical: z.string(),
-  time: z.string(),
 }).meta({ title: "DataVar" });
 
 export const VectorVarMeta = Var.extend({

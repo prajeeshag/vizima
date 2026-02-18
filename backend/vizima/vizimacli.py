@@ -85,7 +85,7 @@ def handle_lons(ds: xr.Dataset) -> dict[str, LonAxis]:
         coord = ds[name]
         match coord.values.ndim:
             case 1:
-                axis[coord.name] = LonAxis(
+                axis[str(coord.name)] = LonAxis(
                     corners=LonCorners(
                         lb=coord.values[0],
                         rb=coord.values[-1],
@@ -95,7 +95,7 @@ def handle_lons(ds: xr.Dataset) -> dict[str, LonAxis]:
                     count=len(coord.values),
                 )
             case 2:
-                axis[coord.name] = LonAxis(
+                axis[str(coord.name)] = LonAxis(
                     corners=LonCorners(
                         lb=coord.values[0, 0],
                         rb=coord.values[0, -1],
@@ -118,7 +118,7 @@ def handle_lats(ds: xr.Dataset) -> dict[str, LatAxis]:
         coord = ds[name]
         match coord.values.ndim:
             case 1:
-                axis[coord.name] = LatAxis(
+                axis[str(coord.name)] = LatAxis(
                     corners=LatCorners(
                         lb=coord.values[0],
                         rb=coord.values[0],
@@ -128,7 +128,7 @@ def handle_lats(ds: xr.Dataset) -> dict[str, LatAxis]:
                     count=len(coord.values),
                 )
             case 2:
-                axis[coord.name] = LatAxis(
+                axis[str(coord.name)] = LatAxis(
                     corners=LatCorners(
                         lb=coord.values[0, 0],
                         rb=coord.values[0, -1],
@@ -262,6 +262,8 @@ def handle_vectors(
                 units=units,
                 long_name=long_name,
                 standard_name=standard_name,
+                vertical=levelv1,
+                time=timev1,
             )
     return vectors
 

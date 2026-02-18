@@ -157,6 +157,12 @@
           "standard_name": {
             "type": "string"
           },
+          "vertical": {
+            "type": "string"
+          },
+          "time": {
+            "type": "string"
+          },
           "arrName": {
             "type": "string"
           },
@@ -165,23 +171,17 @@
           },
           "lat": {
             "type": "string"
-          },
-          "vertical": {
-            "type": "string"
-          },
-          "time": {
-            "type": "string"
           }
         },
         "required": [
           "units",
           "long_name",
           "standard_name",
+          "vertical",
+          "time",
           "arrName",
           "lon",
-          "lat",
-          "vertical",
-          "time"
+          "lat"
         ],
         "additionalProperties": false,
         "title": "DataVar"
@@ -204,6 +204,12 @@
           "standard_name": {
             "type": "string"
           },
+          "vertical": {
+            "type": "string"
+          },
+          "time": {
+            "type": "string"
+          },
           "uArrName": {
             "type": "string"
           },
@@ -215,6 +221,8 @@
           "units",
           "long_name",
           "standard_name",
+          "vertical",
+          "time",
           "uArrName",
           "vArrName"
         ],

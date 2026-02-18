@@ -1,0 +1,294 @@
+import type { PixelField } from "../components/pixel-field";
+import { logger } from "../logger";
+import { randomInt } from "d3-random";
+import type { Animator } from "./animator";
+
+type FlowAnimatorProps = {
+  readonly ufld: PixelField;
+  readonly vfld: PixelField;
+  readonly mfld: PixelField;
+  readonly maxWind: number;
+  readonly colorScaleSteps?: number;
+  readonly particleCountFactor?: number;
+  readonly maxAge?: number;
+  readonly fps?: number;
+};
+
+const COLOR_SCALE_STEPS = 10;
+const PARTICLE_COUNT_FACTOR = 7;
+const PARTICLE_MAX_AGE = 100;
+const PARTICLE_LINE_WIDTH = 1;
+const FADE_FILL_STYLE = "rgba(0, 0, 0, 0.97)";
+const FPS = 25;
+const VELOCITY_SCALE = 1 / 60000;
+
+type Particle = {
+  x: number;
+  y: number;
+  xt: number;
+  yt: number;
+  age: number;
+};
+
+type IntensityColorScale = {
+  colors: string[];
+  indexFor(magnitude: number): number;
+};
+
+function asRGB(r: number, g: number, b: number, a: number): string {
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+function windSpeedColorScale(
+  step: number,
+  maxWind: number,
+): IntensityColorScale {
+  const colors: string[] = [];
+
+  for (var j = 85; j <= 255; j += step) {
+    colors.push(asRGB(j, j, j, 1.0));
+  }
+
+  const indexFor = (m: number) => {
+    return Math.floor((Math.min(m, maxWind) / maxWind) * (colors.length - 1));
+  };
+
+  return {
+    colors,
+    indexFor,
+  };
+}
+
+export function extentNonNaN(
+  fld: PixelField,
+): [[number, number], [number, number]] | null {
+  const [nx, ny] = fld.viewSize;
+  const data = fld.value;
+
+  let x0 = nx,
+    x1 = -1;
+  let y0 = ny,
+    y1 = -1;
+
+  for (let y = 0; y < ny; y++) {
+    const rowOffset = y * nx;
+    for (let x = 0; x < nx; x++) {
+      const v = data[rowOffset + x];
+      if (!Number.isNaN(v)) {
+        if (x < x0) x0 = x;
+        if (x > x1) x1 = x;
+        if (y < y0) y0 = y;
+        if (y > y1) y1 = y;
+      }
+    }
+  }
+
+  return x1 === -1
+    ? null
+    : [
+        [x0, x1],
+        [y0, y1],
+      ];
+}
+
+function createRandomPoints(
+  extent: [[number, number], [number, number]],
+): () => [number, number] {
+  const [xMin, xMax] = extent[0];
+  const [yMin, yMax] = extent[1];
+  const xgen = randomInt(xMin, xMax + 1);
+  const ygen = randomInt(yMin, yMax + 1);
+  return () => [xgen(), ygen()];
+}
+
+export type FlowAnimator = Animator & {
+  updateFields: (fields: {
+    ufld: PixelField;
+    vfld: PixelField;
+    mfld: PixelField;
+  }) => void;
+};
+
+export function createFlowAnimator(props: FlowAnimatorProps): FlowAnimator {
+  let rafId: number | null = null;
+  let lastFrameTime = 0;
+  let ctxRef: CanvasRenderingContext2D | null = null;
+
+  const log = logger.child({ component: "FlowAnimator" });
+
+  let { ufld, vfld, mfld } = props;
+
+  const particleMaxAge = props.maxAge || PARTICLE_MAX_AGE;
+  const randomAge = randomInt(0, particleMaxAge);
+  const colorScale = windSpeedColorScale(
+    props.colorScaleSteps || COLOR_SCALE_STEPS,
+    props.maxWind,
+  );
+
+  const particleCountFactor =
+    props.particleCountFactor || PARTICLE_COUNT_FACTOR;
+
+  const particleCount = Math.floor(
+    particleCountFactor * Math.max(...ufld.viewSize),
+  );
+
+  const frameInterval = 1000 / (props.fps || FPS);
+
+  const velocityScale = Math.max(...ufld.viewSize) * VELOCITY_SCALE;
+
+  const particles: Particle[] = [];
+  const buckets: Particle[][] = colorScale.colors.map(() => []);
+  let extent = extentNonNaN(ufld);
+  if (!extent) {
+    log.warn("No valid extent found");
+    return {
+      animate,
+      start,
+      stop,
+      updateFields,
+    };
+  }
+  let randomPos = createRandomPoints(extent);
+  for (let i = 0; i < particleCount; i++) {
+    particles.push(initParticle());
+  }
+  return {
+    animate,
+    start,
+    stop,
+    updateFields,
+  };
+
+  function animate(htmlCanvas: HTMLCanvasElement) {
+    stop();
+    htmlCanvas.width = ufld.viewSize[0];
+    htmlCanvas.height = ufld.viewSize[1];
+    ctxRef = htmlCanvas.getContext("2d");
+    if (!ctxRef) {
+      log.warn("Failed to get canvas context");
+      return;
+    }
+    ctxRef.clearRect(0, 0, htmlCanvas.width, htmlCanvas.height);
+    start();
+  }
+
+  function start() {
+    if (rafId !== null) return;
+    lastFrameTime = performance.now();
+    rafId = requestAnimationFrame(frame);
+  }
+
+  function stop() {
+    if (rafId === null) return;
+    cancelAnimationFrame(rafId);
+    rafId = null;
+  }
+
+  function updateFields(fields: {
+    ufld: PixelField;
+    vfld: PixelField;
+    mfld: PixelField;
+  }) {
+    ufld = fields.ufld;
+    vfld = fields.vfld;
+    mfld = fields.mfld;
+
+    extent = extentNonNaN(ufld);
+    if (!extent) {
+      return;
+    }
+    randomPos = createRandomPoints(extent);
+  }
+
+  function frame(currentTime: number) {
+    if (!ctxRef) return;
+
+    const deltaTime = currentTime - lastFrameTime;
+    if (deltaTime >= frameInterval) {
+      evolve();
+      draw(ctxRef);
+      lastFrameTime = currentTime;
+    }
+
+    rafId = requestAnimationFrame(frame);
+  }
+
+  function evolve() {
+    buckets.forEach(function (bucket) {
+      bucket.length = 0;
+    });
+    particles.forEach((particle) => {
+      if (particle.age > particleMaxAge) resetParticle(particle);
+      const x: number = particle.x;
+      const y: number = particle.y;
+      const v: [number, number, number] = [
+        ufld.get(x, y),
+        vfld.get(x, y),
+        mfld.get(x, y),
+      ];
+
+      if (isNaN(v[2])) {
+        particle.age = particleMaxAge;
+      } else {
+        const m = v[2];
+        const xt = x + v[0] * velocityScale;
+        const yt = y + v[1] * velocityScale;
+        if (ufld.isDefined(xt, yt)) {
+          // Path from (x,y) to (xt,yt) is visible, so add this particle to the appropriate draw bucket.
+          particle.xt = xt;
+          particle.yt = yt;
+          buckets[colorScale.indexFor(m)]!.push(particle);
+        } else {
+          // Particle isn't visible, will get reinitialized in the next frame.
+          particle.x = xt;
+          particle.y = yt;
+        }
+      }
+      particle.age++;
+    });
+  }
+
+  function draw(g: CanvasRenderingContext2D) {
+    // Fade existing particle trails.
+    g.lineWidth = PARTICLE_LINE_WIDTH;
+    g.fillStyle = FADE_FILL_STYLE;
+    const prev = g.globalCompositeOperation;
+    g.globalCompositeOperation = "destination-in";
+    g.fillRect(0, 0, ufld.viewSize[0], ufld.viewSize[1]);
+    g.globalCompositeOperation = prev;
+
+    buckets.forEach((bucket, i) => {
+      if (bucket.length > 0) {
+        g.beginPath();
+        g.strokeStyle = colorScale.colors[i]!;
+        bucket.forEach(function (particle) {
+          g.moveTo(particle.x, particle.y);
+          g.lineTo(particle.xt, particle.yt);
+          particle.x = particle.xt;
+          particle.y = particle.yt;
+        });
+        g.stroke();
+      }
+    });
+  }
+
+  function resetParticle(particle: Particle) {
+    const p = initParticle();
+    particle.x = p.x;
+    particle.y = p.y;
+    particle.xt = p.xt;
+    particle.yt = p.yt;
+    particle.age = 0;
+  }
+
+  function initParticle(): Particle {
+    const pos = randomPos();
+    const maxIter = 10;
+    for (let iter = 0; iter < maxIter; iter++) {
+      if (ufld.isDefined(pos[0], pos[1])) break;
+      [pos[0], pos[1]] = randomPos();
+    }
+    const age = randomAge();
+    return { x: pos[0], y: pos[1], xt: pos[0], yt: pos[1], age: age };
+  }
+}

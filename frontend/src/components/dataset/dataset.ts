@@ -63,4 +63,16 @@ export class Dataset extends CachedResult<DatasetConfig, DatasetMeta> {
   getVectorMeta(vname: string): VectorVarMeta | undefined {
     return this.value.vectors[vname];
   }
+
+  dataVars(): Record<string, DataVarMeta> {
+    return this.value.datavars;
+  }
+
+  vectorVars(): Record<string, VectorVarMeta> {
+    return this.value.vectors;
+  }
+
+  verticals(): Record<string, VertAxis> {
+    return this.value.verticals;
+  }
 }

@@ -1,22 +1,23 @@
 /** @jsxImportSource solid-js */
 import { createMemo, For, Show } from "solid-js";
-import { Dataset } from "../components/dataset";
 import { styleRegistry } from "../styles";
 import {
   mountController,
   type ExternalSubscribe,
 } from "./_internal/mount-controller";
 
-interface Selection {
-  varKey: string;
+interface Grid {
+  name: string;
   level: string;
 }
 
+type Vars = Record<string, { vertical: string }>;
+type VarSet = { vars: Vars; verticals: Record<string, string[]> };
+
 interface RenderOptions {
-  dataset: Dataset;
-  /** Controlled selection (required). Must be valid for the given dataset. */
-  value: () => Selection;
-  onChange?: (selection: Selection) => void;
+  varset: VarSet;
+  value: () => Grid;
+  onChange?: (selection: Grid) => void;
 }
 
 function firstOrEmpty(list: readonly string[]): string {
@@ -24,47 +25,34 @@ function firstOrEmpty(list: readonly string[]): string {
 }
 
 export const GridSelector = (props: RenderOptions) => {
-  const ds = () => props.dataset;
+  const ds = () => props.varset;
 
   const selection = createMemo(() => props.value());
 
   const currentVar = createMemo(() => {
-    const key = selection().varKey;
+    const key = selection().name;
     const data = ds();
-    return key && data ? data.value.datavars[key] : undefined;
+    return key && data ? data.vars[key] : undefined;
   });
 
   const availableLevels = createMemo<string[]>(() => {
     const vKey = currentVar()?.vertical;
+    if (!vKey) return [];
     const data = ds();
-    if (!data || !vKey) return [];
-    return data.value.verticals[vKey] ?? [];
+    const verticals = data.verticals[vKey];
+    return verticals ?? [];
   });
 
-  const availableTimes = createMemo<string[]>(() => {
-    const tKey = currentVar()?.time;
-    const data = ds();
-    if (!data || !tKey) return [];
-    return data.value.times[tKey] ?? [];
-  });
-
-  const commit = (patch: Partial<Selection>) => {
+  const commit = (patch: Partial<Grid>) => {
     const base = selection();
-    const next: Selection = { ...base, ...patch };
+    const next: Grid = { ...base, ...patch };
 
-    // If var changes, reset dependent fields to first available option (if any).
-    if (patch.varKey !== undefined && patch.varKey !== base.varKey) {
+    if (patch.name !== undefined && patch.name !== base.name) {
       const data = ds();
-      const dv = data?.value.datavars[next.varKey];
-
-      const levels = dv?.vertical
-        ? (data?.value.verticals[dv.vertical] ?? [])
-        : [];
-      const times = dv?.time ? (data?.value.times[dv.time] ?? []) : [];
-
+      const dv = data.vars[next.name];
+      const levels = dv?.vertical ? (data.verticals[dv.vertical] ?? []) : [];
       next.level = firstOrEmpty(levels);
     }
-
     props.onChange?.(next);
   };
 
@@ -78,11 +66,11 @@ export const GridSelector = (props: RenderOptions) => {
       >
         <select
           class="vizima-grid-selector__select"
-          value={selection().varKey}
-          onChange={(e) => commit({ varKey: e.currentTarget.value })}
+          value={selection().name}
+          onChange={(e) => commit({ name: e.currentTarget.value })}
         >
           <option value="">Select Variable</option>
-          <For each={Object.keys(ds()!.value.datavars)}>
+          <For each={Object.keys(ds()!.vars)}>
             {(key) => <option value={key}>{key}</option>}
           </For>
         </select>
@@ -113,7 +101,7 @@ export function createGridSelector(
   styleRegistry.register("grid-selector", styles);
 
   return mountController(container, options, ({ value, onChange }) => (
-    <GridSelector dataset={options.dataset} value={value} onChange={onChange} />
+    <GridSelector varset={options.varset} value={value} onChange={onChange} />
   ));
 }
 
