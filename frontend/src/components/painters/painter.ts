@@ -6,8 +6,5 @@ export abstract class Painter<Props extends PainterProps> extends CachedResult<
   Props,
   null
 > {
-  abstract draw(
-    context: CanvasRenderingContext2D,
-    signal?: AbortSignal,
-  ): Promise<void>;
+  abstract draw(canvas: HTMLCanvasElement, signal?: AbortSignal): Promise<void>;
 }

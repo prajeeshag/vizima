@@ -117,9 +117,6 @@ export function createFlowRenderer(kwds: Expand<Props>): AnimationRenderer {
     flowAnimator = createFlowAnimator({
       ufield: uField,
       vfield: vField,
-      maxWind: props.maxWind({
-        gridMeta: props.gridMeta,
-      }),
     });
     flowAnimator.animate(canvas);
   }

@@ -57,8 +57,12 @@ function minmaxManual(array: Float32Array): [number, number] {
 const initialColorScale: ColorScaleDynamic = defineColorScale({
   name: "Plasma",
   reverse: false,
-  clamp: true,
-  domain: (props) => minmax(props.pixelField.value),
+  clamp: false,
+  domain: (props) => {
+    const range = props.pixelField.value.range;
+    return [range[0], range[1]];
+  },
+  // domain: (props) => [290, 310],
 });
 
 const initialProjection: ViewProjection = { name: "Orthographic" };

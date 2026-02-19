@@ -27,7 +27,7 @@ function windSpeedColorScale(
 ): IntensityColorScale {
   const colors: string[] = [];
 
-  for (var j = 85; j <= 255; j += step) {
+  for (var j = 45; j <= 255; j += step) {
     colors.push(asRGB(j, j, j, 1.0));
   }
 
@@ -55,7 +55,7 @@ export function extentNonNaN(
   for (let y = 0; y < ny; y++) {
     const rowOffset = y * nx;
     for (let x = 0; x < nx; x++) {
-      const v = data[rowOffset + x];
+      const v = data.array[rowOffset + x];
       if (!Number.isNaN(v)) {
         if (x < x0) x0 = x;
         if (x > x1) x1 = x;
@@ -89,12 +89,11 @@ export type FlowAnimator = Animator & {
 
 const PARTICLE_LINE_WIDTH = 1;
 const FADE_FILL_STYLE = "rgba(0, 0, 0, 0.97)";
-const VELOCITY_SCALE = 1 / 6000;
+const VELOCITY_SCALE = 1 / 16000;
 
 type FlowAnimatorProps = {
   readonly ufield: PixelField;
   readonly vfield: PixelField;
-  readonly maxWind: number;
   readonly colorScaleSteps?: number;
   readonly particleCountFactor?: number;
   readonly particleMaxAge?: number;
@@ -104,9 +103,8 @@ type FlowAnimatorProps = {
 export function createFlowAnimator({
   ufield,
   vfield,
-  maxWind,
-  colorScaleSteps = 12,
-  particleCountFactor = 7,
+  colorScaleSteps = 5,
+  particleCountFactor = 6,
   particleMaxAge = 120,
   fps = 25,
 }: FlowAnimatorProps): FlowAnimator {
@@ -120,8 +118,17 @@ export function createFlowAnimator({
   let ufld = ufield;
   let vfld = vfield;
 
+  let maxWind = -Infinity;
+  for (let i = 0; i < ufld.value.array.length; i++) {
+    const u = ufld.value.array[i]!;
+    const v = vfld.value.array[i]!;
+    if (Number.isNaN(u) || Number.isNaN(v)) continue;
+    const speed = Math.sqrt(u * u + v * v);
+    if (speed > maxWind) maxWind = speed;
+  }
+
   const randomAge = randomInt(0, particleMaxAge);
-  const colorScale = windSpeedColorScale(colorScaleSteps, maxWind);
+  const colorScale = windSpeedColorScale(colorScaleSteps, Math.floor(maxWind));
 
   const frameInterval = 1000 / fps;
 

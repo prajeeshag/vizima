@@ -22,7 +22,7 @@ export const pixelPropKeys = [
   "latAxis",
 ] as const;
 
-export class PixelField extends CachedResult<PixelProps, Float32Array> {
+export class PixelField extends CachedResult<PixelProps, PixelFieldValue> {
   get viewSize(): [number, number] {
     return this.props.viewSize;
   }
@@ -37,17 +37,20 @@ export class PixelField extends CachedResult<PixelProps, Float32Array> {
     if (xr < 0 || xr >= this.viewSize[0] || yr < 0 || yr >= this.viewSize[1]) {
       return NaN;
     }
-    const val = this.value[xr + yr * this.viewSize[0]];
+    const val = this.value.array[xr + yr * this.viewSize[0]];
     return val === undefined ? NaN : val;
   }
 
   min(): number {
-    const val = d3.min(this.value);
-    return val === undefined ? NaN : val;
+    return this.value.range[0];
   }
 
   max(): number {
-    const val = d3.max(this.value);
-    return val === undefined ? NaN : val;
+    return this.value.range[0];
   }
 }
+
+type PixelFieldValue = {
+  array: Float32Array;
+  range: readonly [number, number];
+};

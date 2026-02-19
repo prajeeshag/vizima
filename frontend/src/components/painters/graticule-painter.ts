@@ -10,14 +10,15 @@ export type GraticuleProp = {
 const defaultStrokeStyle: string = "rgba(255, 255, 255, 0.1)";
 
 export class GraticulePainter extends Painter<GraticuleProp> {
-  async draw(context: CanvasRenderingContext2D, signal?: AbortSignal) {
+  async draw(canvas: HTMLCanvasElement, signal?: AbortSignal) {
+    const ctx = canvas.getContext("2d")!;
     const proj = getProjector(this.props.projectorState);
-    context.beginPath();
+    ctx.beginPath();
     const graticule = geoGraticule();
     const strokeStyle = this.props.strokeStyle || defaultStrokeStyle;
-    proj.geoPath(context)(graticule());
-    context.strokeStyle = strokeStyle;
-    context.stroke();
+    proj.geoPath(ctx)(graticule());
+    ctx.strokeStyle = strokeStyle;
+    ctx.stroke();
   }
 }
 

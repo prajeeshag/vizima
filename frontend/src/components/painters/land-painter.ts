@@ -11,19 +11,16 @@ export type LandProps = {
 };
 
 export class LandPainter extends Painter<LandProps> {
-  async draw(
-    context: CanvasRenderingContext2D,
-    signal?: AbortSignal,
-  ): Promise<void> {
+  async draw(canvas: HTMLCanvasElement, signal?: AbortSignal): Promise<void> {
+    const ctx = canvas.getContext("2d")!;
     const topoJson = this.props.landJson.value;
-    // const land = feature(topoJson, topoJson.objects.land);
     const land = mesh(topoJson, topoJson.objects.land);
-    context.beginPath();
-    context.strokeStyle = this.props.strokeStyle || "#f7faf8ff";
-    context.lineWidth = this.props.lineWidth || 1;
+    ctx.beginPath();
+    ctx.strokeStyle = this.props.strokeStyle || "#f7faf8ff";
+    ctx.lineWidth = this.props.lineWidth || 1;
     const proj = getProjector(this.props.projectorState);
-    proj.geoPath(context)(land);
-    context.stroke();
+    proj.geoPath(ctx)(land);
+    ctx.stroke();
   }
 }
 

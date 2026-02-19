@@ -30,9 +30,16 @@ export function tInterpolatePixelField(
     t: p0.props.grid.props.t! + alpha,
   };
   const props = { ...p0.props, grid: new Grid(gridProps, new Float32Array(1)) };
-  const value = new Float32Array(p0.value.length);
-  for (let i = 0; i < value.length; i++) {
-    value[i] = p0.value[i]! * w0 + p1.value[i]! * w1;
+  const array = new Float32Array(p0.value.array.length);
+  let min = Infinity;
+  let max = -Infinity;
+  for (let i = 0; i < array.length; i++) {
+    const v = p0.value.array[i]! * w0 + p1.value.array[i]! * w1;
+    array[i] = v;
+    if (!Number.isNaN(v)) {
+      min = Math.min(min, v);
+      max = Math.max(max, v);
+    }
   }
-  return new PixelField(props, value);
+  return new PixelField(props, { array, range: [min, max] });
 }

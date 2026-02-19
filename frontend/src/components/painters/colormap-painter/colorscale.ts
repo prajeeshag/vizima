@@ -2,6 +2,7 @@ import * as d3 from "d3-scale";
 import * as chromatic from "d3-scale-chromatic";
 import type { PixelField } from "../../pixel-field";
 import type { DataVarMeta } from "../../dataset";
+import type { Expand } from "../../../type-helpers";
 
 export const PALETTES = {
   // sequential
@@ -78,9 +79,11 @@ export type ColorScaleDynamic<N extends PaletteName = PaletteName> =
     domain: DomainFnForKind<PaletteKind<N>>;
   };
 
-export type ColorScaleStatic = ColorScaleBase & {
-  domain: number[];
-};
+export type ColorScaleStatic = Expand<
+  ColorScaleBase & {
+    domain: number[];
+  }
+>;
 
 export function defineColorScale<N extends PaletteName>(
   spec: ColorScaleDynamic<N>,

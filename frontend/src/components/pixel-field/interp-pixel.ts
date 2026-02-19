@@ -31,6 +31,8 @@ export async function interpPixelProjected(
 
   const grid = props.grid;
   const pixelFieldArray = new Float32Array(width * height);
+  let min = Infinity;
+  let max = -Infinity;
 
   let lastYieldTime = performance.now();
 
@@ -48,8 +50,9 @@ export async function interpPixelProjected(
         isPreriodicLonAxis(props.lonAxis),
       );
       pixelFieldArray[y * width + x] = value;
-      if (value === 0) {
-        logger.warn(`Pixel at (${x}, ${y}) has value 0.`);
+      if (!Number.isNaN(value)) {
+        min = Math.min(min, value);
+        max = Math.max(max, value);
       }
     }
 
@@ -58,7 +61,7 @@ export async function interpPixelProjected(
       lastYieldTime = performance.now();
     }
   }
-  return new PixelField(props, pixelFieldArray);
+  return new PixelField(props, { array: pixelFieldArray, range: [min, max] });
 
   function getGridIndex(pixelPoint: [number, number]): [number, number] {
     const coord: [number, number] | null = proj.invert(pixelPoint);
@@ -129,13 +132,18 @@ export async function interpPixelNative(
   const pixelFieldArray = new Float32Array(viewHeight * viewWidth);
   let lastYieldTime = performance.now();
   const { x0, x1, y0, y1 } = utils.canvasGridBounds();
-
+  let min = Infinity;
+  let max = -Infinity;
   for (let py = y0; py <= y1; py++) {
     signal.throwIfAborted();
     for (let px = x0; px <= x1; px += 1) {
       const point = utils.canvasToGrid(px, py);
       const value = grid.interpolateBilinear(point[0], point[1], false);
       pixelFieldArray[py * viewWidth + px] = value;
+      if (!Number.isNaN(value)) {
+        if (value < min) min = value;
+        if (value > max) max = value;
+      }
     }
 
     if (performance.now() - lastYieldTime > 16) {
@@ -143,6 +151,5 @@ export async function interpPixelNative(
       lastYieldTime = performance.now();
     }
   }
-
-  return new PixelField(props, pixelFieldArray);
+  return new PixelField(props, { array: pixelFieldArray, range: [min, max] });
 }
