@@ -92,8 +92,13 @@ export class CachingCompute<
     }
 
     // 3. Setup Abort Logic
-    this.controllers.get(agent)?.abort();
+    this.controllers.get(agent)?.abort(`New task: ${stableKey}`);
     const controller = new AbortController();
+    controller.signal.addEventListener("abort", () =>
+      console.log(
+        `Aborting task: ${stableKey} \n --> Because ${controller.signal.reason}`,
+      ),
+    );
     this.controllers.set(agent, controller);
 
     // 4. Start Compute and store the Promise
@@ -113,6 +118,9 @@ export class CachingCompute<
       } finally {
         // Always clean up the pending map so future requests can re-compute if needed
         this.pending.delete(stableKey!);
+        if (this.controllers.get(agent) === controller) {
+          this.controllers.delete(agent);
+        }
       }
     })();
 

@@ -84,7 +84,7 @@ function createRandomPoints(
 }
 
 export type FlowAnimator = Animator & {
-  updateFields: (fields: { ufld: PixelField; vfld: PixelField }) => void;
+  updateFields: (fields: { ufield: PixelField; vfield: PixelField }) => void;
 };
 
 const PARTICLE_LINE_WIDTH = 1;
@@ -114,7 +114,6 @@ export function createFlowAnimator({
   let lastFrameTime: number | null = null;
   let ctxRef: CanvasRenderingContext2D | null = null;
   let numFrames = 0;
-  let d1, d2, d3, d4;
 
   const log = logger.child({ component: "FlowAnimator" });
 
@@ -186,9 +185,9 @@ export function createFlowAnimator({
     buckets.forEach((b) => (b.length = 0));
   }
 
-  function updateFields(fields: { ufld: PixelField; vfld: PixelField }) {
-    ufld = fields.ufld;
-    vfld = fields.vfld;
+  function updateFields(fields: { ufield: PixelField; vfield: PixelField }) {
+    ufld = fields.ufield;
+    vfld = fields.vfield;
 
     extent = extentNonNaN(ufld);
     if (!extent) {
@@ -325,10 +324,10 @@ export function createFlowAnimator({
     // changes depending on φ. Without this, there is a pinching effect at the poles.
     const k = Math.cos((lat / 180) * Math.PI);
 
-    d1 = plon[0] - x;
-    d2 = plon[1] - y;
-    d3 = plat[0] - x;
-    d4 = plat[1] - y;
+    const d1 = plon[0] - x;
+    const d2 = plon[1] - y;
+    const d3 = plat[0] - x;
+    const d4 = plat[1] - y;
     return [d1 / H / k, d2 / H / k, d3 / H, d4 / H];
   }
 }

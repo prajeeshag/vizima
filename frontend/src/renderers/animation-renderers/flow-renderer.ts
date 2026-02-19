@@ -3,12 +3,15 @@ import {
   getGridProps,
   Grid,
   GridAgent,
+  type GridProps,
 } from "../../components/grid-data";
 import {
+  createPixelProvider,
   createPixelAgent,
   PixelAgent,
   PixelField,
   type PixelProps,
+  PixelProvider,
 } from "../../components/pixel-field";
 import {
   createFlowAnimator,
@@ -21,6 +24,7 @@ import {
 } from "../../components/projection";
 import { type AnimationRenderer } from "./animation-renderer";
 import type { Expand } from "../../type-helpers";
+import { tInterpolatePixelField } from "../static-renderers/utils";
 
 export type FlowRendererProps = {
   projectorState: ProjectorState;
@@ -57,20 +61,35 @@ type VGridAgent = {
   v: GridAgent;
 };
 
+type VPixelAgent = {
+  u: PixelAgent;
+  v: PixelAgent;
+};
+
 function createVGridAgent(): VGridAgent {
   return { u: createGridAgent(), v: createGridAgent() };
 }
 
+function createVPixelAgent(provider: PixelProvider): VPixelAgent {
+  return { u: createPixelAgent(provider), v: createPixelAgent(provider) };
+}
+
 export function createFlowRenderer(kwds: Expand<Props>): AnimationRenderer {
+  let lastPrefetchT2: number | null = null;
+  let prefetch: Promise<[PixelField, PixelField]> | null = null;
+
   const gridAgents: [VGridAgent, VGridAgent, VGridAgent] = [
     createVGridAgent(),
     createVGridAgent(),
     createVGridAgent(),
   ];
 
-  const pixelAgents: [PixelAgent, PixelAgent] = [
-    createPixelAgent(),
-    createPixelAgent(),
+  const pixelProvider = createPixelProvider(8);
+
+  const pixelAgents: [VPixelAgent, VPixelAgent, VPixelAgent] = [
+    createVPixelAgent(pixelProvider),
+    createVPixelAgent(pixelProvider),
+    createVPixelAgent(pixelProvider),
   ];
 
   const callback = kwds.callback || (() => {});
@@ -90,15 +109,14 @@ export function createFlowRenderer(kwds: Expand<Props>): AnimationRenderer {
 
   async function render(canvas: HTMLCanvasElement) {
     const props = kwds.getProps();
-    const fields = await getFields();
-    const [uPixelField, vPixelField] = fields;
     if (flowAnimator) {
       flowAnimator.destroy();
       flowAnimator = undefined;
     }
+    const [uField, vField] = await getFields();
     flowAnimator = createFlowAnimator({
-      ufield: uPixelField,
-      vfield: vPixelField,
+      ufield: uField,
+      vfield: vField,
       maxWind: props.maxWind({
         gridMeta: props.gridMeta,
       }),
@@ -108,11 +126,10 @@ export function createFlowRenderer(kwds: Expand<Props>): AnimationRenderer {
 
   async function update() {
     if (!flowAnimator) return;
-    const fields = await getFields();
-    const [uPixelField, vPixelField] = fields;
+    const [uField, vField] = await getFields();
     flowAnimator.updateFields({
-      ufld: uPixelField,
-      vfld: vPixelField,
+      ufield: uField,
+      vfield: vField,
     });
   }
 
@@ -125,30 +142,7 @@ export function createFlowRenderer(kwds: Expand<Props>): AnimationRenderer {
       ...props.v,
     });
 
-    const [uGrid, vGrid] = await getGrid();
-
-    const uPixelProps: PixelProps = {
-      grid: uGrid,
-      projectorState: props.projectorState,
-      viewSize: props.viewSize,
-      gridProj: props.gridProj,
-      lonAxis: props.u.lonAxis,
-      latAxis: props.u.latAxis,
-    };
-
-    const vPixelProps: PixelProps = {
-      grid: vGrid,
-      projectorState: props.projectorState,
-      viewSize: props.viewSize,
-      gridProj: props.gridProj,
-      lonAxis: props.v.lonAxis,
-      latAxis: props.v.latAxis,
-    };
-
-    const [uPixelField, vPixelField] = await Promise.all([
-      pixelAgents[0].get(uPixelProps),
-      pixelAgents[1].get(vPixelProps),
-    ]);
+    const [uPixelField, vPixelField] = await getPixel(props.timeIndex);
 
     callback({
       props: props,
@@ -158,20 +152,83 @@ export function createFlowRenderer(kwds: Expand<Props>): AnimationRenderer {
 
     return [uPixelField, vPixelField];
 
-    async function getGrid(): Promise<[Grid, Grid]> {
+    async function getPixel(
+      timeIndex: number | undefined,
+    ): Promise<[PixelField, PixelField]> {
+      if (timeIndex === undefined) {
+        return await pixelGet(
+          { ...uGridProps, z: props.vertIndex },
+          { ...vGridProps, z: props.vertIndex },
+          0,
+        );
+      }
+      const t0 = Math.floor(timeIndex);
+      const t1 = Math.ceil(timeIndex);
+      const t2 = (t1 + 1) % props.numTimeSteps;
+
+      if (t2 !== lastPrefetchT2) {
+        await prefetch;
+        lastPrefetchT2 = t2;
+        prefetch = pixelGet(
+          { ...uGridProps, z: props.vertIndex, t: t2 },
+          { ...vGridProps, z: props.vertIndex, t: t2 },
+          2,
+        );
+      }
+
+      if (t1 === t0) {
+        return await pixelGet(
+          { ...uGridProps, z: props.vertIndex, t: t0 },
+          { ...vGridProps, z: props.vertIndex, t: t0 },
+          0,
+        );
+      }
+      const alpha = timeIndex - t0;
+      const [p0, p1] = await Promise.all([
+        pixelGet(
+          { ...uGridProps, z: props.vertIndex, t: t0 },
+          { ...vGridProps, z: props.vertIndex, t: t0 },
+          0,
+        ),
+        pixelGet(
+          { ...uGridProps, z: props.vertIndex, t: t1 },
+          { ...vGridProps, z: props.vertIndex, t: t1 },
+          1,
+        ),
+      ]);
+      const u = tInterpolatePixelField(p0[0], p1[0], alpha);
+      const v = tInterpolatePixelField(p0[1], p1[1], alpha);
+      return [u, v];
+    }
+
+    async function pixelGet(
+      ugridProps: GridProps,
+      vgridProps: GridProps,
+      agentId: number,
+    ): Promise<[PixelField, PixelField]> {
       const [uGrid, vGrid] = await Promise.all([
-        gridAgents[0].u.get({
-          ...uGridProps,
-          t: props.timeIndex,
-          z: props.vertIndex,
+        gridAgents[agentId]!.u.get(ugridProps),
+        gridAgents[agentId]!.v.get(vgridProps),
+      ]);
+      const [uPixelField, vPixelField] = await Promise.all([
+        pixelAgents[agentId]!.u.get({
+          grid: uGrid,
+          lonAxis: props.u.lonAxis,
+          latAxis: props.u.latAxis,
+          viewSize: props.viewSize,
+          gridProj: props.gridProj,
+          projectorState: props.projectorState,
         }),
-        gridAgents[1].v.get({
-          ...vGridProps,
-          t: props.timeIndex,
-          z: props.vertIndex,
+        pixelAgents[agentId]!.v.get({
+          grid: vGrid,
+          lonAxis: props.v.lonAxis,
+          latAxis: props.v.latAxis,
+          viewSize: props.viewSize,
+          gridProj: props.gridProj,
+          projectorState: props.projectorState,
         }),
       ]);
-      return [uGrid, vGrid];
+      return [uPixelField, vPixelField];
     }
   }
 }

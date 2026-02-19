@@ -4,6 +4,7 @@ import { getPixelNativeUtils, isPreriodicLon } from "./pixel-utils";
 import equal from "fast-deep-equal";
 import type { LonAxis } from "../dataset";
 import { logger as _logger } from "../../logger";
+import stringify from "json-stable-stringify";
 
 const logger = _logger.child({ module: "interpPixel" });
 
@@ -34,7 +35,7 @@ export async function interpPixelProjected(
   let lastYieldTime = performance.now();
 
   for (let y = 0; y < height; y += 1) {
-    if (signal.aborted) throw new Error("Aborted");
+    signal.throwIfAborted();
     for (let x = 0; x < width; x += 1) {
       if (mask[y * width + x] === 0) {
         pixelFieldArray[y * width + x] = NaN;
@@ -130,7 +131,7 @@ export async function interpPixelNative(
   const { x0, x1, y0, y1 } = utils.canvasGridBounds();
 
   for (let py = y0; py <= y1; py++) {
-    if (signal.aborted) throw new Error("Aborted");
+    signal.throwIfAborted();
     for (let px = x0; px <= x1; px += 1) {
       const point = utils.canvasToGrid(px, py);
       const value = grid.interpolateBilinear(point[0], point[1], false);

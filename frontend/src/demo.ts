@@ -411,7 +411,7 @@ function createTimeAnimationManager(
   let rafId: number | null = null;
   let lastFrameTime: number | null = null;
 
-  const playbackRate = 0.5;
+  const playbackRate = 0.2;
 
   // fixed simulation step (seconds of animation time per real second)
   const FIXED_STEP = 1 / 60; // controls smoothness
