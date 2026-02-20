@@ -19,7 +19,7 @@ export class ProjectionController implements IProjectionController {
 
   constructor(
     projParams: Projection,
-    readonly viewSize: [number, number],
+    readonly viewSize: readonly [number, number],
     private scaleExtent: [number, number] = DEFAULT_SCALE_EXTENT,
     corners?: Corners,
     padding?: [number, number],
@@ -69,7 +69,7 @@ export class ProjectionController implements IProjectionController {
       translation: this._proj.translate(),
       rotation: this._proj.rotate(),
       parallels: hasParallels(this._proj) ? this._proj.parallels() : [0, 0],
-      extent: this.viewSize,
+      viewSize: this.viewSize,
     };
   }
 

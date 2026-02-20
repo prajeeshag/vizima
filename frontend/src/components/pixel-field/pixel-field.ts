@@ -6,7 +6,6 @@ import * as d3 from "d3";
 
 export type PixelProps = {
   readonly grid: Grid;
-  readonly viewSize: [number, number];
   readonly gridProj: GridProjection;
   readonly projectorState: ProjectorState;
   readonly lonAxis: LonAxis;
@@ -15,7 +14,6 @@ export type PixelProps = {
 
 export const pixelPropKeys = [
   "grid",
-  "viewSize",
   "gridProj",
   "projectorState",
   "lonAxis",
@@ -23,8 +21,8 @@ export const pixelPropKeys = [
 ] as const;
 
 export class PixelField extends CachedResult<PixelProps, PixelFieldValue> {
-  get viewSize(): [number, number] {
-    return this.props.viewSize;
+  get viewSize(): readonly [number, number] {
+    return this.props.projectorState.viewSize;
   }
 
   isDefined(x: number, y: number): boolean {

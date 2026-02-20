@@ -27,7 +27,6 @@ import { tInterpolatePixelField } from "./utils";
 
 export type ColorMapRendererProps = {
   projectorState: ProjectorState;
-  viewSize: [number, number];
   url: string;
   latAxis: LatAxis;
   lonAxis: LonAxis;

@@ -4,7 +4,6 @@ import { logger as _logger } from "../../logger";
 
 export function getPixelNativeUtils(props: {
   readonly projectorState: ProjectorState;
-  readonly viewSize: [number, number];
   readonly latAxis: LatAxis;
   readonly lonAxis: LonAxis;
 }): PixelNativeUtil {
@@ -26,7 +25,7 @@ export function getPixelNativeUtils(props: {
     gridEndPoint: gridEndPoint,
     gridStartPoint: gridStartPoint,
     gridSize: gridSize,
-    viewSize: props.viewSize,
+    viewSize: props.projectorState.viewSize,
   });
 
   function gridToPixel(gPoint: [number, number]): [number, number] {
@@ -43,7 +42,7 @@ export class PixelNativeUtil {
   logger = _logger.child({ component: this.constructor.name });
   constructor(
     private readonly props: {
-      readonly viewSize: [number, number];
+      readonly viewSize: readonly [number, number];
       readonly gridStartPoint: [number, number];
       readonly gridEndPoint: [number, number];
       readonly gridSize: [number, number];

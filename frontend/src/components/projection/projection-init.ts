@@ -33,7 +33,7 @@ abstract class ProjectionInit<Config extends ProjectionInitConfig> {
   }
 
   abstract init(
-    viewSize: [number, number],
+    viewSize: readonly [number, number],
     corners?: Corners,
     padding?: [number, number],
   ): d3.GeoProjection;

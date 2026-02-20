@@ -7,7 +7,7 @@ export type ConfigType = {
   readonly [key: string]:
     | ConfigType
     | Primitive
-    | Primitive[]
+    | readonly Primitive[]
     | CachedResult<any, any>
     | readonly CachedResult<any, any>[];
 };
@@ -48,7 +48,10 @@ export class CachingCompute<
   K extends readonly (keyof Prop)[],
 > {
   private cache = new Map<string, Value>();
-  private pending = new Map<string, Promise<Value>>();
+  private pending = new Map<
+    string,
+    { promise: Promise<Value>; agent: DataClient<Prop, Value> }
+  >();
   private controllers = new WeakMap<DataClient<Prop, Value>, AbortController>();
   private logger = logger.child({ component: this.constructor.name });
   private maxCacheSize: number;
@@ -87,8 +90,19 @@ export class CachingCompute<
     }
 
     if (stableKey && this.pending.has(stableKey)) {
-      this.logger.debug(`Awaiting existing computation for ${stableKey}`);
-      return this.pending.get(stableKey)!;
+      const entry = this.pending.get(stableKey)!;
+      if (entry.agent === agent) {
+        // same agent → cancel previous and recompute
+        this.logger.debug(
+          `Restarting computation for ${stableKey} (same agent)`,
+        );
+        this.controllers.get(agent)?.abort(`Restarted task: ${stableKey}`);
+        this.pending.delete(stableKey);
+      } else {
+        // different agent → share pending
+        this.logger.debug(`Awaiting existing computation for ${stableKey}`);
+        return entry.promise;
+      }
     }
 
     // 3. Setup Abort Logic
@@ -124,7 +138,7 @@ export class CachingCompute<
       }
     })();
 
-    this.pending.set(stableKey!, computePromise);
+    this.pending.set(stableKey!, { promise: computePromise, agent: agent });
     return computePromise;
   }
 }

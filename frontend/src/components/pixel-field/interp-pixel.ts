@@ -24,8 +24,8 @@ export async function interpPixelProjected(
   props: PixelProps,
   signal: AbortSignal,
 ): Promise<PixelField> {
-  const width = props.viewSize[0];
-  const height = props.viewSize[1];
+  const width = props.projectorState.viewSize[0];
+  const height = props.projectorState.viewSize[1];
   const proj = getProjector(props.projectorState);
   const mask = createMask();
 
@@ -125,8 +125,8 @@ export async function interpPixelNative(
   props: PixelProps,
   signal: AbortSignal,
 ): Promise<PixelField> {
-  const viewWidth = props.viewSize[0]; // Canvas width
-  const viewHeight = props.viewSize[1]; // Canvas height
+  const viewWidth = props.projectorState.viewSize[0]; // Canvas width
+  const viewHeight = props.projectorState.viewSize[1]; // Canvas height
   const utils = getPixelNativeUtils(props);
   const grid = props.grid;
   const pixelFieldArray = new Float32Array(viewHeight * viewWidth);

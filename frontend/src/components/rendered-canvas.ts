@@ -6,7 +6,7 @@ import { logger } from "../logger";
 type CanvasRendererProps = {
   readonly painters: Painter<any>[];
   readonly canvas: CanvasElement;
-  readonly viewSize: [number, number];
+  readonly viewSize: readonly [number, number];
 };
 
 const canvasRendererPropsKeys = ["canvas", "painters", "viewSize"] as const;

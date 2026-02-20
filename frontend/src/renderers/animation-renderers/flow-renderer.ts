@@ -28,7 +28,6 @@ import { tInterpolatePixelField } from "../static-renderers/utils";
 
 export type FlowRendererProps = {
   projectorState: ProjectorState;
-  viewSize: [number, number];
   u: {
     url: string;
     latAxis: LatAxis;
@@ -212,7 +211,6 @@ export function createFlowRenderer(kwds: Expand<Props>): AnimationRenderer {
           grid: uGrid,
           lonAxis: props.u.lonAxis,
           latAxis: props.u.latAxis,
-          viewSize: props.viewSize,
           gridProj: props.gridProj,
           projectorState: props.projectorState,
         }),
@@ -220,7 +218,6 @@ export function createFlowRenderer(kwds: Expand<Props>): AnimationRenderer {
           grid: vGrid,
           lonAxis: props.v.lonAxis,
           latAxis: props.v.latAxis,
-          viewSize: props.viewSize,
           gridProj: props.gridProj,
           projectorState: props.projectorState,
         }),

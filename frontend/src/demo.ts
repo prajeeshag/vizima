@@ -84,6 +84,7 @@ type ColorBarProps = {
 };
 
 type AppState = {
+  projectorState: ProjectorState | null;
   landUrl: string;
   timeStep: number;
   projection: ViewProjection;
@@ -91,7 +92,6 @@ type AppState = {
   flowAnimation: FlowAnimationProps;
   colorBar: ColorBarProps | null;
   playing: boolean;
-  projectorState: ProjectorState | null;
   mapInteracting: boolean;
 };
 
@@ -189,8 +189,7 @@ const store = createStore<AppState, Action>({
 
 const numTimes = () => dset.getTimeAxis("prate")!.length;
 
-const viewSize: [number, number] = [800, 600];
-const view = new MapView(viewSize, mapdiv1);
+const view = new MapView(initialProjection, mapdiv1);
 
 const onMapInteract = (e: ProjectorState) => {
   store.dispatch({
@@ -201,10 +200,6 @@ const onMapInteract = (e: ProjectorState) => {
     type: "mapInteracting/changed",
     mapInteracting: true,
   });
-  store.dispatch({
-    type: "projectorState/changed",
-    projectorState: e,
-  });
 };
 
 const onMapInteractEnd = (e: ProjectorState) => {
@@ -212,6 +207,9 @@ const onMapInteractEnd = (e: ProjectorState) => {
     type: "mapInteracting/changed",
     mapInteracting: false,
   });
+};
+
+const onMapChange = (e: ProjectorState) => {
   store.dispatch({
     type: "projectorState/changed",
     projectorState: e,
@@ -222,7 +220,9 @@ view.on("drag", onMapInteract);
 view.on("dragEnd", onMapInteractEnd);
 view.on("zoom", onMapInteract);
 view.on("zoomEnd", onMapInteractEnd);
-view.on("projectionUpdate", onMapInteractEnd);
+view.on("resize", onMapInteract);
+view.on("resizeEnd", onMapInteractEnd);
+view.on("change", onMapChange);
 
 watchSelector(
   store,
@@ -264,6 +264,8 @@ const selectColorMapState = (s: AppState) => ({
   timeStep: s.timeStep,
   colorMap: s.colorMap,
   projectorState: s.projectorState,
+  playing: s.playing,
+  mapInteracting: s.mapInteracting,
 });
 
 function getColorMapRendererProps(): ColorMapRendererProps {
@@ -283,7 +285,6 @@ function getColorMapRendererProps(): ColorMapRendererProps {
   return {
     url,
     projectorState,
-    viewSize,
     latAxis,
     lonAxis,
     gridProj: dset.getGridProj(),
@@ -312,6 +313,8 @@ const selectFlowAnimationState = (s: AppState) => ({
   timeStep: s.timeStep,
   flowAnimation: s.flowAnimation,
   projectorState: s.projectorState,
+  playing: s.playing,
+  mapInteracting: s.mapInteracting,
 });
 
 function getFlowRendererProps(): FlowRendererProps {
@@ -353,7 +356,6 @@ function getFlowRendererProps(): FlowRendererProps {
       lonAxis: vLonAxis,
     },
     projectorState,
-    viewSize,
     gridProj: dset.getGridProj(),
     timeIndex: timeStep,
     vertIndex,
@@ -375,28 +377,28 @@ const flowLayer = view.addAnimationLayer(flowRenderer);
 const colorMapLayer = view.addLayer([colorMapRenderer]);
 const landGraticuleLayer = view.addLayer([landRenderer, graticuleRenderer]);
 
-watchSelector(store, selectColorMapState, () => {
-  const { playing, mapInteracting } = store.getState();
-  if (!playing && !mapInteracting) {
-    colorMapLayer.render();
-  }
-});
-
-watchSelector(store, selectFlowAnimationState, () => {
-  const { playing, mapInteracting } = store.getState();
-  if (!playing && !mapInteracting) {
-    flowLayer.render();
-  }
-});
+watchSelector(
+  store,
+  selectColorMapState,
+  ({ playing, mapInteracting }, prev) => {
+    const notTimePlayAction = playing === prev?.playing;
+    if (notTimePlayAction && !playing && !mapInteracting) {
+      colorMapLayer.render();
+      console.log("Calling colormap layer render");
+    } else if (mapInteracting) {
+      colorMapLayer.hide();
+    }
+  },
+);
 
 watchSelector(
   store,
-  (s: AppState) => ({
-    mapInteracting: s.mapInteracting,
-  }),
-  ({ mapInteracting }) => {
-    if (mapInteracting) {
-      colorMapLayer.hide();
+  selectFlowAnimationState,
+  ({ playing, mapInteracting }, prev) => {
+    const notTimePlayAction = playing === prev?.playing;
+    if (notTimePlayAction && !playing && !mapInteracting) {
+      flowLayer.render();
+    } else if (mapInteracting) {
       flowLayer.hide();
     }
   },
@@ -567,4 +569,3 @@ createPlayButton(playButtondiv, {
 });
 
 styleRegistry.inject();
-view.setProjection(initialProjection);

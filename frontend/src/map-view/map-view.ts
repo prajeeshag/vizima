@@ -8,6 +8,7 @@ import {
 import { createCanvas } from "../components/canvas-element";
 import { createRenderedCanvasAgent } from "../components/rendered-canvas";
 import type { AnimationRenderer, StaticRenderer } from "../renderers";
+import type { Expand } from "../type-helpers";
 
 interface Layer {
   render: (e?: any) => Promise<void>;
@@ -19,14 +20,16 @@ interface Layer {
 const className = "vizima-mapview-canvas-stack";
 
 type MapViewEvents = {
-  projectionUpdate: ProjectorState;
+  change: ProjectorState;
   drag: ProjectorState;
   dragEnd: ProjectorState;
   zoom: ProjectorState;
   zoomEnd: ProjectorState;
-  resize: [number, number];
-  resizeEnd: [number, number];
+  resize: ProjectorState;
+  resizeEnd: ProjectorState;
 };
+
+type EventKeys = Expand<keyof MapViewEvents>;
 
 type Listener<T> = (value: T) => void;
 type Unsubscribe = () => void;
@@ -51,14 +54,12 @@ class TypedEmitter<E extends Record<string, any>> {
 
 export class MapView {
   private readonly div;
-  private interactCanvas: HTMLCanvasElement;
-  private resizeObserver?: ResizeObserver;
-  private resizeRAF: number | null = null;
-  private resizeEndTimer: number | null = null;
+  private readonly interactCanvas: HTMLCanvasElement;
   private readonly events = new TypedEmitter<MapViewEvents>();
+  private globe: ProjectionController;
 
   constructor(
-    private viewSize: [number, number],
+    private projection: Projection,
     div?: HTMLDivElement,
   ) {
     this.div = div || document.createElement("div");
@@ -66,6 +67,13 @@ export class MapView {
     styleRegistry.register("mapview", styles);
     this.interactCanvas = document.createElement("canvas");
     this.div.appendChild(this.interactCanvas);
+    this.getResizeObserver().observe(this.div);
+    this.globe = this.setGlobe([0, 0]);
+    requestAnimationFrame(() => {
+      const { height, width } = this.div.getBoundingClientRect();
+      const [w, h] = [Math.round(width), Math.round(height)];
+      this.updateGlobe([w, h]);
+    });
   }
 
   on = this.events.on.bind(this.events);
@@ -74,6 +82,7 @@ export class MapView {
     const canvasElement = createCanvas();
     this.div.appendChild(canvasElement.value);
     const canvasRendererAgent = createRenderedCanvasAgent();
+
     const render = async ({ show }: { show: boolean } = { show: true }) => {
       const painters = await Promise.all(
         renderers.map((renderer) => renderer()),
@@ -81,7 +90,7 @@ export class MapView {
       await canvasRendererAgent.get({
         painters,
         canvas: canvasElement,
-        viewSize: this.viewSize,
+        viewSize: this.globe.getProjState().viewSize,
       });
       if (show) {
         canvasElement.show();
@@ -126,44 +135,63 @@ export class MapView {
   }
 
   setProjection(projection: Projection) {
-    const globe = new ProjectionController(projection, this.viewSize);
-    const canvas = this.interactCanvas;
-    canvas.width = this.viewSize[0];
-    canvas.height = this.viewSize[1];
-    const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("Canvas context not available");
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const dragHandler = globe.dragHandler(
-      (proj) => this.events.emit("drag", proj),
-      (proj) => this.events.emit("dragEnd", proj),
-    );
-    const zoomHandler = globe.zoomHandler(
-      (proj) => this.events.emit("zoom", proj),
-      (proj) => this.events.emit("zoomEnd", proj),
-    );
-    d3.select(this.interactCanvas).call(dragHandler).call(zoomHandler);
-
-    this.events.emit("projectionUpdate", globe.getProjState());
+    if (this.projection === projection) {
+      return;
+    }
+    this.projection = projection;
+    const viewSize = this.globe.getProjState().viewSize;
+    this.updateGlobe(viewSize);
   }
 
-  private observeResize() {
-    this.resizeObserver = new ResizeObserver((entries) => {
-      const { width, height } = entries[0]!.contentRect;
+  private updateGlobe(viewSize: readonly [number, number]) {
+    this.globe = this.setGlobe(viewSize);
+    this.emit(["change"]);
+  }
 
-      if (this.resizeRAF === null) {
-        this.resizeRAF = requestAnimationFrame(() => {
-          this.resizeRAF = null;
-          this.events.emit("resize", [Math.round(width), Math.round(height)]);
+  private setGlobe(viewSize: readonly [number, number]) {
+    const globe = new ProjectionController(this.projection, viewSize);
+    const canvas = this.interactCanvas;
+    canvas.width = viewSize[0];
+    canvas.height = viewSize[1];
+    const dragHandler = globe.dragHandler(
+      (p) => this.emit(["drag", "change"]),
+      (p) => this.emit(["dragEnd"]),
+    );
+    const zoomHandler = globe.zoomHandler(
+      (p) => this.emit(["zoom", "change"]),
+      (p) => this.emit(["zoomEnd"]),
+    );
+    d3.select(this.interactCanvas).call(dragHandler).call(zoomHandler);
+    return globe;
+  }
+
+  private emit<K extends EventKeys>(types: K[]) {
+    types.map((type) => {
+      console.log(`Emiting ${type}`);
+      this.events.emit(type, this.globe.getProjState());
+    });
+  }
+
+  private getResizeObserver() {
+    let resizeRAF: number | null = null;
+    let resizeEndTimer: number | null = null;
+    return new ResizeObserver((entries) => {
+      const { width, height } = entries[0]!.contentRect;
+      const [w, h] = [Math.round(width), Math.round(height)];
+
+      if (resizeRAF === null) {
+        resizeRAF = requestAnimationFrame(() => {
+          resizeRAF = null;
+          this.globe = this.setGlobe([w, h]);
+          this.emit(["resize", "change"]);
         });
       }
 
-      if (this.resizeEndTimer) clearTimeout(this.resizeEndTimer);
-      this.resizeEndTimer = window.setTimeout(() => {
-        this.events.emit("resizeEnd", [Math.round(width), Math.round(height)]);
+      if (resizeEndTimer) clearTimeout(resizeEndTimer);
+      resizeEndTimer = window.setTimeout(() => {
+        this.emit(["resizeEnd"]);
       }, 150);
     });
-
-    this.resizeObserver.observe(this.div);
   }
 }
 
@@ -172,8 +200,9 @@ const styles = `
       display: grid;
       grid-template-columns: 1fr;
       grid-template-rows: 1fr;
-      /* Ensure the container matches the canvas size */
-      width: fit-content;
+      position: absolute;
+      width: 100vw;
+      height: 100vh;
   }
   .${className} > canvas {
       grid-area: 1 / 1 / 2 / 2; /* All canvases start at row 1, col 1 */

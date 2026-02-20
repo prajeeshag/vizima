@@ -9,7 +9,7 @@ export type ProjectorState = {
   readonly translation: [number, number];
   readonly scale: number;
   readonly parallels: [number, number];
-  readonly extent: [number, number];
+  readonly viewSize: readonly [number, number];
 };
 
 export class Projector {
@@ -35,6 +35,6 @@ export function getProjector(config: ProjectorState): Projector {
     .rotate(config.rotation)
     .translate(config.translation)
     .scale(config.scale)
-    .clipExtent([[0, 0], config.extent]);
+    .clipExtent([[0, 0], [...config.viewSize]]);
   return new Projector(projection);
 }
