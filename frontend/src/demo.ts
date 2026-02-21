@@ -14,7 +14,7 @@ import {
   type ColorScaleStatic,
 } from "./components/painters/colormap-painter";
 import { styleRegistry } from "./styles";
-import type { ProjectorState, ViewProjection } from "./components/projection";
+import { ViewProjection, type ProjectorState } from "./components/projection";
 import {
   createGridSelector,
   createColorScaleController,
@@ -82,6 +82,9 @@ type ColorBarProps = {
   gridMeta: DataVarMeta;
   scale: ColorScaleStatic;
 };
+const PROJECTIONS = ViewProjection.options.map((o) => ({
+  name: o.shape.name.value,
+}));
 
 type AppState = {
   projectorState: ProjectorState | null;
@@ -526,6 +529,7 @@ createProjectionSelector(projdiv, {
   subscribe: subscribeBridge,
   onChange: (projection) =>
     store.dispatch({ type: "projection/changed", projection }),
+  options: PROJECTIONS,
 });
 
 const contdiv = document.createElement("div");

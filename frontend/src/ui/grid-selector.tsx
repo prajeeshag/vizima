@@ -57,38 +57,31 @@ export const GridSelector = (props: RenderOptions) => {
   };
 
   return (
-    <div class="vizima-grid-selector">
-      <Show
-        when={ds()}
-        fallback={
-          <p class="vizima-grid-selector__loading">Loading Dataset...</p>
-        }
+    <Show when={ds()}>
+      <select
+        class="vizima-select"
+        value={selection().name}
+        onChange={(e) => commit({ name: e.currentTarget.value })}
       >
+        <option value="">Select Variable</option>
+        <For each={Object.keys(ds()!.vars)}>
+          {(key) => <option value={key}>{key}</option>}
+        </For>
+      </select>
+
+      <Show when={availableLevels().length > 0}>
         <select
-          class="vizima-grid-selector__select"
-          value={selection().name}
-          onChange={(e) => commit({ name: e.currentTarget.value })}
+          class="vizima-select"
+          value={selection().level}
+          onInput={(e) => commit({ level: e.currentTarget.value })}
         >
-          <option value="">Select Variable</option>
-          <For each={Object.keys(ds()!.vars)}>
-            {(key) => <option value={key}>{key}</option>}
+          <option value="">Select Level</option>
+          <For each={availableLevels()}>
+            {(lvl) => <option value={lvl}>{lvl}</option>}
           </For>
         </select>
-
-        <Show when={availableLevels().length > 0}>
-          <select
-            class="vizima-grid-selector__select"
-            value={selection().level}
-            onInput={(e) => commit({ level: e.currentTarget.value })}
-          >
-            <option value="">Select Level</option>
-            <For each={availableLevels()}>
-              {(lvl) => <option value={lvl}>{lvl}</option>}
-            </For>
-          </select>
-        </Show>
       </Show>
-    </div>
+    </Show>
   );
 };
 
@@ -106,15 +99,7 @@ export function createGridSelector(
 }
 
 const styles = `
-  .vizima-grid-selector {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    font-family: system-ui, sans-serif;
-    color: #333;
-  }
-
-  .vizima-grid-selector__select {
+  .vizima-select {
     padding: 6px 8px;
     font-size: 13px;
     border-radius: 4px;
@@ -125,13 +110,9 @@ const styles = `
     cursor: pointer;
   }
 
-  .vizima-grid-selector__select:focus {
+  .vizima-select:focus {
     outline: none;
     border-color: #2684ff;
   }
 
-  .vizima-grid-selector__loading {
-    font-size: 12px;
-    color: #666;
-  }
 `;

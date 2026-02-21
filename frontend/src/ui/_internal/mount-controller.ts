@@ -6,17 +6,19 @@ export type ExternalSubscribe = (listener: () => void) => () => void;
 
 export type ControllerRenderProps<TValue> = {
   value: () => TValue;
-  onChange?: (value: TValue) => void;
 };
 
 type MountControllerOptions<TValue> = ControllerRenderProps<TValue> & {
   subscribe: ExternalSubscribe;
 };
 
-export function mountController<TValue>(
+export function mountController<
+  P extends MountControllerOptions<TValue>,
+  TValue,
+>(
   container: HTMLElement,
-  options: MountControllerOptions<TValue>,
-  view: (props: ControllerRenderProps<TValue>) => JSX.Element,
+  options: P,
+  view: (props: P) => JSX.Element,
 ): () => void {
   const unmount = render(() => {
     const [bridged, setBridged] = createSignal<TValue>(options.value());
@@ -31,8 +33,8 @@ export function mountController<TValue>(
     });
 
     return view({
+      ...options,
       value: bridged,
-      onChange: options.onChange,
     });
   }, container);
 
