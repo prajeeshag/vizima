@@ -9,7 +9,6 @@ import { createCanvas } from "../components/canvas-element";
 import { createRenderedCanvasAgent } from "../components/rendered-canvas";
 import type { AnimationRenderer, StaticRenderer } from "../renderers";
 import type { Expand } from "../type-helpers";
-import { css } from "lit";
 
 export interface MapLayer {
   render: (e?: any) => Promise<void>;
