@@ -109,7 +109,7 @@ export class CachingCompute<
     this.controllers.get(agent)?.abort(`New task: ${stableKey}`);
     const controller = new AbortController();
     controller.signal.addEventListener("abort", () =>
-      console.log(
+      this.logger.info(
         `Aborting task: ${stableKey} \n --> Because ${controller.signal.reason}`,
       ),
     );

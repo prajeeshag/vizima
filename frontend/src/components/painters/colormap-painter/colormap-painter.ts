@@ -28,7 +28,6 @@ export class ColorMapPainter extends Painter<ColorMapProps> {
     }
 
     if (canvas.getContext("webgl2")) {
-      console.log("WebGL2 context available");
       return this.drawWebGl2(signal);
     }
     return this.drawCPU(signal);

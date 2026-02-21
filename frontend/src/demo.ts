@@ -7,7 +7,7 @@ import {
   type GraticuleRendererProps,
   type ColorMapRendererProps,
 } from "./renderers/static-renderers";
-import { MapView } from "./map-view/map-view";
+import { MapView, type MapLayer } from "./map-view/map-view";
 import {
   defineColorScale,
   type ColorScaleDynamic,
@@ -23,7 +23,7 @@ import {
   createPlayButton,
 } from "./ui";
 
-import { createStore, watchSelector, type Store } from "./state/store";
+import { createStore, watchSelector } from "./state/store";
 import { createColorBar } from "./ui/colorbar";
 import {
   createFlowRenderer,
@@ -384,7 +384,6 @@ watchSelector(
     const notTimePlayAction = playing === prev?.playing;
     if (notTimePlayAction && !playing && !mapInteracting) {
       colorMapLayer.render();
-      console.log("Calling colormap layer render");
     } else if (mapInteracting) {
       colorMapLayer.hide();
     }
@@ -408,8 +407,20 @@ watchSelector(store, selectLandGraticuleState, () => {
   landGraticuleLayer.render();
 });
 
+function timeAnimationUpdate(
+  layers: MapLayer[],
+): (nextTime: number, prevTime: number) => Promise<void> {
+  return async (nextTime, prevTime) => {
+    if (nextTime < prevTime) {
+      await Promise.all(layers.map((layer) => layer.render()));
+      return;
+    }
+    await Promise.all(layers.map((layer) => layer.update()));
+  };
+}
+
 function createTimeAnimationManager(
-  layers: { update: () => Promise<void> }[],
+  update: (nextTime: number, prevTime: number) => Promise<void>,
   numTimes: () => number,
   currentTime: () => number,
   updateTime: (time: number) => void,
@@ -436,6 +447,7 @@ function createTimeAnimationManager(
     if (accumulator > MAX_ACCUM) accumulator = MAX_ACCUM;
 
     let nextTime = currentTime();
+    let prevTime = nextTime;
 
     while (accumulator >= FIXED_STEP) {
       nextTime += playbackRate * FIXED_STEP;
@@ -446,7 +458,7 @@ function createTimeAnimationManager(
 
     updateTime(nextTime);
     store.dispatch({ type: "time/changed", timeStep: nextTime });
-    await Promise.all(layers.map((layer) => layer.update()));
+    await update(nextTime, prevTime);
     if (!running) return;
     rafId = requestAnimationFrame(animate);
   };
@@ -472,7 +484,7 @@ function createTimeAnimationManager(
 }
 
 const timeAnimation = createTimeAnimationManager(
-  [colorMapLayer, flowLayer],
+  timeAnimationUpdate([colorMapLayer, flowLayer]),
   numTimes,
   () => store.getState().timeStep,
   (time) => store.dispatch({ type: "time/changed", timeStep: time }),
@@ -492,8 +504,9 @@ watchSelector(
   },
 );
 
-const subscribeBridge = (listener: () => void) =>
-  store.subscribe(() => listener());
+function subscribeBridge(listener: () => void) {
+  return store.subscribe(() => listener());
+}
 
 const colorbardiv = document.createElement("div");
 document.body.appendChild(colorbardiv);

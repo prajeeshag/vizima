@@ -9,8 +9,9 @@ import { createCanvas } from "../components/canvas-element";
 import { createRenderedCanvasAgent } from "../components/rendered-canvas";
 import type { AnimationRenderer, StaticRenderer } from "../renderers";
 import type { Expand } from "../type-helpers";
+import { css } from "lit";
 
-interface Layer {
+export interface MapLayer {
   render: (e?: any) => Promise<void>;
   show: () => void;
   hide: () => void;
@@ -69,16 +70,11 @@ export class MapView {
     this.div.appendChild(this.interactCanvas);
     this.getResizeObserver().observe(this.div);
     this.globe = this.setGlobe([0, 0]);
-    requestAnimationFrame(() => {
-      const { height, width } = this.div.getBoundingClientRect();
-      const [w, h] = [Math.round(width), Math.round(height)];
-      this.updateGlobe([w, h]);
-    });
   }
 
   on = this.events.on.bind(this.events);
 
-  addLayer(renderers: StaticRenderer[]): Layer {
+  addLayer(renderers: StaticRenderer[]): MapLayer {
     const canvasElement = createCanvas();
     this.div.appendChild(canvasElement.value);
     const canvasRendererAgent = createRenderedCanvasAgent();
@@ -110,7 +106,7 @@ export class MapView {
     };
   }
 
-  addAnimationLayer(renderer: AnimationRenderer): Layer {
+  addAnimationLayer(renderer: AnimationRenderer): MapLayer {
     const canvasElement = createCanvas();
     this.div.appendChild(canvasElement.value);
     return {
@@ -167,7 +163,6 @@ export class MapView {
 
   private emit<K extends EventKeys>(types: K[]) {
     types.map((type) => {
-      console.log(`Emiting ${type}`);
       this.events.emit(type, this.globe.getProjState());
     });
   }
@@ -195,21 +190,21 @@ export class MapView {
   }
 }
 
-const styles = `
+const styles = /* css */ `
   .${className} {
-      display: grid;
-      grid-template-columns: 1fr;
-      grid-template-rows: 1fr;
-      position: absolute;
-      width: 100vw;
-      height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+    position: absolute;
+    width: 100vw;
+    height: 100vh;
   }
   .${className} > canvas {
-      grid-area: 1 / 1 / 2 / 2; /* All canvases start at row 1, col 1 */
-      pointer-events: none;     /* Do not allow interaction */
+    grid-area: 1 / 1 / 2 / 2; /* All canvases start at row 1, col 1 */
+    pointer-events: none; /* Do not allow interaction */
   }
   /* Except for the first canvas */
   .${className} > canvas:first-child {
     pointer-events: auto;
   }
-  `;
+`;
