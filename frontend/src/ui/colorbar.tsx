@@ -12,15 +12,6 @@ import {
 import { createEffect, Show, createMemo } from "solid-js";
 import type { DataVarMeta } from "../components/dataset";
 
-type RenderOptions = {
-  orientation: "horizontal" | "vertical";
-  ticks: number;
-  value: () => {
-    scale: ColorScaleStatic;
-    gridMeta: DataVarMeta;
-  } | null;
-};
-
 function computeExponent(domain: number[]): number {
   const maxAbs = d3.max(domain);
   if (maxAbs === undefined || maxAbs === 0) return 0;
@@ -47,11 +38,40 @@ const superscript = (n: number) =>
     .replace(/8/g, "⁸")
     .replace(/9/g, "⁹");
 
-export const ColorBar = (props: RenderOptions) => {
-  const { value, orientation, ticks } = props;
+type RenderOptions = {
+  value: () => {
+    scale: ColorScaleStatic;
+    gridMeta: DataVarMeta;
+  } | null;
+  orientation?: "horizontal" | "vertical";
+  ticks?: number;
+  tickSize?: number;
+  labelSize?: number;
+  tickLabelSize?: number;
+  colorBarThickness?: number;
+  colorBarLength?: number;
+};
 
-  const width = orientation === "horizontal" ? 300 : 70;
-  const height = orientation === "horizontal" ? 60 : 300;
+const LABEL_SIZE = 14;
+const TICK_LABEL_SIZE = 11;
+const COLORBAR_LENGTH = 200;
+const COLORBAR_THICKNESS = 20;
+const COLORBAR_TICKSIZE = 0;
+const COLORBAR_TICKS = 4;
+
+export const ColorBar = ({
+  value,
+  orientation = "horizontal",
+  ticks = 4,
+  tickSize = 0,
+  colorBarThickness = COLORBAR_THICKNESS,
+  colorBarLength = COLORBAR_LENGTH,
+  labelSize = LABEL_SIZE,
+  tickLabelSize = TICK_LABEL_SIZE,
+}: RenderOptions) => {
+  const totalThickness = colorBarThickness + tickSize + labelSize + 5;
+  const width = orientation === "horizontal" ? colorBarLength : totalThickness;
+  const height = orientation === "horizontal" ? totalThickness : colorBarLength;
 
   let gAxis!: SVGGElement;
 
@@ -81,9 +101,11 @@ export const ColorBar = (props: RenderOptions) => {
   const axis = createMemo(() => {
     if (!axisScale()) return null;
 
-    return orientation === "horizontal"
-      ? d3.axisBottom(axisScale()!).ticks(ticks).tickFormat(tickFormat)
-      : d3.axisRight(axisScale()!).ticks(ticks).tickFormat(tickFormat);
+    const ax =
+      orientation === "horizontal"
+        ? d3.axisBottom(axisScale()!).ticks(ticks).tickFormat(tickFormat)
+        : d3.axisRight(axisScale()!).ticks(ticks).tickFormat(tickFormat);
+    return ax.tickSizeOuter(0).tickSizeInner(tickSize);
   });
 
   const colorScale = createMemo(() =>
@@ -109,12 +131,25 @@ export const ColorBar = (props: RenderOptions) => {
 
   createEffect(() => {
     if (!axis() || !gAxis) return;
-    d3.select(gAxis).call(axis()!);
+    const sel = d3.select(gAxis).call(axis()!);
+    if (orientation === "horizontal") {
+      sel
+        .selectAll(".tick text")
+        .attr("dominant-baseline", "middle")
+        .attr("text-anchor", "middle");
+    } else {
+      sel
+        .selectAll(".tick text")
+        .attr("text-anchor", "middle")
+        .attr("dominant-baseline", "middle")
+        .attr("transform", "rotate(-90)");
+    }
   });
 
-  const labelX = orientation === "horizontal" ? width / 2 : 65;
+  const labelX = orientation === "horizontal" ? width / 2 : width - 5;
   const labelY = orientation === "horizontal" ? height - 5 : height / 2;
 
+  const axisOffset = colorBarThickness / 2 - tickLabelSize / 2 - 5;
   return (
     <Show
       when={scale() && scale()!.domain.length > 1 && colorScale()}
@@ -140,22 +175,21 @@ export const ColorBar = (props: RenderOptions) => {
             ))}
           </linearGradient>
         </defs>
-
         <rect
           class="colorbar__bar"
-          width={orientation === "horizontal" ? width : 20}
-          height={orientation === "horizontal" ? 20 : height}
+          width={orientation === "horizontal" ? width : colorBarThickness}
+          height={orientation === "horizontal" ? colorBarThickness : height}
           fill={`url(#${gradientId})`}
         />
-
         <g
           ref={gAxis}
           class="colorbar__axis"
           transform={
-            orientation === "horizontal" ? `translate(0,20)` : `translate(20,0)`
+            orientation === "horizontal"
+              ? `translate(0,${axisOffset})`
+              : `translate(${axisOffset + 5},0)`
           }
         />
-
         <text
           class="colorbar__label"
           x={labelX}
@@ -180,45 +214,45 @@ export function createColorBar(
     subscribe: ExternalSubscribe;
   },
 ) {
-  styleRegistry.register("colorbar", styles);
-  const mountOptions = {
-    ...options,
-    onChange: () => {},
-  };
-  return mountController(container, mountOptions, ({ value, onChange }) => (
-    <ColorBar
-      value={value}
-      ticks={options.ticks}
-      orientation={options.orientation}
-    />
+  const options1 = { ...options, labelSize: options.labelSize ?? 14 };
+  styleRegistry.register("colorbar", createStyle(options1));
+  return mountController(container, options1, ({ value }) => (
+    <ColorBar {...options} value={value} />
   ));
 }
 
-const styles = `
-  /* svg background */
-  .colorbar {
-    background: transparent;
-  }
+function createStyle(kwds: { labelSize: number }) {
+  const styles = `
+    /* svg background */
+    .colorbar {
+      background: transparent;
+      position: relative;
+      z-index: 10;
+    }
 
-  /* axis lines & ticks */
-  .colorbar__axis path,
-  .colorbar__axis line {
-    stroke: #555;
-  }
+    /* axis lines & ticks */
+    .colorbar__axis path,
+    .colorbar__axis line {
+      display: none;
+      // stroke: #555;
+      // stroke: none;
+    }
 
-  .colorbar__axis text {
-    fill: #555;
-    font-size: 11px;
-  }
+    .colorbar__axis text {
+      fill: #999;
+      font-size: 11px;
+    }
 
-  /* label text */
-  .colorbar__label {
-    fill: #555;
-    font-size: 12px;
-    font-weight: 500;
-  }
+    /* label text */
+    .colorbar__label {
+      fill: #555;
+      font-size: ${kwds.labelSize}px;
+      font-weight: 500;
+    }
 
-  /* optional bar tweaks */
-  .colorbar__bar {
-    shape-rendering: crispEdges;
-  }`;
+    /* optional bar tweaks */
+    .colorbar__bar {
+      shape-rendering: crispEdges;
+    }`;
+  return styles;
+}

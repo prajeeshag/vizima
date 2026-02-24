@@ -526,9 +526,19 @@ const colorbardiv = document.createElement("div");
 document.body.appendChild(colorbardiv);
 
 createColorBar(colorbardiv, {
-  ticks: 5,
-  orientation: "horizontal",
   value: () => store.getState().colorBar,
+  colorBarThickness: 30,
+  orientation: "vertical",
+  subscribe: subscribeBridge,
+});
+
+const colorbardiv1 = document.createElement("div");
+document.body.appendChild(colorbardiv1);
+
+createColorBar(colorbardiv1, {
+  value: () => store.getState().colorBar,
+  orientation: "horizontal",
+  colorBarThickness: 30,
   subscribe: subscribeBridge,
 });
 
