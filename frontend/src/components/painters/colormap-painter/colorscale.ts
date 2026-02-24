@@ -1,11 +1,20 @@
 import * as d3 from "d3-scale";
 import * as chromatic from "d3-scale-chromatic";
+import * as metbrewer from "../../../colorPalettes/metbrewer";
 import type { PixelField } from "../../pixel-field";
 import type { DataVarMeta } from "../../dataset";
 import type { Expand } from "../../../type-helpers";
 
 export const PALETTES = {
   // sequential
+  Archambault: {
+    kind: "sequential",
+    interpolate: metbrewer.interpolateArchambault,
+  },
+  Austria: {
+    kind: "sequential",
+    interpolate: metbrewer.interpolateAustria,
+  },
   Turbo: { kind: "sequential", interpolate: chromatic.interpolateTurbo },
   Viridis: { kind: "sequential", interpolate: chromatic.interpolateViridis },
   Plasma: { kind: "sequential", interpolate: chromatic.interpolatePlasma },
