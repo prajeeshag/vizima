@@ -395,6 +395,17 @@ watchSelector(
 
 watchSelector(
   store,
+  (s) => ({
+    projectorState: s.projectorState,
+    flowAnimation: s.flowAnimation,
+  }),
+  (current) => {
+    store.dispatch({ type: "play/changed", playing: false });
+  },
+);
+
+watchSelector(
+  store,
   selectFlowAnimationState,
   ({ playing, mapInteracting }, prev) => {
     const notTimePlayAction = playing === prev?.playing;

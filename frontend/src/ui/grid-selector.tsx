@@ -5,6 +5,7 @@ import {
   mountController,
   type ExternalSubscribe,
 } from "./_internal/mount-controller";
+import { DerivedSelect } from "./primitives/select";
 
 interface Grid {
   name: string;
@@ -58,28 +59,21 @@ export const GridSelector = (props: RenderOptions) => {
 
   return (
     <Show when={ds()}>
-      <select
-        class="vizima-select"
-        value={selection().name}
-        onChange={(e) => commit({ name: e.currentTarget.value })}
-      >
-        <option value="">Select Variable</option>
-        <For each={Object.keys(ds()!.vars)}>
-          {(key) => <option value={key}>{key}</option>}
-        </For>
-      </select>
-
+      <DerivedSelect
+        class="vizima-grid-selector vizima-grid-select"
+        value={() => selection().name}
+        onChange={(e) => commit({ name: e })}
+        options={Object.keys(ds()!.vars)}
+        toKey={(v) => v}
+      />
       <Show when={availableLevels().length > 0}>
-        <select
-          class="vizima-select"
-          value={selection().level}
-          onInput={(e) => commit({ level: e.currentTarget.value })}
-        >
-          <option value="">Select Level</option>
-          <For each={availableLevels()}>
-            {(lvl) => <option value={lvl}>{lvl}</option>}
-          </For>
-        </select>
+        <DerivedSelect
+          class="vizima-level-selector vizima-grid-select"
+          value={() => selection().level}
+          onChange={(e) => commit({ level: e })}
+          options={availableLevels()}
+          toKey={(v) => v}
+        />
       </Show>
     </Show>
   );
@@ -99,7 +93,7 @@ export function createGridSelector(
 }
 
 const styles = `
-  .vizima-select {
+  .vizima-grid-select {
     padding: 6px 8px;
     font-size: 13px;
     border-radius: 4px;
@@ -110,9 +104,8 @@ const styles = `
     cursor: pointer;
   }
 
-  .vizima-select:focus {
+  .vizima-grid-select:focus {
     outline: none;
     border-color: #2684ff;
   }
-
 `;

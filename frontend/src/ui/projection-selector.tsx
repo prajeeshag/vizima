@@ -10,18 +10,17 @@ import { DerivedSelect } from "./primitives/select";
 type RenderProps = {
   value: () => ViewProjection;
   options: ViewProjection[];
-  onChange?: (p: ViewProjection) => void;
-  toKey?: (p: ViewProjection) => string;
+  onChange: (p: ViewProjection) => void;
+  label?: (p: ViewProjection) => string;
 };
 
 export function ProjectionSelect(props: RenderProps) {
   const current = createMemo(() => props.value());
   return (
     <DerivedSelect
+      {...props}
       value={() => current()}
-      options={props.options}
       toKey={(p) => p.name}
-      onChange={(value) => props.onChange?.(value)}
       class="vizima-projection-select"
     />
   );
