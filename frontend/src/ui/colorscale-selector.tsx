@@ -98,7 +98,7 @@ function ColorScaleController(props: RenderOptions) {
           <input
             type="checkbox"
             checked={value().reverse}
-            onInput={(e) => update({ reverse: e.currentTarget.checked })}
+            onChange={(e) => update({ reverse: e.currentTarget.checked })}
           />
           reverse
         </label>
@@ -107,7 +107,7 @@ function ColorScaleController(props: RenderOptions) {
           <input
             type="checkbox"
             checked={value().clamp}
-            onInput={(e) => update({ clamp: e.currentTarget.checked })}
+            onChange={(e) => update({ clamp: e.currentTarget.checked })}
           />
           clamp
         </label>
@@ -130,9 +130,11 @@ export function createColorScaleController(
 
 const styles = `
   .vizima-csp {
-    width: 200px;
+    width: 120px;
     font-family: system-ui, sans-serif;
     color: #333;
+    position: relative;
+    z-index: 10;
   }
 
   .vizima-csp-dropdown {
