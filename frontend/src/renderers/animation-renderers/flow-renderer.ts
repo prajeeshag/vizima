@@ -76,6 +76,7 @@ function createVPixelAgent(provider: PixelProvider): VPixelAgent {
 export function createFlowRenderer(kwds: Expand<Props>): AnimationRenderer {
   let lastPrefetchT2: number | null = null;
   let prefetch: Promise<[PixelField, PixelField]> | null = null;
+  let renderRequestId = 0;
 
   const gridAgents: [VGridAgent, VGridAgent, VGridAgent] = [
     createVGridAgent(),
@@ -107,12 +108,13 @@ export function createFlowRenderer(kwds: Expand<Props>): AnimationRenderer {
   }
 
   async function render(canvas: HTMLCanvasElement) {
-    const props = kwds.getProps();
+    const requestId = ++renderRequestId;
     if (flowAnimator) {
       flowAnimator.destroy();
       flowAnimator = undefined;
     }
     const [uField, vField] = await getFields();
+    if (requestId !== renderRequestId) return;
     flowAnimator = createFlowAnimator({
       ufield: uField,
       vfield: vField,
