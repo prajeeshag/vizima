@@ -37,19 +37,6 @@ export function createPlayButton(
 }
 
 const styles = `
-  .vizima-play-button {
-    width: 36px;
-    height: 36px;
-    border-radius: 8px; /* rounded square */
-    border: none;
-    cursor: pointer;
-    background: rgba(255,255,255,0.15);
-    position: relative;
-    backdrop-filter: blur(4px);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
 
   .vizima-play-button {
     width: 36px;
@@ -57,9 +44,9 @@ const styles = `
     border-radius: 8px;
     border: none;
     cursor: pointer;
-    background: rgba(255,255,255,0.15);
     backdrop-filter: blur(4px);
-
+    background: var(--vizima-ui-bg, rgba(20, 20, 22, 0.7));
+    border: 1px solid var(--vizima-ui-border, rgba(255, 255, 255, 0.12));
     color: white;
     font-size: 16px;
     display: inline-flex;

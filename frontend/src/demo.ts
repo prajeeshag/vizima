@@ -592,17 +592,6 @@ const formatMonth = (iso: string) =>
     month: "long",
   });
 
-const timediv = document.createElement("div");
-document.body.appendChild(timediv);
-createTimeSlider(timediv, {
-  numTimes: numTimes,
-  ticks: () => dset.getTimeAxis("prate")!.map((t, i) => i),
-  tickLabels: () => dset.getTimeAxis("prate")!.map((t) => formatTime(t)),
-  value: () => store.getState().timeStep,
-  subscribe: subscribeBridge,
-  onChange: (timeStep) => store.dispatch({ type: "time/changed", timeStep }),
-});
-
 const timeWheeldiv = document.createElement("div");
 document.body.appendChild(timeWheeldiv);
 createTimeWheel(timeWheeldiv, {
