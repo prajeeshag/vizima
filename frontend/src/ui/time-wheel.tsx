@@ -6,7 +6,7 @@ import {
   type ExternalSubscribe,
 } from "./_internal/mount-controller";
 
-interface RenderOptions {
+type RenderOptions = {
   items: () => string[];
   value: () => number;
   onChange?: (index: number) => void;
@@ -14,7 +14,7 @@ interface RenderOptions {
   visibleCount?: number;
   itemHeight?: number;
   orientation?: "vertical" | "horizontal";
-}
+};
 
 function clamp(n: number, min: number, max: number): number {
   if (!Number.isFinite(n)) return min;
@@ -152,11 +152,12 @@ export function TimeWheel({
   );
 }
 
+export type TimeWheelOptions = RenderOptions & {
+  subscribe: ExternalSubscribe;
+};
 export function createTimeWheel(
   container: HTMLElement,
-  options: RenderOptions & {
-    subscribe: ExternalSubscribe;
-  },
+  options: TimeWheelOptions,
 ) {
   styleRegistry.register("time-wheel", styles);
   return mountController(container, options, ({ value }) => (
@@ -171,17 +172,8 @@ export function createTimeWheel(
 const styles = `
 .vizima-time-wheel {
   position: relative;
-  z-index: 10;
   overflow: hidden;
   user-select: none;
-  font: 13px system-ui, sans-serif;
-  color: #e7e7e7;
-  padding: 5px;
-  cursor: grab;
-  background: var(--vizima-ui-bg, rgba(20, 20, 22, 0.7));
-  border: 1px solid var(--vizima-ui-border, rgba(255, 255, 255, 0.12));
-  border-radius: 10px;
-  backdrop-filter: blur(6px);
 }
 
 .vizima-time-wheel.dragging {

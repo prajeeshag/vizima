@@ -19,9 +19,10 @@ import {
   createGridSelector,
   createColorScaleController,
   createProjectionSelector,
-  createTimeSlider,
   createPlayButton,
 } from "./ui";
+
+import { createTimeBar } from "./ui/time-bar";
 
 import { createStore, watchSelector } from "./state/store";
 import { createColorBar } from "./ui/colorbar";
@@ -592,21 +593,19 @@ const formatMonth = (iso: string) =>
     month: "long",
   });
 
-const timeWheeldiv = document.createElement("div");
-document.body.appendChild(timeWheeldiv);
-createTimeWheel(timeWheeldiv, {
-  value: () => store.getState().timeStep,
-  items: () => dset.getTimeAxis("prate")!.map((t, i) => formatMonth(t)),
-  onChange: (timeStep) => store.dispatch({ type: "time/changed", timeStep }),
-  subscribe: subscribeBridge,
+const timeBardiv = createTimeBar({
+  timeWheel: {
+    value: () => store.getState().timeStep,
+    items: () => dset.getTimeAxis("prate")!.map((t, i) => formatMonth(t)),
+    onChange: (timeStep) => store.dispatch({ type: "time/changed", timeStep }),
+    subscribe: subscribeBridge,
+  },
+  playButton: {
+    value: () => store.getState().playing,
+    subscribe: subscribeBridge,
+    onChange: (playing) => store.dispatch({ type: "play/changed", playing }),
+  },
 });
-
-const playButtondiv = document.createElement("div");
-document.body.appendChild(playButtondiv);
-createPlayButton(playButtondiv, {
-  value: () => store.getState().playing,
-  subscribe: subscribeBridge,
-  onChange: (playing) => store.dispatch({ type: "play/changed", playing }),
-});
+document.body.appendChild(timeBardiv);
 
 styleRegistry.inject();
