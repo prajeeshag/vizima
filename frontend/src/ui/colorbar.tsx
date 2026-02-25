@@ -186,7 +186,7 @@ export const ColorBar = ({
           width={orientation === "horizontal" ? width : colorBarThickness}
           height={orientation === "horizontal" ? colorBarThickness : height}
           fill={`url(#${gradientId})`}
-          rx={colorBarThickness / 2}
+          rx={colorBarThickness / 4}
         />
         <g
           ref={gAxis}
@@ -243,18 +243,15 @@ function createStyle(kwds: { labelSize: number }) {
     .colorbar__axis path,
     .colorbar__axis line {
       display: none;
-      // stroke: #555;
-      // stroke: none;
     }
 
     .colorbar__axis text {
-      fill: #999;
-      font-size: 11px;
+      fill: #bbb;
+      font-size: 10px;
     }
 
-    /* label text */
     .colorbar__label {
-      fill: #555;
+      fill: #ddd;
       font-size: ${kwds.labelSize}px;
       font-weight: 500;
     }

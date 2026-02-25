@@ -5,10 +5,16 @@ import { createPlayButton, type PlayButtonOptions } from "./play-button";
 export type TimeBarOptions = {
   playButton: PlayButtonOptions;
   timeWheel: TimeWheelOptions;
-  totalLength: number;
+  totalLength?: number;
 };
 
-export function createTimeBar(options: TimeBarOptions) {
+const GAP = 2;
+
+export function createTimeBar({
+  playButton,
+  timeWheel,
+  totalLength = 200,
+}: TimeBarOptions) {
   styleRegistry.register("time-bar", styles);
   const div = document.createElement("div");
   div.classList.add("vizima-time-bar");
@@ -18,11 +24,11 @@ export function createTimeBar(options: TimeBarOptions) {
   divTimeWheel.classList.add("vizima-time-wheel-container");
   div.appendChild(divButton);
   div.appendChild(divTimeWheel);
-  createPlayButton(divButton, options.playButton);
-  const timeWheelLength = options.totalLength - 26 - 4;
+  createPlayButton(divButton, playButton);
+  const timeWheelLength = totalLength - 26 - GAP;
   console.log("timeWheelLength", timeWheelLength);
   createTimeWheel(divTimeWheel, {
-    ...options.timeWheel,
+    ...timeWheel,
     totalLength: timeWheelLength,
   });
   return div;
@@ -33,7 +39,7 @@ const styles = `
   display: flex;
   flex-direction: row;
   align-items: stretch;
-  gap: 4px;
+  gap: ${GAP}px;
 
 }
 
