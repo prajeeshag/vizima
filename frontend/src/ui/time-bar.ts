@@ -2,10 +2,11 @@ import { styleRegistry } from "../styles";
 import { createTimeWheel, type TimeWheelOptions } from "./time-wheel";
 import { createPlayButton, type PlayButtonOptions } from "./play-button";
 
-interface TimeBarOptions {
+export type TimeBarOptions = {
   playButton: PlayButtonOptions;
   timeWheel: TimeWheelOptions;
-}
+  totalLength: number;
+};
 
 export function createTimeBar(options: TimeBarOptions) {
   styleRegistry.register("time-bar", styles);
@@ -18,7 +19,12 @@ export function createTimeBar(options: TimeBarOptions) {
   div.appendChild(divButton);
   div.appendChild(divTimeWheel);
   createPlayButton(divButton, options.playButton);
-  createTimeWheel(divTimeWheel, options.timeWheel);
+  const timeWheelLength = options.totalLength - 26 - 4;
+  console.log("timeWheelLength", timeWheelLength);
+  createTimeWheel(divTimeWheel, {
+    ...options.timeWheel,
+    totalLength: timeWheelLength,
+  });
   return div;
 }
 
@@ -32,7 +38,7 @@ const styles = `
 }
 
 .vizima-play-button-container {
-  flex: 0 0 auto;          /* don't stretch */
+  flex: 0 0 auto;
 }
 
 .vizima-play-button {
@@ -40,14 +46,14 @@ const styles = `
   align-items: center;
   justify-content: center;
   color: white;
-  width: 100%;
-  height: 100%;
+  width: 26px;
+  height: 26px;
   border-radius: 4px;
   cursor: pointer;
   backdrop-filter: blur(4px);
   background: var(--vizima-ui-bg, rgba(20, 20, 22, 0.7));
   border: 1px solid var(--vizima-ui-border, rgba(255, 255, 255, 0.12));
-  font-size: 12px;
+  font-size: 16px;
 }
 
 .vizima-time-wheel-container {
@@ -57,7 +63,6 @@ const styles = `
   z-index: 10;
   font: 12px system-ui, sans-serif;
   color: #e7e7e7;
-  padding: 5px;
   cursor: grab;
   background: var(--vizima-ui-bg, rgba(20, 20, 22, 0.7));
   border: 1px solid var(--vizima-ui-border, rgba(255, 255, 255, 0.12));

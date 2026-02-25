@@ -215,11 +215,13 @@ export const ColorBar = ({
   );
 };
 
+export type ColorBarOptions = RenderOptions & {
+  subscribe: ExternalSubscribe;
+};
+
 export function createColorBar(
   container: HTMLElement,
-  options: RenderOptions & {
-    subscribe: ExternalSubscribe;
-  },
+  options: ColorBarOptions,
 ) {
   const options1 = { ...options, labelSize: options.labelSize ?? 14 };
   styleRegistry.register("colorbar", createStyle(options1));

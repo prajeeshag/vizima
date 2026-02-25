@@ -31,6 +31,7 @@ import {
   createFlowRenderer,
   type FlowRendererProps,
 } from "./renderers/animation-renderers";
+import { createStatusBar } from "./ui/status-bar";
 
 const landUrl = "/land-110m.json";
 
@@ -534,15 +535,6 @@ function subscribeBridge(listener: () => void) {
   return store.subscribe(() => listener());
 }
 
-const colorbardiv1 = document.createElement("div");
-document.body.appendChild(colorbardiv1);
-
-createColorBar(colorbardiv1, {
-  value: () => store.getState().colorBar,
-  orientation: "horizontal",
-  subscribe: subscribeBridge,
-});
-
 const projdiv = document.createElement("div");
 document.body.appendChild(projdiv);
 
@@ -593,19 +585,27 @@ const formatMonth = (iso: string) =>
     month: "long",
   });
 
-const timeBardiv = createTimeBar({
-  timeWheel: {
-    value: () => store.getState().timeStep,
-    items: () => dset.getTimeAxis("prate")!.map((t, i) => formatMonth(t)),
-    onChange: (timeStep) => store.dispatch({ type: "time/changed", timeStep }),
+const statusBardiv = createStatusBar({
+  colorBar: {
+    value: () => store.getState().colorBar,
+    orientation: "horizontal",
     subscribe: subscribeBridge,
   },
-  playButton: {
-    value: () => store.getState().playing,
-    subscribe: subscribeBridge,
-    onChange: (playing) => store.dispatch({ type: "play/changed", playing }),
+  timeBar: {
+    timeWheel: {
+      value: () => store.getState().timeStep,
+      items: () => dset.getTimeAxis("prate")!.map((t, i) => formatMonth(t)),
+      onChange: (timeStep) =>
+        store.dispatch({ type: "time/changed", timeStep }),
+      subscribe: subscribeBridge,
+    },
+    playButton: {
+      value: () => store.getState().playing,
+      subscribe: subscribeBridge,
+      onChange: (playing) => store.dispatch({ type: "play/changed", playing }),
+    },
   },
 });
-document.body.appendChild(timeBardiv);
+document.body.appendChild(statusBardiv);
 
 styleRegistry.inject();

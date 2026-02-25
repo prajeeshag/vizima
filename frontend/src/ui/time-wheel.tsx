@@ -12,7 +12,7 @@ type RenderOptions = {
   onChange?: (index: number) => void;
 
   visibleCount?: number;
-  itemHeight?: number;
+  totalLength?: number;
   orientation?: "vertical" | "horizontal";
 };
 
@@ -26,9 +26,10 @@ export function TimeWheel({
   value,
   onChange,
   visibleCount = 3,
-  itemHeight = 80,
+  totalLength = 240,
   orientation = "horizontal",
 }: RenderOptions) {
+  console.log("totalLength", totalLength);
   let dragging = false;
   let startY = 0;
   let startIndex = 0;
@@ -67,6 +68,7 @@ export function TimeWheel({
     onChange?.(next);
   };
 
+  const itemHeight = totalLength / visibleCount;
   const containerHeight = () => itemHeight * visibleCount;
   const centerOffset = () => containerHeight() / 2 - itemHeight / 2;
 
@@ -162,6 +164,7 @@ export function createTimeWheel(
   styleRegistry.register("time-wheel", styles);
   return mountController(container, options, ({ value }) => (
     <TimeWheel
+      {...options}
       items={options.items}
       value={value}
       onChange={options.onChange}

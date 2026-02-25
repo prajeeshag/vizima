@@ -40,7 +40,6 @@ export function createPlayButton(
 
 const styles = `
 
-
   .vizima-play-button::before {
     content: "▶";
   }
