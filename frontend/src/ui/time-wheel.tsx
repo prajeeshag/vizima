@@ -11,8 +11,9 @@ interface RenderOptions {
   value: () => number;
   onChange?: (index: number) => void;
 
-  visibleCount?: number; // odd number recommended (default 3)
-  itemHeight?: number; // px (default 32)
+  visibleCount?: number;
+  itemHeight?: number;
+  orientation?: "vertical" | "horizontal";
 }
 
 function clamp(n: number, min: number, max: number): number {
@@ -20,30 +21,41 @@ function clamp(n: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, n));
 }
 
-export function TimeWheel(props: RenderOptions) {
+export function TimeWheel({
+  items,
+  value,
+  onChange,
+  visibleCount = 3,
+  itemHeight = 80,
+  orientation = "horizontal",
+}: RenderOptions) {
   let dragging = false;
   let startY = 0;
   let startIndex = 0;
   let container!: HTMLDivElement;
 
+  const isVertical = orientation === "vertical";
+
   const onPointerDown = (e: PointerEvent) => {
     dragging = true;
-    startY = e.clientY;
+    container.classList.add("dragging");
+    startY = isVertical ? e.clientY : e.clientX;
     startIndex = safeValue();
     container.setPointerCapture(e.pointerId);
   };
 
   const onPointerMove = (e: PointerEvent) => {
     if (!dragging) return;
-    const dy = e.clientY - startY;
-    const deltaIndex = -dy / itemHeight();
+    const pos = isVertical ? e.clientY : e.clientX;
+    const d = pos - startY;
+    const deltaIndex = -d / itemHeight;
     const next = clamp(Math.round(startIndex + deltaIndex), 0, maxIndex());
-    console.log("Pointer move: ", next);
-    props.onChange?.(next);
+    onChange?.(next);
   };
 
   const onPointerUp = (e: PointerEvent) => {
     dragging = false;
+    container.classList.remove("dragging");
     container.releasePointerCapture(e.pointerId);
   };
 
@@ -52,28 +64,27 @@ export function TimeWheel(props: RenderOptions) {
     const sensitivity = 0.01;
     const delta = e.deltaY * sensitivity;
     const next = clamp(Math.round(safeValue() + delta), 0, maxIndex());
-    props.onChange?.(next);
+    onChange?.(next);
   };
 
-  const itemHeight = () => props.itemHeight ?? 20;
-  const visibleCount = () => props.visibleCount ?? 3;
+  const containerHeight = () => itemHeight * visibleCount;
+  const centerOffset = () => containerHeight() / 2 - itemHeight / 2;
 
-  const containerHeight = () => itemHeight() * visibleCount();
-  const centerOffset = () => containerHeight() / 2 - itemHeight() / 2;
+  const maxIndex = createMemo(() => Math.max(0, items().length - 1));
 
-  const maxIndex = createMemo(() => Math.max(0, props.items().length - 1));
+  const safeValue = createMemo(() => clamp(value(), 0, maxIndex()));
 
-  const safeValue = createMemo(() => clamp(props.value(), 0, maxIndex()));
-
-  const translateY = createMemo(
-    () => centerOffset() - safeValue() * itemHeight(),
-  );
+  const translate = createMemo(() => centerOffset() - safeValue() * itemHeight);
 
   return (
     <div
       ref={container}
       class="vizima-time-wheel"
-      style={{ height: `${containerHeight()}px` }}
+      style={
+        isVertical
+          ? { height: `${containerHeight()}px` }
+          : { width: `${containerHeight()}px` }
+      }
       role="listbox"
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
@@ -84,10 +95,13 @@ export function TimeWheel(props: RenderOptions) {
       <div
         class="vizima-time-wheel__viewport"
         style={{
-          transform: `translateY(${translateY()}px)`,
+          transform: isVertical
+            ? `translateY(${translate()}px)`
+            : `translateX(${translate()}px)`,
         }}
+        classList={{ horizontal: !isVertical }}
       >
-        <For each={props.items()}>
+        <For each={items()}>
           {(item, i) => {
             const selectedIndex = createMemo(() => Math.round(safeValue()));
             const diff = () => i() - selectedIndex();
@@ -99,11 +113,18 @@ export function TimeWheel(props: RenderOptions) {
                   prev: diff() === -1,
                   next: diff() === 1,
                 }}
-                style={{ height: `${itemHeight()}px` }}
+                style={
+                  isVertical
+                    ? { height: `${itemHeight}px` }
+                    : {
+                        width: `${itemHeight}px`,
+                        flex: `0 0 ${itemHeight}px`,
+                      }
+                }
                 role="option"
                 aria-selected={diff() === 0}
               >
-                {item}
+                <div class="vizima-time-wheel__item-inner">{item}</div>
               </div>
             );
           }}
@@ -111,13 +132,22 @@ export function TimeWheel(props: RenderOptions) {
       </div>
 
       {/* center highlight line */}
-      <div
+      {/*<div
         class="vizima-time-wheel__focus"
-        style={{
-          top: `${centerOffset()}px`,
-          height: `${itemHeight()}px`,
-        }}
-      />
+        style={
+          isVertical
+            ? {
+                top: `${centerOffset()}px`,
+                height: `${itemHeight}px`,
+              }
+            : {
+                left: `${centerOffset()}px`,
+                width: `${itemHeight}px`,
+                top: 0,
+                bottom: 0,
+              }
+        }
+      />*/}
     </div>
   );
 }
@@ -147,6 +177,12 @@ const styles = `
   user-select: none;
   font: 13px system-ui, sans-serif;
   color: #e7e7e7;
+  padding: 5px;
+  cursor: grab;
+}
+
+.vizima-time-wheel.dragging {
+  cursor: grabbing;
 }
 
 .vizima-time-wheel__viewport {
@@ -156,27 +192,38 @@ const styles = `
   transition: transform 0.18s ease-out;
 }
 
+.vizima-time-wheel__viewport.horizontal {
+  flex-direction: row;
+}
+
 .vizima-time-wheel__item {
   display: grid;
   place-items: center;
   opacity: 0.35;
-  transform: scale(0.82);
   transition: all 0.18s ease;
-  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  // overflow: hidden;
+}
+
+.vizima-time-wheel__item .vizima-time-wheel__item-inner {
+  transition: all 0.18s ease;
+  opacity: 0.35;
+  transform: scale(0.7);
 }
 
 /* selected */
-.vizima-time-wheel__item.active {
+.vizima-time-wheel__item.active .vizima-time-wheel__item-inner {
   opacity: 1;
-  transform: scale(1.15);
+  transform: scale(1);
   font-weight: 600;
 }
 
 /* neighbours */
-.vizima-time-wheel__item.prev,
-.vizima-time-wheel__item.next {
+.vizima-time-wheel__item.prev .vizima-time-wheel__item-inner,
+.vizima-time-wheel__item.next .vizima-time-wheel__item-inner {
   opacity: 0.55;
-  transform: scale(0.85);
+  transform: scale(0.8);
 }
 
 /* center focus frame */
@@ -185,7 +232,5 @@ const styles = `
   left: 0;
   right: 0;
   pointer-events: none;
-  // border-top: 1px solid rgba(255,255,255,0.35);
-  // border-bottom: 1px solid rgba(255,255,255,0.35);
 }
 `;
