@@ -119,6 +119,7 @@ export function createTimeSlider(
 
 const styles = `
   .vizima-time-slider {
+    width: 300px;
     display: grid;
     padding: 8px 10px;
     user-select: none;

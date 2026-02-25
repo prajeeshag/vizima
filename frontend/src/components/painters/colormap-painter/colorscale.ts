@@ -11,10 +11,6 @@ export const PALETTES = {
     kind: "sequential",
     interpolate: metbrewer.interpolateArchambault,
   },
-  Austria: {
-    kind: "sequential",
-    interpolate: metbrewer.interpolateAustria,
-  },
   Turbo: { kind: "sequential", interpolate: chromatic.interpolateTurbo },
   Viridis: { kind: "sequential", interpolate: chromatic.interpolateViridis },
   Plasma: { kind: "sequential", interpolate: chromatic.interpolatePlasma },

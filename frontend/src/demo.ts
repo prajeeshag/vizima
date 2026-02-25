@@ -25,6 +25,7 @@ import {
 
 import { createStore, watchSelector } from "./state/store";
 import { createColorBar } from "./ui/colorbar";
+import { createTimeWheel } from "./ui/time-wheel";
 import {
   createFlowRenderer,
   type FlowRendererProps,
@@ -380,14 +381,19 @@ const flowLayer = view.addAnimationLayer(flowRenderer);
 const colorMapLayer = view.addLayer([colorMapRenderer]);
 const landGraticuleLayer = view.addLayer([landRenderer, graticuleRenderer]);
 
+let cmRenderTimer: ReturnType<typeof setTimeout> | undefined;
 watchSelector(
   store,
   selectColorMapState,
   ({ playing, mapInteracting }, prev) => {
     const notTimePlayAction = playing === prev?.playing;
     if (notTimePlayAction && !playing && !mapInteracting) {
-      colorMapLayer.render();
+      clearTimeout(cmRenderTimer);
+      cmRenderTimer = setTimeout(() => {
+        colorMapLayer.render();
+      }, 150);
     } else if (mapInteracting) {
+      clearTimeout(cmRenderTimer);
       colorMapLayer.hide();
     }
   },
@@ -404,14 +410,19 @@ watchSelector(
   },
 );
 
+let flowRenderTimer: ReturnType<typeof setTimeout> | undefined;
 watchSelector(
   store,
   selectFlowAnimationState,
   ({ playing, mapInteracting }, prev) => {
     const notTimePlayAction = playing === prev?.playing;
     if (notTimePlayAction && !playing && !mapInteracting) {
-      flowLayer.render();
+      clearTimeout(flowRenderTimer);
+      flowRenderTimer = setTimeout(() => {
+        flowLayer.render();
+      }, 150);
     } else if (mapInteracting) {
+      clearTimeout(flowRenderTimer);
       flowLayer.hide();
     }
   },
@@ -522,23 +533,12 @@ function subscribeBridge(listener: () => void) {
   return store.subscribe(() => listener());
 }
 
-const colorbardiv = document.createElement("div");
-document.body.appendChild(colorbardiv);
-
-createColorBar(colorbardiv, {
-  value: () => store.getState().colorBar,
-  colorBarThickness: 30,
-  orientation: "vertical",
-  subscribe: subscribeBridge,
-});
-
 const colorbardiv1 = document.createElement("div");
 document.body.appendChild(colorbardiv1);
 
 createColorBar(colorbardiv1, {
   value: () => store.getState().colorBar,
   orientation: "horizontal",
-  colorBarThickness: 30,
   subscribe: subscribeBridge,
 });
 
@@ -587,6 +587,11 @@ const formatTime = (iso: string) =>
     month: "short",
   });
 
+const formatMonth = (iso: string) =>
+  new Date(iso).toLocaleString("en-US", {
+    month: "long",
+  });
+
 const timediv = document.createElement("div");
 document.body.appendChild(timediv);
 createTimeSlider(timediv, {
@@ -596,6 +601,15 @@ createTimeSlider(timediv, {
   value: () => store.getState().timeStep,
   subscribe: subscribeBridge,
   onChange: (timeStep) => store.dispatch({ type: "time/changed", timeStep }),
+});
+
+const timeWheeldiv = document.createElement("div");
+document.body.appendChild(timeWheeldiv);
+createTimeWheel(timeWheeldiv, {
+  value: () => store.getState().timeStep,
+  items: () => dset.getTimeAxis("prate")!.map((t, i) => formatMonth(t)),
+  onChange: (timeStep) => store.dispatch({ type: "time/changed", timeStep }),
+  subscribe: subscribeBridge,
 });
 
 const playButtondiv = document.createElement("div");
