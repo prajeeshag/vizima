@@ -70,8 +70,9 @@ export const ColorBar = ({
   tickLabelSize = TICK_LABEL_SIZE,
 }: RenderOptions) => {
   const totalThickness = colorBarThickness + tickSize + labelSize + 5;
-  const width = orientation === "horizontal" ? colorBarLength : totalThickness;
-  const height = orientation === "horizontal" ? totalThickness : colorBarLength;
+  const isHorizontal = orientation === "horizontal";
+  const width = isHorizontal ? colorBarLength : totalThickness;
+  const height = isHorizontal ? totalThickness : colorBarLength;
 
   let gAxis!: SVGGElement;
 
@@ -93,7 +94,7 @@ export const ColorBar = ({
   const axisScale = createMemo(() => {
     if (!scale()) return null;
 
-    return orientation === "horizontal"
+    return isHorizontal
       ? d3.scaleLinear().domain(domainScaled()).range([0, width])
       : d3.scaleLinear().domain(domainScaled()).range([height, 0]);
   });
@@ -101,10 +102,9 @@ export const ColorBar = ({
   const axis = createMemo(() => {
     if (!axisScale()) return null;
 
-    const ax =
-      orientation === "horizontal"
-        ? d3.axisBottom(axisScale()!).ticks(ticks).tickFormat(tickFormat)
-        : d3.axisRight(axisScale()!).ticks(ticks).tickFormat(tickFormat);
+    const ax = isHorizontal
+      ? d3.axisBottom(axisScale()!).ticks(ticks).tickFormat(tickFormat)
+      : d3.axisRight(axisScale()!).ticks(ticks).tickFormat(tickFormat);
     return ax.tickSizeOuter(0).tickSizeInner(tickSize);
   });
 
@@ -132,7 +132,7 @@ export const ColorBar = ({
   createEffect(() => {
     if (!axis() || !gAxis) return;
     const sel = d3.select(gAxis).call(axis()!);
-    if (orientation === "horizontal") {
+    if (isHorizontal) {
       sel
         .selectAll(".tick text")
         .attr("dominant-baseline", "middle")
@@ -146,10 +146,14 @@ export const ColorBar = ({
     }
   });
 
-  const labelX = orientation === "horizontal" ? width / 2 : width - 5;
-  const labelY = orientation === "horizontal" ? height - 5 : height / 2;
+  const labelX = isHorizontal ? width / 2 : width - 5;
+  const labelY = isHorizontal ? labelSize : height / 2;
 
-  const axisOffset = colorBarThickness / 2 - tickLabelSize / 2 - 5;
+  const axisOffset =
+    colorBarThickness / 2 -
+    tickLabelSize / 2 -
+    5 +
+    (isHorizontal ? labelSize + 5 : 0);
   return (
     <Show
       when={scale() && scale()!.domain.length > 1 && colorScale()}
@@ -176,10 +180,13 @@ export const ColorBar = ({
           </linearGradient>
         </defs>
         <rect
+          x={0}
+          y={orientation === "horizontal" ? labelSize + 5 : 0}
           class="colorbar__bar"
           width={orientation === "horizontal" ? width : colorBarThickness}
           height={orientation === "horizontal" ? colorBarThickness : height}
           fill={`url(#${gradientId})`}
+          rx={colorBarThickness / 2}
         />
         <g
           ref={gAxis}
@@ -228,7 +235,6 @@ function createStyle(kwds: { labelSize: number }) {
       background: transparent;
       position: relative;
       z-index: 10;
-      border-radius: 4px;
     }
 
     /* axis lines & ticks */
