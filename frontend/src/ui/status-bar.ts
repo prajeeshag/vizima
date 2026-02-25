@@ -34,7 +34,6 @@ const styles = `
   flex-direction: column;
   align-items: stretch;
   gap: 2px;
-  // background: var(--vizima-ui-bg, rgba(20, 20, 22, 0.7));
   padding: 4px;
   border-radius: 4px;
 }

@@ -234,7 +234,8 @@ function createStyle(kwds: { labelSize: number }) {
   const styles = `
     /* svg background */
     .colorbar {
-      background: transparent;
+      background: var(--vizima-ui-bg, rgba(20, 20, 22, 0.3));
+      border-radius: 4px;
       position: relative;
       z-index: 10;
     }
