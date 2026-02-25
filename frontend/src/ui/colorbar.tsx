@@ -228,6 +228,7 @@ function createStyle(kwds: { labelSize: number }) {
       background: transparent;
       position: relative;
       z-index: 10;
+      border-radius: 4px;
     }
 
     /* axis lines & ticks */
