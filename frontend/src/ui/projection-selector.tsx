@@ -5,7 +5,7 @@ import {
   mountController,
   type ExternalSubscribe,
 } from "./_internal/mount-controller";
-import { DerivedSelect } from "./primitives/select";
+import { Select } from "./primitives/select";
 
 type RenderProps = {
   value: () => ViewProjection;
@@ -17,7 +17,7 @@ type RenderProps = {
 export function ProjectionSelect(props: RenderProps) {
   const current = createMemo(() => props.value());
   return (
-    <DerivedSelect
+    <Select
       {...props}
       value={() => current()}
       toKey={(p) => p.name}

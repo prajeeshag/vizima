@@ -531,23 +531,45 @@ def process_dataset(
     encoding: dict[str, dict] = {}
 
     for _, dataarray in metadata["datavars"].items():
-        var = ds[dataarray["arrName"]]
-        out_ds[dataarray["arrName"]] = var
+        arr_name = dataarray["arrName"]
+        var = ds[arr_name]
+        out_ds[arr_name] = var
+
+        last_two = var.dims[-2:]
+        maybe_time = var.dims[0]
+        var_stack = var.stack(_tmp=last_two)
+        min_var = var_stack.min("_tmp")
+        max_var = var_stack.max("_tmp")
+        range_var = xr.concat([min_var, max_var], dim="range")
+        out_ds[f"{arr_name}_range"] = range_var
+
+        if dataarray["time"]:
+            var_stack = var.stack(_tmp=[*last_two, maybe_time])
+            min_time = var_stack.min("_tmp")
+            max_time = var_stack.max("_tmp")
+            range_time = xr.concat([min_time, max_time], dim="range")
+            out_ds[f"{arr_name}_rangeTime"] = range_time
 
         # TODO: need to implement intelligent chunking strategy
         chunks = []
+        chunk_minmax = []
         if dataarray["time"]:
             chunks.append(1)
+            chunk_minmax.append(1)
         if dataarray["vertical"]:
             chunks.append(1)
+            chunk_minmax.append(1)
         chunks.append(var.shape[-2])
         chunks.append(var.shape[-1])
 
-        encoding[dataarray["arrName"]] = {
+        encoding[arr_name] = {
             "dtype": "int16",
             "_FillValue": -32767,
             "chunks": tuple(chunks),
             **get_packing_params(var),
+        }
+        encoding[f"{arr_name}_range"] = {
+            "chunks": tuple(chunk_minmax),
         }
 
     out_ds.to_zarr(out, mode="w", encoding=encoding)

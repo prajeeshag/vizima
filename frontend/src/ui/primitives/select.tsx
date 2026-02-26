@@ -11,7 +11,7 @@ type DerivedSelectProps<T> = {
   class?: string;
 };
 
-export function DerivedSelect<T>(props: DerivedSelectProps<T>) {
+export function Select<T>(props: DerivedSelectProps<T>) {
   const keyOf = (v: T | undefined) => (v ? props.toKey(v) : "");
 
   const lookup = createMemo(() => {

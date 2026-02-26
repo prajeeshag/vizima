@@ -49,7 +49,7 @@ type Props = {
 
 export const createColorMapRenderer = (kwrgs: Props) => {
   let lastPrefetchT2: number | null = null;
-  let prefetch: Promise<PixelField> | null = null;
+  let prefetch: Promise<[PixelField, Grid]> | null = null;
   const gridAgents: [GridAgent, GridAgent, GridAgent] = [
     createGridAgent(),
     createGridAgent(),
@@ -77,16 +77,20 @@ export const createColorMapRenderer = (kwrgs: Props) => {
       latAxis: props.latAxis,
       lonAxis: props.lonAxis,
     });
-    const pixelField = await getPixel(props.timeIndex);
+    const [pixelField, grid] = await getPixel(props.timeIndex);
+
     const staticColorScale = buildColorScale(props.colorScale, {
+      grid,
       pixelField,
       gridMeta: props.gridMeta,
     });
+
     callback({
       colorScale: staticColorScale,
       props: props,
       pixelField,
     });
+
     return createColorMapPainter({
       pixelField,
       colorScale: staticColorScale,
@@ -94,7 +98,7 @@ export const createColorMapRenderer = (kwrgs: Props) => {
 
     async function getPixel(
       timeIndex: number | undefined,
-    ): Promise<PixelField> {
+    ): Promise<[PixelField, Grid]> {
       if (timeIndex === undefined) {
         return await pixelGet(
           {
@@ -149,20 +153,20 @@ export const createColorMapRenderer = (kwrgs: Props) => {
           1,
         ),
       ]);
-      const p = tInterpolatePixelField(p0, p1, alpha);
-      return p;
+      const p = tInterpolatePixelField(p0[0], p1[0], alpha);
+      return [p, p0[1]];
     }
 
     async function pixelGet(
       gridProps: GridProps,
       agentId: number,
-    ): Promise<PixelField> {
+    ): Promise<[PixelField, Grid]> {
       const grid = await gridAgents[agentId]!.get(gridProps);
       const pixelField = await pixelAgents[agentId]!.get({
         grid,
         ...props,
       });
-      return pixelField;
+      return [pixelField, grid];
     }
   };
   return colorMapRenderer;

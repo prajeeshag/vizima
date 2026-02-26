@@ -5,7 +5,7 @@ import {
   mountController,
   type ExternalSubscribe,
 } from "./_internal/mount-controller";
-import { DerivedSelect } from "./primitives/select";
+import { Select } from "./primitives/select";
 
 interface Grid {
   name: string;
@@ -59,7 +59,7 @@ export const GridSelector = (props: RenderOptions) => {
 
   return (
     <Show when={ds()}>
-      <DerivedSelect
+      <Select
         class="vizima-grid-selector vizima-grid-select"
         value={() => selection().name}
         onChange={(e) => commit({ name: e })}
@@ -67,7 +67,7 @@ export const GridSelector = (props: RenderOptions) => {
         toKey={(v) => v}
       />
       <Show when={availableLevels().length > 0}>
-        <DerivedSelect
+        <Select
           class="vizima-level-selector vizima-grid-select"
           value={() => selection().level}
           onChange={(e) => commit({ level: e })}

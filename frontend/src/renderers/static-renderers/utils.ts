@@ -8,11 +8,13 @@ export function tInterpolateGrids(g0: Grid, g1: Grid, alpha: number): Grid {
   const w0 = 1 - alpha;
   const w1 = alpha;
   const props = { ...g0.props, t: g0.props.t! + alpha };
-  const value = new Float32Array(g0.value.length);
+  const value = new Float32Array(g0.value.grid.length);
+
   for (let i = 0; i < value.length; i++) {
-    value[i] = g0.value[i]! * w0 + g1.value[i]! * w1;
+    value[i] = g0.value.grid[i]! * w0 + g1.value.grid[i]! * w1;
   }
-  return new Grid(props, value);
+
+  return new Grid(props, { ...g0.value, grid: value });
 }
 
 export function tInterpolatePixelField(
@@ -29,7 +31,14 @@ export function tInterpolatePixelField(
     ...p0.props.grid.props,
     t: p0.props.grid.props.t! + alpha,
   };
-  const props = { ...p0.props, grid: new Grid(gridProps, new Float32Array(1)) };
+  const props = {
+    ...p0.props,
+    grid: new Grid(gridProps, {
+      grid: new Float32Array(1),
+      range: [0, 0] as [number, number],
+      rangeTime: [0, 0] as [number, number],
+    }),
+  };
   const array = new Float32Array(p0.value.array.length);
   let min = Infinity;
   let max = -Infinity;

@@ -1,16 +1,11 @@
 import * as d3 from "d3-scale";
 import * as chromatic from "d3-scale-chromatic";
-import * as metbrewer from "../../../colorPalettes/metbrewer";
 import type { PixelField } from "../../pixel-field";
 import type { DataVarMeta } from "../../dataset";
 import type { Expand } from "../../../type-helpers";
+import { Grid } from "../../grid-data";
 
 export const PALETTES = {
-  // sequential
-  Archambault: {
-    kind: "sequential",
-    interpolate: metbrewer.interpolateArchambault,
-  },
   Turbo: { kind: "sequential", interpolate: chromatic.interpolateTurbo },
   Viridis: { kind: "sequential", interpolate: chromatic.interpolateViridis },
   Plasma: { kind: "sequential", interpolate: chromatic.interpolatePlasma },
@@ -59,7 +54,8 @@ export const PALETTES = {
 export type PaletteName = keyof typeof PALETTES;
 type PaletteKind<N extends PaletteName> = (typeof PALETTES)[N]["kind"];
 
-type DomainFnProps = {
+export type DomainFnProps = {
+  grid: Grid;
   pixelField: PixelField;
   gridMeta: DataVarMeta;
 };
@@ -71,7 +67,79 @@ type DomainFnByKind = {
   categorical: (props: DomainFnProps) => number[];
 };
 
-type DomainFnForKind<K extends keyof DomainFnByKind> = DomainFnByKind[K];
+function rangeGrid(props: DomainFnProps) {
+  return props.grid.range();
+}
+
+function rangeGridT(props: DomainFnProps) {
+  return props.grid.rangeTime();
+}
+
+function rangePixel(props: DomainFnProps): [number, number] {
+  const range = props.pixelField.value.range;
+  return [range[0], range[1]];
+}
+
+function crossesZero(range: [number, number]): boolean {
+  return range[0] * range[1] < 0;
+}
+
+function rangeDiv(range: [number, number]): [number, number, number] {
+  if (crossesZero(range)) {
+    return [range[0], 0, range[1]];
+  }
+  const avg = (range[0] + range[1]) / 2;
+  return [range[0], avg, range[1]];
+}
+
+function rangeGridDiv(props: DomainFnProps): [number, number, number] {
+  const range = props.grid.range();
+  return rangeDiv(range);
+}
+
+function rangeGridTDiv(props: DomainFnProps): [number, number, number] {
+  const range = props.grid.rangeTime();
+  return rangeDiv(range);
+}
+
+function rangePixelDiv(props: DomainFnProps): [number, number, number] {
+  const range = props.pixelField.value.range;
+  return rangeDiv([...range]);
+}
+
+export const SEQUENTIAL_DOMAIN_FNS = {
+  grid_range: rangeGrid,
+  grid_time_range: rangeGridT,
+  pixel_range: rangePixel,
+} satisfies Record<string, DomainFnByKind["sequential"]>;
+
+export const DIVERGING_DOMAIN_FNS = {
+  grid_range: rangeGridDiv,
+  grid_time_range: rangeGridTDiv,
+  pixel_range: rangePixelDiv,
+} satisfies Record<string, DomainFnByKind["diverging"]>;
+
+export const CATEGORICAL_DOMAIN_FNS = {
+  categories: (props: DomainFnProps): number[] => {
+    return [];
+  },
+} satisfies Record<string, DomainFnByKind["categorical"]>;
+
+export const DOMAIN_FNS: {
+  [K in keyof DomainFnByKind]: Record<string, DomainFnByKind[K]>;
+} = {
+  sequential: SEQUENTIAL_DOMAIN_FNS,
+  diverging: DIVERGING_DOMAIN_FNS,
+  cyclic: SEQUENTIAL_DOMAIN_FNS,
+  categorical: CATEGORICAL_DOMAIN_FNS,
+} as const;
+
+type DomainFnKeyByKind = {
+  [K in keyof typeof DOMAIN_FNS]: keyof (typeof DOMAIN_FNS)[K];
+};
+
+type DomainKeyForPalette<N extends PaletteName> =
+  DomainFnKeyByKind[PaletteKind<N>];
 
 type ColorScaleBase = {
   name: PaletteName;
@@ -81,7 +149,7 @@ type ColorScaleBase = {
 
 export type ColorScaleDynamic<N extends PaletteName = PaletteName> =
   ColorScaleBase & {
-    domain: DomainFnForKind<PaletteKind<N>>;
+    domain: DomainKeyForPalette<N>;
   };
 
 export type ColorScaleStatic = Expand<
@@ -89,6 +157,11 @@ export type ColorScaleStatic = Expand<
     domain: number[];
   }
 >;
+
+function resolveDomainFn<N extends PaletteName>(scale: ColorScaleDynamic<N>) {
+  const kind = PALETTES[scale.name].kind;
+  return DOMAIN_FNS[kind][scale.domain];
+}
 
 export function defineColorScale<N extends PaletteName>(
   spec: ColorScaleDynamic<N>,
@@ -100,10 +173,10 @@ export function buildColorScale<N extends PaletteName>(
   spec: ColorScaleDynamic<N>,
   props: DomainFnProps,
 ): ColorScaleStatic {
-  const domain = spec.domain(props);
+  const domainFn = resolveDomainFn(spec)!;
   return {
     ...spec,
-    domain,
+    domain: domainFn(props),
   };
 }
 

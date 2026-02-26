@@ -32,31 +32,11 @@ const dset = await datasetAgent.get({ url: "/dataset.zarr" });
 const mapdiv1 = document.createElement("div");
 document.body.appendChild(mapdiv1);
 
-function minmax(array: Float32Array): [number, number] {
-  let min = Infinity;
-  let max = -Infinity;
-  for (let i = 0; i < array.length; i++) {
-    const value = array[i];
-    if (!Number.isFinite(value) || value === undefined) continue;
-    if (value < min) min = value;
-    if (value > max) max = value;
-  }
-  return [min, max];
-}
-
-function minmaxManual(array: Float32Array): [number, number] {
-  return [210, 310];
-}
-
 const initialColorScale: ColorScaleDynamic = defineColorScale({
   name: "Plasma",
   reverse: false,
   clamp: false,
-  domain: (props) => {
-    const range = props.pixelField.value.range;
-    return [range[0], range[1]];
-  },
-  // domain: (props) => [290, 310],
+  domain: "pixel_range",
 });
 
 const initialProjection: ViewProjection = { name: "Orthographic" };

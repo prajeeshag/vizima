@@ -3,6 +3,7 @@ import {
   type ColorScaleDynamic,
   type PaletteName,
   PALETTES,
+  DOMAIN_FNS,
 } from "../components/painters/colormap-painter";
 import { createSignal, For, Show } from "solid-js";
 import { styleRegistry } from "../styles";
@@ -10,6 +11,12 @@ import {
   mountController,
   type ExternalSubscribe,
 } from "./_internal/mount-controller";
+import { Select } from "./primitives/select";
+
+function getDomainFnKeys(name: PaletteName) {
+  const kind = PALETTES[name].kind;
+  return Object.keys(DOMAIN_FNS[kind]);
+}
 
 function renderPalettePreview(name: PaletteName): JSX.Element {
   const p = PALETTES[name];
@@ -92,6 +99,13 @@ function ColorScaleController(props: RenderOptions) {
         </Show>
       </div>
 
+      <Select
+        value={() => value().domain}
+        onChange={(domain) => update({ domain })}
+        options={getDomainFnKeys(value().name)}
+        toKey={(key) => key}
+      />
+
       <div class="vizima-csp-controls">
         <label class="vizima-csp-checkbox">
           <input
@@ -111,6 +125,7 @@ function ColorScaleController(props: RenderOptions) {
           clamp
         </label>
       </div>
+      <div class="vizima-csp-range-selector"></div>
     </div>
   );
 }

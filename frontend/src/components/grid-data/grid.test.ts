@@ -1,8 +1,16 @@
 import { describe, expect, it } from "bun:test";
 import { Grid } from "./grid"; // Update this path
 
+const extras = {
+  range: [0, 0] as [number, number],
+  rangeTime: [0, 0] as [number, number],
+};
+
 describe("GridScalarData", () => {
-  const gridData = new Float32Array([10, 20, 30, 40, 50, 60, 70, 80, 90]);
+  const gridData = {
+    grid: new Float32Array([10, 20, 30, 40, 50, 60, 70, 80, 90]),
+    ...extras,
+  };
 
   const scalarGrid = new Grid(
     { x0: 0, y0: 0, nx: 3, ny: 3, url: "..." },
@@ -19,9 +27,10 @@ describe("GridScalarData", () => {
     it("should not return NaN for value 0", () => {
       const sparseData = new Float32Array(9);
       sparseData[0] = 0; // 0 is falsy in JS
+
       const sparseGrid = new Grid(
         { x0: 1, y0: 2, nx: 3, ny: 3, url: "..." },
-        sparseData,
+        { grid: sparseData, ...extras },
       );
       expect(sparseGrid.get(1, 2)).toBe(0);
     });
@@ -39,7 +48,7 @@ describe("GridScalarData", () => {
       sparseData[0] = NaN; // 0 is falsy in JS
       const sparseGrid = new Grid(
         { x0: 0, y0: 0, nx: 3, ny: 3, url: "..." },
-        sparseData,
+        { grid: sparseData, ...extras },
       );
       expect(sparseGrid.get(0, 0)).toBeNaN();
     });
@@ -81,7 +90,7 @@ describe("GridScalarData", () => {
       const nanData = new Float32Array([10, NaN, 40, 50, 0, 0, 0, 0, 0]);
       const nanGrid = new Grid(
         { x0: 0, y0: 0, nx: 3, ny: 3, url: "..." },
-        nanData,
+        { grid: nanData, ...extras },
       );
       expect(nanGrid.interpolateBilinear(0.5, 0.5, false)).toBeNaN();
     });
