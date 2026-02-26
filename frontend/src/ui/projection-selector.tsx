@@ -21,6 +21,7 @@ export function ProjectionSelect(props: RenderProps) {
       {...props}
       value={() => current()}
       toKey={(p) => p.name}
+      title="Select projection"
       class="vizima-projection-select"
     />
   );
@@ -39,27 +40,8 @@ export function createProjectionSelector(options: ProjectionSelectorOptions) {
     title.textContent = options.title;
     container.appendChild(title);
   }
-  styleRegistry.register("projection-selector", styles);
   mountController(container, options, (props) => (
     <ProjectionSelect {...props} />
   ));
   return container;
 }
-
-const styles = /*css */ `
-  .vizima-projection-select {
-  color: #ddd;
-  padding: 4px;
-  font-size: 12px;
-  border-radius: 4px;
-  border: 1px solid #999;
-  background: transparent;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  cursor: pointer;
-  }
-
-  .vizima-projection-select:focus {
-    outline: none;
-    border-color: #2684ff;
-  }`;

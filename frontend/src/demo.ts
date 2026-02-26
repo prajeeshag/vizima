@@ -22,7 +22,7 @@ import {
   type FlowRendererProps,
 } from "./renderers/animation-renderers";
 import { createStatusBar } from "./ui/status-bar";
-import { createControlPanel } from "./ui/control-panel";
+import { createControlPanel, createMenuButton } from "./ui/control-panel";
 
 const landUrl = "/land-110m.json";
 
@@ -35,7 +35,7 @@ document.body.appendChild(mapdiv1);
 const initialColorScale: ColorScaleDynamic = defineColorScale({
   name: "Plasma",
   reverse: false,
-  clamp: false,
+  clamp: true,
   domain: "pixel_range",
 });
 
@@ -506,7 +506,7 @@ function subscribeBridge(listener: () => void) {
   return store.subscribe(() => listener());
 }
 
-const ctrlDiv = createControlPanel({
+const [ctrlDiv, menuBtn] = createControlPanel({
   colorMap: {
     grid: {
       varset: { vars: dset.dataVars(), verticals: dset.verticals() },
@@ -538,6 +538,7 @@ const ctrlDiv = createControlPanel({
   },
 });
 document.body.appendChild(ctrlDiv);
+document.body.appendChild(menuBtn);
 
 const formatMonth = (iso: string) =>
   new Date(iso).toLocaleString("en-US", {

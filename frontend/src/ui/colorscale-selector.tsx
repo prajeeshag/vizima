@@ -4,6 +4,7 @@ import {
   type PaletteName,
   PALETTES,
   DOMAIN_FNS,
+  DOMAINS_FNS_PARAMS,
 } from "../components/painters/colormap-painter";
 import { createSignal, For, Show } from "solid-js";
 import { styleRegistry } from "../styles";
@@ -76,38 +77,33 @@ function ColorScaleController(props: RenderOptions) {
   return (
     <div class="vizima-csp">
       <div class="vizima-csp-dropdown">
-        <div class="vizima-csp-trigger" onClick={() => setOpen((o) => !o)}>
+        <div
+          class="vizima-csp-trigger"
+          title="Select Color Palette"
+          onClick={() => setOpen((o) => !o)}
+        >
           <div class="vizima-csp-trigger-label">{value().name}</div>
           {renderPalettePreview(value().name)}
         </div>
 
-        <Show when={open()}>
-          <div class="vizima-csp-menu">
-            <For each={Object.keys(PALETTES) as PaletteName[]}>
-              {(name) => (
-                <PaletteOption
-                  name={name}
-                  selected={name === value().name}
-                  onSelect={() => {
-                    update({ name });
-                    setOpen(false);
-                  }}
-                />
-              )}
-            </For>
-          </div>
-        </Show>
+        <div class="vizima-csp-menu" classList={{ "is-open": open() }}>
+          <For each={Object.keys(PALETTES) as PaletteName[]}>
+            {(name) => (
+              <PaletteOption
+                name={name}
+                selected={name === value().name}
+                onSelect={() => {
+                  update({ name });
+                  setOpen(false);
+                }}
+              />
+            )}
+          </For>
+        </div>
       </div>
 
-      <Select
-        value={() => value().domain}
-        onChange={(domain) => update({ domain })}
-        options={getDomainFnKeys(value().name)}
-        toKey={(key) => key}
-      />
-
       <div class="vizima-csp-controls">
-        <label class="vizima-csp-checkbox">
+        <label class="vizima-csp-checkbox" title="Reverse color palette">
           <input
             type="checkbox"
             checked={value().reverse}
@@ -116,7 +112,7 @@ function ColorScaleController(props: RenderOptions) {
           reverse
         </label>
 
-        <label class="vizima-csp-checkbox">
+        <label class="vizima-csp-checkbox" title="Clamp colormap range">
           <input
             type="checkbox"
             checked={value().clamp}
@@ -125,7 +121,16 @@ function ColorScaleController(props: RenderOptions) {
           clamp
         </label>
       </div>
-      <div class="vizima-csp-range-selector"></div>
+
+      <Select
+        value={() => value().domain}
+        onChange={(domain) => update({ domain })}
+        options={getDomainFnKeys(value().name)}
+        toKey={(key) => key}
+        label={(v) => DOMAINS_FNS_PARAMS[v]?.label || ""}
+        tooltip={(v) => DOMAINS_FNS_PARAMS[v]?.tooltip || ""}
+        title="Select colorscale range options"
+      />
     </div>
   );
 }
@@ -146,11 +151,13 @@ export function createColorScaleSelector(options: ColorScaleSelectorOptions) {
 
 const styles = `
   .vizima-csp {
-    width: 120px;
+    display: flex;
+    flex-direction: column;
     font-family: system-ui, sans-serif;
     color: #ddd;
     position: relative;
     z-index: 10;
+    gap: 4px
   }
 
   .vizima-csp-dropdown {
@@ -166,8 +173,19 @@ const styles = `
     left: 0;
     z-index: 1000;
     background: rgba(20, 20, 20, 0.7); /* translucent */
-     backdrop-filter: blur(6px);
-     -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+
+    opacity: 0;
+    transform: translateY(-4px);
+    pointer-events: none;
+    transition: opacity 120ms ease, transform 120ms ease;
+  }
+
+  .vizima-csp-menu.is-open {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
   }
 
   .vizima-csp-trigger {
@@ -188,7 +206,7 @@ const styles = `
   }
 
   .vizima-csp-option.is-selected {
-    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid #999;
   }
 
   .vizima-csp-option-label {
@@ -224,5 +242,6 @@ const styles = `
   }
 
   .vizima-csp-checkbox {
-    font-size: 10px;
+    font-size: 11px;
+    cursor: pointer;
   }`;

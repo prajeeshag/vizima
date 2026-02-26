@@ -119,6 +119,24 @@ export const DIVERGING_DOMAIN_FNS = {
   pixel_range: rangePixelDiv,
 } satisfies Record<string, DomainFnByKind["diverging"]>;
 
+export const DOMAINS_FNS_PARAMS: Record<
+  string,
+  { label: string; tooltip: string }
+> = {
+  grid_range: {
+    label: "grid range",
+    tooltip: "Min and Max of grid field",
+  },
+  grid_time_range: {
+    label: "grid time range",
+    tooltip: "Min and Max of grid field over all time",
+  },
+  pixel_range: {
+    label: "pixel range",
+    tooltip: "Min and Max of pixel field",
+  },
+};
+
 export const CATEGORICAL_DOMAIN_FNS = {
   categories: (props: DomainFnProps): number[] => {
     return [];

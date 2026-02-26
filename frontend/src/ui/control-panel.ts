@@ -35,17 +35,52 @@ const ControlPanelParams: Record<string, ParamType> = {
   },
 };
 
-export function createControlPanel(options: ControlPanelOptions) {
-  const div = document.createElement("div");
+export function createControlPanel(
+  options: ControlPanelOptions,
+): [HTMLDivElement, HTMLButtonElement] {
+  const panel = document.createElement("div");
+  const menuBtn = createMenuButton();
+
+  function openPanel() {
+    panel.classList.add("open");
+    menuBtn.classList.add("hidden");
+  }
+
+  function closePanel() {
+    panel.classList.remove("open");
+    menuBtn.classList.remove("hidden");
+  }
+
+  menuBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    openPanel();
+  });
+
+  document.addEventListener("click", (event) => {
+    const target = event.target as Node;
+    const clickedInsidePanel = panel.contains(target);
+    const clickedMenuButton = menuBtn.contains(target);
+    console.log(target, clickedInsidePanel);
+    if (!clickedInsidePanel && !clickedMenuButton) {
+      if (panel.classList.contains("open")) {
+        closePanel();
+      }
+    }
+  });
+
   styleRegistry.register("control-panel", styles);
-  div.classList.add("vizima-control-panel");
+  panel.classList.add("vizima-control-panel");
   for (const [key, value] of Object.entries(options)) {
     const params = ControlPanelParams[key]!;
-    const panel = params.create({ ...value, title: params.title });
-    panel.classList.add(`control-panel-panel`);
-    div.appendChild(panel);
+    const subpanel = params.create({ ...value, title: params.title });
+    subpanel.classList.add(`control-panel-panel`);
+    panel.appendChild(subpanel);
   }
-  return div;
+  openPanel();
+  setTimeout(() => {
+    closePanel();
+  }, 3000);
+  return [panel, menuBtn];
 }
 
 type ColorMapPanelOptions = {
@@ -92,6 +127,24 @@ const styles = /*css*/ `
     background-color: rgba(20, 20, 22, 0.7);
     z-index: 10;
     gap: 4px;
+
+    /* Transform */
+    transform-origin: bottom left;   /* ← add this */
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 700ms ease, opacity 700ms ease;
+  }
+
+  .vizima-control-panel.open {
+    transform: scale(1);
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .vizima-control-panel.hidden {
+    transform: scale(0.5);
+    opacity: 0;
+    pointer-events: none;
   }
 
   .vizima-controller-container{
@@ -131,4 +184,52 @@ const styles = /*css*/ `
     border-bottom: 1px solid #999;
   }
 
+    .vizima-select {
+    color: #ddd;
+    padding: 4px;
+    font-size: 12px;
+    border-radius: 4px;
+    border: 1px solid #999;
+    background: transparent;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    cursor: pointer;
+    }
+
+    .vizima-select:focus {
+      outline: none;
+      border-color: #2684ff;
+    }
 `;
+
+export function createMenuButton(): HTMLButtonElement {
+  styleRegistry.register("menu-button", menuButtonStyles);
+  const btn = document.createElement("button");
+  btn.classList.add("vizima-menu-btn");
+  btn.innerHTML = "☰"; // or svg
+  return btn;
+}
+
+const menuButtonStyles = /*css*/ `
+  .vizima-menu-btn {
+    position: fixed;
+    bottom: 16px;
+    left: 16px;
+    z-index: 11;
+    font-size: 18px;
+    padding: 6px 10px;
+    border-radius: 4px;
+    border: 1px solid #999;
+    background: rgba(20,20,22,0.2);
+    color: #ddd;
+    cursor: pointer;
+    transition: opacity 500ms ease;
+    opacity: 1;
+  }
+
+  .vizima-menu-btn.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  `;

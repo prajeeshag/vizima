@@ -12,13 +12,21 @@ interface Grid {
   level: string;
 }
 
-type Vars = Record<string, { vertical: string }>;
+type Vars = Record<
+  string,
+  {
+    vertical: string;
+    long_name: string;
+    standard_name: string;
+  }
+>;
 type VarSet = { vars: Vars; verticals: Record<string, string[]> };
 
 type RenderOptions = {
   varset: VarSet;
   value: () => Grid;
   onChange?: (selection: Grid) => void;
+  label?: (name: string) => string;
 };
 
 function firstOrEmpty(list: readonly string[]): string {
@@ -57,15 +65,25 @@ export const GridSelector = (props: RenderOptions) => {
     props.onChange?.(next);
   };
 
+  function tooltip(name: string) {
+    const data = ds();
+    const dv = data.vars[name];
+    return dv?.long_name || dv?.standard_name || "";
+  }
+
   return (
     <Show when={ds()}>
       <Select
+        title="Select Variable"
         class="vizima-grid-selector vizima-grid-select"
         value={() => selection().name}
         onChange={(e) => commit({ name: e })}
         options={Object.keys(ds()!.vars)}
         toKey={(v) => v}
+        label={props.label}
+        tooltip={tooltip}
       />
+
       <Show when={availableLevels().length > 0}>
         <Select
           class="vizima-level-selector vizima-grid-select"

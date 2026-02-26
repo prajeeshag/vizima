@@ -63,7 +63,6 @@ async function fetchRange(
   const values = (val.data as number[]).map(
     (x) => x * attrs.scale_factor + attrs.add_offset,
   );
-  console.log(values);
   return [values[0]!, values[1]!];
 }
 

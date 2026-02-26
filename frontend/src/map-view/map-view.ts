@@ -156,7 +156,11 @@ export class MapView {
       (p) => this.emit(["zoom", "change"]),
       (p) => this.emit(["zoomEnd"]),
     );
-    d3.select(this.interactCanvas).call(dragHandler).call(zoomHandler);
+    const sel = d3.select(this.interactCanvas);
+    delete (this.interactCanvas as any).__zoom;
+    sel.on(".zoom", null);
+    sel.on(".drag", null);
+    sel.call(dragHandler).call(zoomHandler);
     return globe;
   }
 
