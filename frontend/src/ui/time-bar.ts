@@ -18,19 +18,17 @@ export function createTimeBar({
   styleRegistry.register("time-bar", styles);
   const div = document.createElement("div");
   div.classList.add("vizima-time-bar");
-  const divButton = document.createElement("div");
-  divButton.classList.add("vizima-play-button-container");
-  const divTimeWheel = document.createElement("div");
-  divTimeWheel.classList.add("vizima-time-wheel-container");
-  div.appendChild(divButton);
-  div.appendChild(divTimeWheel);
-  createPlayButton(divButton, playButton);
+
+  const divButton = createPlayButton(playButton);
+
   const timeWheelLength = totalLength - 26 - GAP;
-  console.log("timeWheelLength", timeWheelLength);
-  createTimeWheel(divTimeWheel, {
+  const divTimeWheel = createTimeWheel({
     ...timeWheel,
     totalLength: timeWheelLength,
   });
+  divTimeWheel.classList.add("vizima-time-wheel-container");
+  div.appendChild(divButton);
+  div.appendChild(divTimeWheel);
   return div;
 }
 
@@ -43,7 +41,7 @@ const styles = `
 
 }
 
-.vizima-play-button-container {
+.vizima-time-bar > .vizima-controller-container {
   flex: 0 0 auto;
 }
 
@@ -65,7 +63,6 @@ const styles = `
 .vizima-time-wheel-container {
   display: inline-flex;
   align-items: center;
-  flex: 0 0 auto;
   z-index: 10;
   font: 12px system-ui, sans-serif;
   color: #e7e7e7;

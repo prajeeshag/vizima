@@ -15,23 +15,14 @@ import {
 } from "./components/painters/colormap-painter";
 import { styleRegistry } from "./styles";
 import { ViewProjection, type ProjectorState } from "./components/projection";
-import {
-  createGridSelector,
-  createColorScaleController,
-  createProjectionSelector,
-  createPlayButton,
-} from "./ui";
-
-import { createTimeBar } from "./ui/time-bar";
 
 import { createStore, watchSelector } from "./state/store";
-import { createColorBar } from "./ui/colorbar";
-import { createTimeWheel } from "./ui/time-wheel";
 import {
   createFlowRenderer,
   type FlowRendererProps,
 } from "./renderers/animation-renderers";
 import { createStatusBar } from "./ui/status-bar";
+import { createControlPanel } from "./ui/control-panel";
 
 const landUrl = "/land-110m.json";
 
@@ -535,50 +526,38 @@ function subscribeBridge(listener: () => void) {
   return store.subscribe(() => listener());
 }
 
-const projdiv = document.createElement("div");
-document.body.appendChild(projdiv);
-
-createProjectionSelector(projdiv, {
-  value: () => store.getState().projection,
-  subscribe: subscribeBridge,
-  onChange: (projection) =>
-    store.dispatch({ type: "projection/changed", projection }),
-  options: PROJECTIONS,
+const ctrlDiv = createControlPanel({
+  colorMap: {
+    grid: {
+      varset: { vars: dset.dataVars(), verticals: dset.verticals() },
+      value: () => store.getState().colorMap.selection,
+      subscribe: subscribeBridge,
+      onChange: (selection) =>
+        store.dispatch({ type: "colormap/grid/changed", selection }),
+    },
+    colorScale: {
+      value: () => store.getState().colorMap.colorScale,
+      subscribe: subscribeBridge,
+      onChange: (colorScale) =>
+        store.dispatch({ type: "colormap/colorscale/changed", colorScale }),
+    },
+  },
+  flowMap: {
+    varset: { vars: dset.vectorVars(), verticals: dset.verticals() },
+    value: () => store.getState().flowAnimation.selection,
+    subscribe: subscribeBridge,
+    onChange: (selection) =>
+      store.dispatch({ type: "flowanimation/grid/changed", selection }),
+  },
+  projection: {
+    value: () => store.getState().projection,
+    subscribe: subscribeBridge,
+    onChange: (projection) =>
+      store.dispatch({ type: "projection/changed", projection }),
+    options: PROJECTIONS,
+  },
 });
-
-const contdiv = document.createElement("div");
-document.body.appendChild(contdiv);
-createGridSelector(contdiv, {
-  varset: { vars: dset.dataVars(), verticals: dset.verticals() },
-  value: () => store.getState().colorMap.selection,
-  subscribe: subscribeBridge,
-  onChange: (selection) =>
-    store.dispatch({ type: "colormap/grid/changed", selection }),
-});
-
-const vecdiv = document.createElement("div");
-document.body.appendChild(vecdiv);
-createGridSelector(vecdiv, {
-  varset: { vars: dset.vectorVars(), verticals: dset.verticals() },
-  value: () => store.getState().flowAnimation.selection,
-  subscribe: subscribeBridge,
-  onChange: (selection) =>
-    store.dispatch({ type: "flowanimation/grid/changed", selection }),
-});
-
-const csdiv = document.createElement("div");
-document.body.appendChild(csdiv);
-createColorScaleController(csdiv, {
-  value: () => store.getState().colorMap.colorScale,
-  subscribe: subscribeBridge,
-  onChange: (colorScale) =>
-    store.dispatch({ type: "colormap/colorscale/changed", colorScale }),
-});
-
-const formatTime = (iso: string) =>
-  new Date(iso).toLocaleString("en-US", {
-    month: "short",
-  });
+document.body.appendChild(ctrlDiv);
 
 const formatMonth = (iso: string) =>
   new Date(iso).toLocaleString("en-US", {

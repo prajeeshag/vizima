@@ -99,14 +99,16 @@ export const TimeSlider = (props: RenderOptions) => {
 };
 
 export function createTimeSlider(
-  container: HTMLElement,
   options: RenderOptions & {
     subscribe: ExternalSubscribe;
   },
 ) {
+  const container = document.createElement("div");
+  container.classList.add("vizima-controller-container");
+
   styleRegistry.register("time-slider", styles);
 
-  return mountController(container, options, ({ value, onChange }) => (
+  mountController(container, options, ({ value, onChange }) => (
     <TimeSlider
       numTimes={options.numTimes}
       ticks={options.ticks}
@@ -115,6 +117,7 @@ export function createTimeSlider(
       onChange={onChange}
     />
   ));
+  return container;
 }
 
 const styles = `

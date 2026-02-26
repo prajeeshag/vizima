@@ -26,25 +26,34 @@ export function ProjectionSelect(props: RenderProps) {
   );
 }
 
-export function createProjectionSelector(
-  container: HTMLElement,
-  options: RenderProps & {
-    subscribe: ExternalSubscribe;
-  },
-) {
+export type ProjectionSelectorOptions = RenderProps & {
+  subscribe: ExternalSubscribe;
+  title?: string;
+};
+export function createProjectionSelector(options: ProjectionSelectorOptions) {
+  const container = document.createElement("div");
+  container.classList.add("vizima-controller-container");
+  if (options.title) {
+    const title = document.createElement("div");
+    title.classList.add("vizima-controller-title");
+    title.textContent = options.title;
+    container.appendChild(title);
+  }
   styleRegistry.register("projection-selector", styles);
-  return mountController(container, options, (props) => (
+  mountController(container, options, (props) => (
     <ProjectionSelect {...props} />
   ));
+  return container;
 }
 
 const styles = /*css */ `
   .vizima-projection-select {
-  padding: 6px 8px;
-  font-size: 13px;
+  color: #ddd;
+  padding: 4px;
+  font-size: 12px;
   border-radius: 4px;
-  border: 1px solid #ccc;
-  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid #999;
+  background: transparent;
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   cursor: pointer;

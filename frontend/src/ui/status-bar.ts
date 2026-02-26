@@ -16,12 +16,10 @@ export function createStatusBar({
   styleRegistry.register("status-bar", styles);
   const div = document.createElement("div");
   div.classList.add("vizima-status-bar");
-  const divCb = document.createElement("div");
-  divCb.classList.add("vizima-color-bar-container");
-  const divTimeBar = createTimeBar({ ...timeBar, totalLength: length });
+  const divCb = createColorBar({ ...colorBar, colorBarLength: length });
   div.appendChild(divCb);
+  const divTimeBar = createTimeBar({ ...timeBar, totalLength: length });
   div.appendChild(divTimeBar);
-  createColorBar(divCb, { ...colorBar, colorBarLength: length });
   return div;
 }
 
@@ -37,7 +35,7 @@ const styles = `
   padding: 4px;
   border-radius: 4px;
 }
-.vizima-color-bar-container {
+.vizima-status-bar > .vizima-controller-container {
 line-height: 0;
 }
 `;

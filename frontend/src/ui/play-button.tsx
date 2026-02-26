@@ -27,15 +27,16 @@ export type PlayButtonOptions = RenderOptions & {
   subscribe: ExternalSubscribe;
 };
 
-export function createPlayButton(
-  container: HTMLElement,
-  options: PlayButtonOptions,
-) {
+export function createPlayButton(options: PlayButtonOptions) {
   styleRegistry.register("play-button", styles);
 
-  return mountController(container, options, ({ value, onChange }) => (
+  const container = document.createElement("div");
+  container.classList.add("vizima-controller-container");
+
+  mountController(container, options, ({ value, onChange }) => (
     <PlayButton value={value} onChange={onChange} />
   ));
+  return container;
 }
 
 const styles = `

@@ -157,12 +157,13 @@ export function TimeWheel({
 export type TimeWheelOptions = RenderOptions & {
   subscribe: ExternalSubscribe;
 };
-export function createTimeWheel(
-  container: HTMLElement,
-  options: TimeWheelOptions,
-) {
+export function createTimeWheel(options: TimeWheelOptions) {
+  const container = document.createElement("div");
+  container.classList.add("vizima-time-wheel-container");
+
   styleRegistry.register("time-wheel", styles);
-  return mountController(container, options, ({ value }) => (
+
+  mountController(container, options, ({ value }) => (
     <TimeWheel
       {...options}
       items={options.items}
@@ -170,6 +171,8 @@ export function createTimeWheel(
       onChange={options.onChange}
     />
   ));
+
+  return container;
 }
 
 const styles = `

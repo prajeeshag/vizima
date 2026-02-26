@@ -219,15 +219,15 @@ export type ColorBarOptions = RenderOptions & {
   subscribe: ExternalSubscribe;
 };
 
-export function createColorBar(
-  container: HTMLElement,
-  options: ColorBarOptions,
-) {
+export function createColorBar(options: ColorBarOptions) {
+  const container = document.createElement("div");
+  container.classList.add("vizima-controller-container");
   const options1 = { ...options, labelSize: options.labelSize ?? 14 };
   styleRegistry.register("colorbar", createStyle(options1));
-  return mountController(container, options1, ({ value }) => (
+  mountController(container, options1, ({ value }) => (
     <ColorBar {...options} value={value} />
   ));
+  return container;
 }
 
 function createStyle(kwds: { labelSize: number }) {

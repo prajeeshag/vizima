@@ -15,11 +15,11 @@ interface Grid {
 type Vars = Record<string, { vertical: string }>;
 type VarSet = { vars: Vars; verticals: Record<string, string[]> };
 
-interface RenderOptions {
+type RenderOptions = {
   varset: VarSet;
   value: () => Grid;
   onChange?: (selection: Grid) => void;
-}
+};
 
 function firstOrEmpty(list: readonly string[]): string {
   return list.length > 0 ? list[0]! : "";
@@ -79,29 +79,40 @@ export const GridSelector = (props: RenderOptions) => {
   );
 };
 
-export function createGridSelector(
-  container: HTMLElement,
-  options: RenderOptions & {
-    subscribe: ExternalSubscribe;
-  },
-) {
+export type GridSelectorOptions = RenderOptions & {
+  subscribe: ExternalSubscribe;
+  title?: string;
+};
+
+export function createGridSelector(options: GridSelectorOptions) {
   styleRegistry.register("grid-selector", styles);
 
-  return mountController(container, options, ({ value, onChange }) => (
-    <GridSelector varset={options.varset} value={value} onChange={onChange} />
+  const container = document.createElement("div");
+  if (options.title) {
+    const title = document.createElement("div");
+    title.textContent = options.title;
+    title.classList.add("vizima-controller-title");
+    container.appendChild(title);
+  }
+
+  container.classList.add("vizima-controller-container");
+  mountController(container, options, ({ value }) => (
+    <GridSelector {...options} value={value} />
   ));
+  return container;
 }
 
 const styles = `
   .vizima-grid-select {
-    padding: 6px 8px;
-    font-size: 13px;
+    padding: 4px;
+    font-size: 12px;
     border-radius: 4px;
-    border: 1px solid #ccc;
-    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid #999;
+    background: transparent;
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
     cursor: pointer;
+    color: #ddd;
   }
 
   .vizima-grid-select:focus {

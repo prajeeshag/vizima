@@ -52,7 +52,6 @@ function PaletteOption(props: {
 }
 
 type RenderOptions = {
-  /** Controlled value accessor (e.g. from your store). */
   value: () => ColorScaleDynamic;
   onChange?: (value: ColorScaleDynamic) => void;
 };
@@ -116,23 +115,25 @@ function ColorScaleController(props: RenderOptions) {
   );
 }
 
-export function createColorScaleController(
-  container: HTMLElement,
-  options: RenderOptions & {
-    subscribe: ExternalSubscribe;
-  },
-) {
+export type ColorScaleSelectorOptions = RenderOptions & {
+  subscribe: ExternalSubscribe;
+};
+
+export function createColorScaleSelector(options: ColorScaleSelectorOptions) {
+  const container = document.createElement("div");
+  container.classList.add("vizima-controller-container");
   styleRegistry.register("colorscale-selector", styles);
-  return mountController(container, options, ({ value, onChange }) => (
-    <ColorScaleController value={value} onChange={onChange} />
+  mountController(container, options, ({ value }) => (
+    <ColorScaleController {...options} value={value} />
   ));
+  return container;
 }
 
 const styles = `
   .vizima-csp {
     width: 120px;
     font-family: system-ui, sans-serif;
-    color: #333;
+    color: #ddd;
     position: relative;
     z-index: 10;
   }
@@ -142,7 +143,6 @@ const styles = `
   }
 
   .vizima-csp-menu {
-    border: 1px solid #ccc;
     max-height: 200px;
     width: 100%;
     overflow: auto;
@@ -150,19 +150,20 @@ const styles = `
     top: 100%;
     left: 0;
     z-index: 1000;
-    background: rgba(255, 255, 255, 0.3); /* translucent */
+    background: rgba(20, 20, 20, 0.7); /* translucent */
      backdrop-filter: blur(6px);
      -webkit-backdrop-filter: blur(6px);
   }
 
   .vizima-csp-trigger {
-    border: 1px solid #ccc;
+    border: 1px solid #999;
     padding: 6px;
     cursor: pointer;
+    border-radius: 5px;
   }
 
   .vizima-csp-trigger-label {
-    font-size: 12px;
+    font-size: 10px;
     margin-bottom: 4px;
   }
 
@@ -176,9 +177,9 @@ const styles = `
   }
 
   .vizima-csp-option-label {
-    font-size: 12px;
+    font-size: 10px;
     margin-bottom: 2px;
-    color: #333;
+    color: #ddd;
   }
 
   /* previews */
@@ -204,9 +205,9 @@ const styles = `
   .vizima-csp-controls {
     display: flex;
     gap: 8px;
-    margin-top: 6px;
+    margin-top: 2px;
   }
 
   .vizima-csp-checkbox {
-    font-size: 12px;
+    font-size: 10px;
   }`;
