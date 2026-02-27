@@ -7,7 +7,7 @@ export type GraticuleProp = {
   readonly strokeStyle?: string;
 };
 
-const defaultStrokeStyle: string = "rgba(255, 255, 255, 0.1)";
+const defaultStrokeStyle: string = "rgba(255, 255, 255, 0.3)";
 
 export class GraticulePainter extends Painter<GraticuleProp> {
   async draw(canvas: HTMLCanvasElement, signal?: AbortSignal) {

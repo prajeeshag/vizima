@@ -217,6 +217,9 @@ const JsonDataAgent = createJsonDataAgent();
 const landLow = await JsonDataAgent.get({
   url: "./assets/landjson/land-110m.topojson",
 });
+const landMid = await JsonDataAgent.get({
+  url: "./assets/landjson/land-50m.topojson",
+});
 const landHigh = await JsonDataAgent.get({
   url: "./assets/landjson/land-10m.topojson",
 });

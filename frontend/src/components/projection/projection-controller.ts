@@ -74,15 +74,15 @@ export class ProjectionController implements IProjectionController {
   }
 
   dragHandler = (
-    renderDrag: (proj: ProjectorState) => void,
-    renderEnd: (proj: ProjectorState) => void,
+    onDrag: (proj: ProjectorState) => void,
+    onDragEnd: (proj: ProjectorState) => void,
   ): DragBehavior<HTMLCanvasElement, unknown, unknown> => {
-    return getDragHandler(this.projParams.name)(this, renderDrag, renderEnd);
+    return getDragHandler(this.projParams.name)(this, onDrag, onDragEnd);
   };
 
   zoomHandler(
-    renderZoom: (proj: ProjectorState) => void,
-    renderEnd: (proj: ProjectorState) => void,
+    onZoom: (proj: ProjectorState) => void,
+    onZoomEnd: (proj: ProjectorState) => void,
   ): ZoomBehavior<HTMLCanvasElement, unknown> {
     const baseScale = this._proj.scale();
     return d3zoom<HTMLCanvasElement, unknown>()
@@ -91,10 +91,10 @@ export class ProjectionController implements IProjectionController {
         const { transform } = event;
         const newScale = baseScale * transform.k;
         this._proj.scale(newScale);
-        renderZoom(this.getProjState());
+        onZoom(this.getProjState());
       })
       .on("end", () => {
-        renderEnd(this.getProjState());
+        onZoomEnd(this.getProjState());
       });
   }
 }

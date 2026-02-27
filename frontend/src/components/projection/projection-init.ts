@@ -49,7 +49,7 @@ class GlobalProjectionInit<
   init = (
     viewSize: [number, number],
     corners?: Corners,
-    padding: [number, number] = [0.05, 0.05],
+    padding: [number, number] = [0.005, 0.005],
   ) => {
     const paddedSize: [[number, number], [number, number]] = [
       [viewSize[0] * padding[0], viewSize[1] * padding[0]],

@@ -11,6 +11,7 @@ import {
 } from "./_internal/mount-controller";
 import { createEffect, Show, createMemo } from "solid-js";
 import type { DataVarMeta } from "../components/dataset";
+import { is } from "zod/v4/locales";
 
 function computeExponent(domain: number[]): number {
   const maxAbs = d3.max(domain);
@@ -23,8 +24,23 @@ function computeExponent(domain: number[]): number {
 
 const tickFormat = (value: d3.NumberValue) => d3.format(".3~g")(Number(value));
 
-const superscript = (n: number) =>
-  n
+function toLinear(c: number): number {
+  c /= 255;
+  return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+}
+
+function getContrastColor(color: string): string {
+  const c = d3.color(color);
+  if (!c) return "#000";
+
+  const L =
+    0.2126 * toLinear(c.r) + 0.7152 * toLinear(c.g) + 0.0722 * toLinear(c.b);
+
+  return L > 0.5 ? "#000" : "#fff";
+}
+
+const superscript = (num: number) =>
+  num
     .toString()
     .replace(/-/g, "⁻")
     .replace(/0/g, "⁰")
@@ -93,10 +109,15 @@ export const ColorBar = ({
 
   const axisScale = createMemo(() => {
     if (!scale()) return null;
-
-    return isHorizontal
-      ? d3.scaleLinear().domain(domainScaled()).range([0, width])
-      : d3.scaleLinear().domain(domainScaled()).range([height, 0]);
+    let range: number[];
+    const size = isHorizontal ? width : height;
+    if (domainScaled().length === 3) {
+      range = [0, size / 2, size];
+    } else {
+      range = [0, size];
+    }
+    if (!isHorizontal) range.reverse();
+    return d3.scaleLinear().domain(domainScaled()).range(range);
   });
 
   const axis = createMemo(() => {
@@ -132,6 +153,17 @@ export const ColorBar = ({
   createEffect(() => {
     if (!axis() || !gAxis) return;
     const sel = d3.select(gAxis).call(axis()!);
+
+    sel.selectAll<SVGTextElement, number>(".tick text").attr("fill", (d) => {
+      if (!scale() || !colorScale()) return "#000";
+
+      const exp = exponent();
+      const actualValue = d * Math.pow(10, exp);
+
+      const bg = colorScale()!(actualValue);
+      return getContrastColor(bg);
+    });
+
     if (isHorizontal) {
       sel
         .selectAll(".tick text")
@@ -154,6 +186,13 @@ export const ColorBar = ({
     tickLabelSize / 2 -
     5 +
     (isHorizontal ? labelSize + 5 : 0);
+
+  function colorStop(d: number) {
+    const domain = scale()!.domain;
+    const [min, max] = d3.extent(domain) as [number, number];
+    return colorScale()!(min + d * (max - min));
+  }
+
   return (
     <Show
       when={scale() && scale()!.domain.length > 1 && colorScale()}
@@ -169,13 +208,7 @@ export const ColorBar = ({
             y2={orientation === "horizontal" ? "0%" : "0%"}
           >
             {stops.map((d) => (
-              <stop
-                offset={`${d * 100}%`}
-                stop-color={colorScale()!(
-                  scale()!.domain[0]! +
-                    d * (scale()!.domain[1]! - scale()!.domain[0]!),
-                )}
-              />
+              <stop offset={`${d * 100}%`} stop-color={colorStop(d)} />
             ))}
           </linearGradient>
         </defs>
@@ -247,7 +280,7 @@ function createStyle(kwds: { labelSize: number }) {
     }
 
     .colorbar__axis text {
-      fill: #bbb;
+      // fill: #bbb;
       font-size: 10px;
     }
 
