@@ -92,10 +92,6 @@ export class CachingCompute<
     if (stableKey && this.pending.has(stableKey)) {
       const entry = this.pending.get(stableKey)!;
       if (entry.agent === agent) {
-        // same agent → cancel previous and recompute
-        this.logger.debug(
-          `Restarting computation for ${stableKey} (same agent)`,
-        );
         this.controllers.get(agent)?.abort(`Restarted task: ${stableKey}`);
         this.pending.delete(stableKey);
       } else {
@@ -129,6 +125,15 @@ export class CachingCompute<
           }
         }
         return value;
+      } catch (err: unknown) {
+        if (
+          controller.signal.aborted ||
+          (err instanceof DOMException && err.name === "AbortError")
+        ) {
+          this.logger.debug(`Computation aborted for ${stableKey}`);
+          return new Promise<Value>(() => {}); // never resolves
+        }
+        throw err;
       } finally {
         // Always clean up the pending map so future requests can re-compute if needed
         this.pending.delete(stableKey!);

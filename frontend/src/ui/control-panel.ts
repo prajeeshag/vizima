@@ -60,7 +60,6 @@ export function createControlPanel(
     const target = event.target as Node;
     const clickedInsidePanel = panel.contains(target);
     const clickedMenuButton = menuBtn.contains(target);
-    console.log(target, clickedInsidePanel);
     if (!clickedInsidePanel && !clickedMenuButton) {
       if (panel.classList.contains("open")) {
         closePanel();

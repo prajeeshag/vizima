@@ -3,7 +3,9 @@
   "module": "index.ts",
   "type": "module",
   "devDependencies": {
+    "@rollup/plugin-url": "^8.0.2",
     "@types/bun": "latest",
+    "mapshaper": "^0.6.113",
     "pino": "^10.2.0",
     "zarrita": "^0.5.4",
     "zod": "^4.3.5"
@@ -25,9 +27,9 @@
   },
   "scripts": {
     "dev:build": "vite build --watch --mode development",
+    "prod": "vite build",
     "dev:server": "bun run serve.ts",
     "typecheck": "bun x tsc --noEmit",
-    "dev": "bun run dev:build & bun run dev:server",
-    "prod": "LOG_LEVEL=silent bun build src/demo.ts --outdir dist/ --env inline --minify"
+    "dev": "bun run dev:build & bun run dev:server"
   }
 }

@@ -23,6 +23,7 @@ import {
 } from "./renderers/animation-renderers";
 import { createStatusBar } from "./ui/status-bar";
 import { createControlPanel, createMenuButton } from "./ui/control-panel";
+import { createJsonDataAgent, JsonData } from "./components/json-data";
 
 const landUrl = "/land-110m.json";
 
@@ -62,7 +63,6 @@ const PROJECTIONS = ViewProjection.options.map((o) => ({
 
 type AppState = {
   projectorState: ProjectorState | null;
-  landUrl: string;
   timeStep: number;
   projection: ViewProjection;
   colorMap: ColorMapProps;
@@ -146,7 +146,6 @@ const flowSelection: GridSelection = {
 
 const store = createStore<AppState, Action>({
   initialState: {
-    landUrl,
     timeStep: 0,
     projection: initialProjection,
     playing: false,
@@ -210,20 +209,30 @@ watchSelector(
 );
 
 const selectLandGraticuleState = (s: AppState) => ({
-  landUrl: s.landUrl,
   projectorState: s.projectorState,
+  mapInteracting: s.mapInteracting,
+});
+
+const JsonDataAgent = createJsonDataAgent();
+const landLow = await JsonDataAgent.get({
+  url: "./assets/landjson/land-110m.topojson",
+});
+const landHigh = await JsonDataAgent.get({
+  url: "./assets/landjson/land-10m.topojson",
 });
 
 function getLandRendererProps(): LandRendererProps {
-  const { landUrl, projectorState } = selectLandGraticuleState(
+  const { projectorState, mapInteracting } = selectLandGraticuleState(
     store.getState(),
   );
   if (!projectorState) {
     throw new Error("Projector state is not defined");
   }
+  const landType = mapInteracting ? landLow : landHigh;
+
   return {
     projectorState,
-    landJsonUrl: landUrl,
+    topoJson: landType,
   };
 }
 
@@ -401,7 +410,8 @@ watchSelector(
   },
 );
 
-watchSelector(store, selectLandGraticuleState, () => {
+watchSelector(store, selectLandGraticuleState, ({ projectorState }) => {
+  if (!projectorState) return;
   landGraticuleLayer.render();
 });
 
