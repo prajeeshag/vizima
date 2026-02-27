@@ -14,7 +14,11 @@ import {
   type ColorScaleStatic,
 } from "./components/painters/colormap-painter";
 import { styleRegistry } from "./styles";
-import { ViewProjection, type ProjectorState } from "./components/projection";
+import {
+  getProjector,
+  ViewProjection,
+  type ProjectorState,
+} from "./components/projection";
 
 import { createStore, watchSelector } from "./state/store";
 import {
@@ -22,10 +26,9 @@ import {
   type FlowRendererProps,
 } from "./renderers/animation-renderers";
 import { createStatusBar } from "./ui/status-bar";
-import { createControlPanel, createMenuButton } from "./ui/control-panel";
-import { createJsonDataAgent, JsonData } from "./components/json-data";
-
-const landUrl = "/land-110m.json";
+import { createControlPanel } from "./ui/control-panel";
+import { createJsonDataAgent } from "./components/json-data";
+import { geoDistance } from "d3";
 
 const datasetAgent = createZarrDatasetAgent();
 const dset = await datasetAgent.get({ url: "/dataset.zarr" });
@@ -224,6 +227,16 @@ const landHigh = await JsonDataAgent.get({
   url: "./assets/landjson/land-10m.topojson",
 });
 
+function selectLand(scaleMeters: number) {
+  if (scaleMeters > 30000) {
+    return landLow;
+  } else if (scaleMeters > 10000) {
+    return landMid;
+  } else {
+    return landHigh;
+  }
+}
+
 function getLandRendererProps(): LandRendererProps {
   const { projectorState, mapInteracting } = selectLandGraticuleState(
     store.getState(),
@@ -231,7 +244,10 @@ function getLandRendererProps(): LandRendererProps {
   if (!projectorState) {
     throw new Error("Projector state is not defined");
   }
-  const landType = mapInteracting ? landLow : landHigh;
+
+  const scale_meters = metersPerPixel(projectorState);
+  const landJson = selectLand(scale_meters);
+  const landType = mapInteracting ? landLow : landJson;
 
   return {
     projectorState,
@@ -247,6 +263,17 @@ function getGraticuleRendererProps(): GraticuleRendererProps {
   return {
     projectorState,
   };
+}
+
+function metersPerPixel(projState: ProjectorState): number {
+  const proj = getProjector(projState);
+  const [width, height] = projState.viewSize;
+  const npoints = 2;
+  const R = 6371000;
+  const p0 = proj.invert([width / 2, height / 2]);
+  const p1 = proj.invert([width / 2 + npoints, height / 2]);
+  if (!p0 || !p1) return Infinity;
+  return (geoDistance(p0, p1) * R) / npoints;
 }
 
 const selectColorMapState = (s: AppState) => ({

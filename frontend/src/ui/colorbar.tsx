@@ -30,12 +30,10 @@ function toLinear(c: number): number {
 }
 
 function getContrastColor(color: string): string {
-  const c = d3.color(color);
+  const c = d3.color(color)?.rgb();
   if (!c) return "#000";
-
   const L =
     0.2126 * toLinear(c.r) + 0.7152 * toLinear(c.g) + 0.0722 * toLinear(c.b);
-
   return L > 0.5 ? "#000" : "#fff";
 }
 
