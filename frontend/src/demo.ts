@@ -166,6 +166,28 @@ const store = createStore<AppState, Action>({
   reducer,
 });
 
+watchSelector(
+  store,
+  (s) => ({
+    projectorState: s.projectorState,
+    flowAnimation: s.flowAnimation,
+  }),
+  (current) => {
+    store.dispatch({ type: "play/changed", playing: false });
+  },
+);
+
+watchSelector(
+  store,
+  (s) => ({
+    projectorState: s.projectorState,
+    flowAnimation: s.flowAnimation,
+  }),
+  (current) => {
+    store.dispatch({ type: "play/changed", playing: false });
+  },
+);
+
 const numTimes = () => dset.getTimeAxis("prate")!.length;
 
 const view = new MapView(initialProjection, mapdiv1);
@@ -228,9 +250,9 @@ const landHigh = await JsonDataAgent.get({
 });
 
 function selectLand(scaleMeters: number) {
-  if (scaleMeters > 30000) {
+  if (scaleMeters > 20000) {
     return landLow;
-  } else if (scaleMeters > 10000) {
+  } else if (scaleMeters > 6000) {
     return landMid;
   } else {
     return landHigh;
@@ -255,13 +277,45 @@ function getLandRendererProps(): LandRendererProps {
   };
 }
 
+function pickNiceStep(projState: ProjectorState): number | undefined {
+  const proj = getProjector(projState);
+
+  let p1: [number, number] | null = null;
+  let p2: [number, number] | null = null;
+
+  if (projState.type.name === "Mercator") {
+    p1 = proj.project([-60, 0]);
+    p2 = proj.project([60, 0]);
+  } else {
+    p1 = proj.project([0, 60]);
+    p2 = proj.project([0, -60]);
+  }
+
+  if (!p1 || !p2) return undefined;
+  const pixelDist = Math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2);
+
+  const targetPx = 200;
+  const deg = (120 / pixelDist) * targetPx;
+  const roundedDeg = 180 / Math.round(180 / deg);
+  return roundedDeg;
+}
+
+let graticuleStep: number | undefined = undefined;
+
 function getGraticuleRendererProps(): GraticuleRendererProps {
-  const { projectorState } = selectLandGraticuleState(store.getState());
+  const { projectorState, mapInteracting } = selectLandGraticuleState(
+    store.getState(),
+  );
   if (!projectorState) {
     throw new Error("Projector state is not defined");
   }
+  if (!mapInteracting) {
+    graticuleStep = pickNiceStep(projectorState);
+  }
   return {
     projectorState,
+    lonStep: graticuleStep,
+    latStep: graticuleStep,
   };
 }
 
@@ -411,17 +465,6 @@ watchSelector(
   },
 );
 
-watchSelector(
-  store,
-  (s) => ({
-    projectorState: s.projectorState,
-    flowAnimation: s.flowAnimation,
-  }),
-  (current) => {
-    store.dispatch({ type: "play/changed", playing: false });
-  },
-);
-
 let flowRenderTimer: ReturnType<typeof setTimeout> | undefined;
 watchSelector(
   store,
@@ -445,7 +488,7 @@ watchSelector(store, selectLandGraticuleState, ({ projectorState }) => {
   landGraticuleLayer.render();
 });
 
-function timeAnimationUpdate(
+function onTimeAnimation(
   layers: MapLayer[],
 ): (nextTime: number, prevTime: number) => Promise<void> {
   return async (nextTime, prevTime) => {
@@ -457,8 +500,15 @@ function timeAnimationUpdate(
   };
 }
 
+function onTimeAnimationStop(layers: MapLayer[]): () => Promise<void> {
+  return async () => {
+    await Promise.all(layers.map((layer) => layer.render()));
+  };
+}
+
 function createTimeAnimationManager(
-  update: (nextTime: number, prevTime: number) => Promise<void>,
+  onAnimate: (nextTime: number, prevTime: number) => Promise<void>,
+  onAnimationStop: () => Promise<void>,
   numTimes: () => number,
   currentTime: () => number,
   updateTime: (time: number) => void,
@@ -496,7 +546,7 @@ function createTimeAnimationManager(
 
     updateTime(nextTime);
     store.dispatch({ type: "time/changed", timeStep: nextTime });
-    await update(nextTime, prevTime);
+    await onAnimate(nextTime, prevTime);
     if (!running) return;
     rafId = requestAnimationFrame(animate);
   };
@@ -514,6 +564,7 @@ function createTimeAnimationManager(
       rafId = null;
       lastFrameTime = null;
       accumulator = 0;
+      onAnimationStop();
     },
     isRunning() {
       return running;
@@ -522,7 +573,8 @@ function createTimeAnimationManager(
 }
 
 const timeAnimation = createTimeAnimationManager(
-  timeAnimationUpdate([colorMapLayer, flowLayer]),
+  onTimeAnimation([colorMapLayer, flowLayer]),
+  onTimeAnimationStop([colorMapLayer, flowLayer]),
   numTimes,
   () => store.getState().timeStep,
   (time) => store.dispatch({ type: "time/changed", timeStep: time }),

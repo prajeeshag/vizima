@@ -13,7 +13,7 @@ export class LandPainter extends Painter<LandProps> {
   async draw(canvas: HTMLCanvasElement, signal?: AbortSignal): Promise<void> {
     const ctx = canvas.getContext("2d")!;
     ctx.beginPath();
-    ctx.strokeStyle = this.props.strokeStyle || "#f7faf8ff";
+    ctx.strokeStyle = this.props.strokeStyle || "#333333ff";
     ctx.lineWidth = this.props.lineWidth || 1;
     const proj = getProjector(this.props.projectorState);
     proj.geoPath(ctx)(this.props.path.value);

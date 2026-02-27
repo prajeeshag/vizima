@@ -11,7 +11,7 @@ import {
 
 import { type IProjectionController } from "./drag-handlers";
 
-const DEFAULT_SCALE_EXTENT: [number, number] = [1, 10];
+const DEFAULT_SCALE_EXTENT: [number, number] = [1, 16];
 
 export class ProjectionController implements IProjectionController {
   private _proj: d3.GeoProjection;
