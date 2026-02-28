@@ -9,7 +9,7 @@ type ColorMapProps = {
   readonly colorScale: ColorScaleStatic;
 };
 
-const ALPHA = 0.9;
+const ALPHA = 0.85;
 
 export class ColorMapPainter extends Painter<ColorMapProps> {
   private readonly logger = logger.child({ component: "ColorMapPainter" });

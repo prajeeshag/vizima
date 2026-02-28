@@ -6,7 +6,7 @@ import {
   DOMAIN_FNS,
   DOMAINS_FNS_PARAMS,
 } from "../components/painters/colormap-painter";
-import { createSignal, For, Show } from "solid-js";
+import { createSignal, For, onCleanup, onMount, Show } from "solid-js";
 import { styleRegistry } from "../styles";
 import {
   mountController,
@@ -65,6 +65,7 @@ type RenderOptions = {
 };
 
 function ColorScaleController(props: RenderOptions) {
+  let root!: HTMLDivElement;
   const [open, setOpen] = createSignal(false);
 
   const value = () => props.value();
@@ -74,9 +75,27 @@ function ColorScaleController(props: RenderOptions) {
     props.onChange?.(next);
   };
 
+  onMount(() => {
+    const handlePointerDown = (e: PointerEvent) => {
+      if (!root.contains(e.target as Node)) setOpen(false);
+    };
+
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKey);
+
+    onCleanup(() => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKey);
+    });
+  });
+
   return (
     <div class="vizima-csp">
-      <div class="vizima-csp-dropdown">
+      <div ref={root} class="vizima-csp-dropdown">
         <div
           class="vizima-csp-trigger"
           title="Select Color Palette"

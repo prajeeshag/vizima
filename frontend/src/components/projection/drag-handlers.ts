@@ -24,8 +24,8 @@ interface DragHandler {
 
 function dragRotation(
   globe: IProjectionController,
-  renderDrag: (config: ProjectorState) => void,
-  renderEnd: (config: ProjectorState) => void,
+  onDrag: (config: ProjectorState) => void,
+  onDragEnd: (config: ProjectorState) => void,
 ): DragBehavior<HTMLCanvasElement, unknown, unknown> {
   let v0: [number, number];
   let r0: [number, number, number];
@@ -73,20 +73,20 @@ function dragRotation(
         globe.setRotation(rot);
         const canvas = event.sourceEvent.target;
         canvas.style.cursor = "grabbing";
-        renderDrag(globe.getProjState());
+        onDrag(globe.getProjState());
       })
       .on("end", (event) => {
         const canvas = event.sourceEvent.target;
         canvas.style.cursor = "default";
-        renderEnd(globe.getProjState());
+        onDragEnd(globe.getProjState());
       })
   );
 }
 
 function dragRotationSimple(
   globe: IProjectionController,
-  renderDrag: (projConfig: ProjectorState) => void,
-  renderEnd: (projConfig: ProjectorState) => void,
+  onDrag: (projConfig: ProjectorState) => void,
+  onDragEnd: (projConfig: ProjectorState) => void,
 ): DragBehavior<HTMLCanvasElement, unknown, unknown> {
   return d3drag<HTMLCanvasElement, unknown>()
     .filter((event) => !event.touches || event.touches.length < 2)
@@ -109,19 +109,19 @@ function dragRotationSimple(
       newRotation[1] = Math.max(-90, Math.min(90, newRotation[1]));
 
       globe.setRotation(newRotation);
-      renderDrag(globe.getProjState());
+      onDrag(globe.getProjState());
     })
     .on("end", (event) => {
       const canvas = event.sourceEvent.target;
       canvas.style.cursor = "default";
-      renderEnd(globe.getProjState());
+      onDragEnd(globe.getProjState());
     });
 }
 
 function dragTranslate(
   globe: IProjectionController,
-  renderDrag: (projState: ProjectorState) => void,
-  renderEnd: (projState: ProjectorState) => void,
+  onDrag: (projState: ProjectorState) => void,
+  onDragEnd: (projState: ProjectorState) => void,
 ): DragBehavior<HTMLCanvasElement, unknown, unknown> {
   let t0: [number, number];
   let p0: [number, number];
@@ -149,19 +149,19 @@ function dragTranslate(
       const canvas = event.sourceEvent.target;
       canvas.style.cursor = "move";
       globe.setTranslate(point);
-      renderDrag(globe.getProjState());
+      onDrag(globe.getProjState());
     })
     .on("end", (event) => {
       const canvas = event.sourceEvent.target;
       canvas.style.cursor = "default";
-      renderEnd(globe.getProjState());
+      onDragEnd(globe.getProjState());
     });
 }
 
 function dragTranslateWrapX(
   globe: IProjectionController,
-  renderDrag: (projConfig: ProjectorState) => void,
-  renderEnd: (projConfig: ProjectorState) => void,
+  onDrag: (projConfig: ProjectorState) => void,
+  onDragEnd: (projConfig: ProjectorState) => void,
 ): DragBehavior<HTMLCanvasElement, unknown, unknown> {
   let t0: [number, number];
   let r0: [number, number, number];
@@ -200,12 +200,12 @@ function dragTranslateWrapX(
       globe.setRotation(newRotation);
       globe.setTranslate(newTranslate);
 
-      renderDrag(globe.getProjState());
+      onDrag(globe.getProjState());
     })
     .on("end", (event) => {
       const canvas = event.sourceEvent.target;
       canvas.style.cursor = "default";
-      renderEnd(globe.getProjState());
+      onDragEnd(globe.getProjState());
     });
 }
 
