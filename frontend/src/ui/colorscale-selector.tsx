@@ -5,7 +5,7 @@ import {
   PALETTES,
   DOMAIN_FNS,
   DOMAINS_FNS_PARAMS,
-} from "../components/painters/colormap-painter";
+} from "../layers/colormap/colorscale";
 import { createSignal, For, onCleanup, onMount, Show } from "solid-js";
 import { styleRegistry } from "../styles";
 import {

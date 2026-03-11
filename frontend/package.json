@@ -26,10 +26,9 @@
     "vite-plugin-solid": "^2.11.10"
   },
   "scripts": {
-    "dev:build": "vite build --watch --mode development",
-    "prod": "vite build",
-    "dev:server": "bun run serve.ts",
-    "typecheck": "bun x tsc --noEmit",
-    "dev": "bun run dev:build & bun run dev:server"
+    "dev": "vite --config vite.demo.config.ts",
+    "build": "vite build",
+    "build:demo": "vite build --config vite.demo.config.ts",
+    "typecheck": "bun x tsc --noEmit"
   }
 }

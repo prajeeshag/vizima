@@ -4,11 +4,14 @@ import {
   ProjectionController,
   Projection,
   type ProjectorState,
-} from "../components/projection";
-import { createCanvas } from "../components/canvas-element";
-import { createRenderedCanvasAgent } from "../components/rendered-canvas";
-import type { AnimationRenderer, StaticRenderer } from "../renderers";
-import type { Expand } from "../type-helpers";
+} from "../projection";
+import {
+  createCanvas,
+  createRenderedCanvasAgent,
+  type AnimationRenderer,
+  type StaticRenderer,
+} from "../core";
+import type { Expand } from "../core/type-helpers";
 
 export interface MapLayer {
   render: (e?: any) => Promise<void>;

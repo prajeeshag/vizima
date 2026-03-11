@@ -1,5 +1,5 @@
 import { createMemo } from "solid-js";
-import { ViewProjection } from "../components/projection";
+import { ViewProjection } from "../projection";
 import { styleRegistry } from "../styles";
 import {
   mountController,

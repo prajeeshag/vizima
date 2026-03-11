@@ -2,7 +2,7 @@
 import {
   type ColorScaleStatic,
   createColorScale,
-} from "../components/painters/colormap-painter";
+} from "../layers/colormap/colorscale";
 import * as d3 from "d3";
 import { styleRegistry } from "../styles";
 import {
@@ -10,7 +10,7 @@ import {
   type ExternalSubscribe,
 } from "./_internal/mount-controller";
 import { createEffect, Show, createMemo } from "solid-js";
-import type { DataVarMeta } from "../components/dataset";
+import type { DataVarMeta } from "../data/dataset";
 import { is } from "zod/v4/locales";
 
 function computeExponent(domain: number[]): number {

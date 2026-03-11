@@ -18,11 +18,10 @@ export default defineConfig({
     outDir: "dist",
     sourcemap: true,
     assetsInlineLimit: 0,
-    // This matches your 'src/demo.ts' entry point
     lib: {
-      entry: resolve(__dirname, "src/demo.ts"),
+      entry: resolve(__dirname, "src/index.ts"),
       formats: ["es"],
-      fileName: "demo",
+      fileName: "index",
     },
     rollupOptions: {
       // Ensure the assets aren't bundled into the JS
