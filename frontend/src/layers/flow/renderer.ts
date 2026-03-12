@@ -48,6 +48,14 @@ type Props = {
   }) => void;
 };
 
+type PixelGetArgs = {
+  gridProj: GridProjection;
+  gridProps: GridProps;
+  lonAxis: LonAxis;
+  latAxis: LatAxis;
+  projectorState: ProjectorState;
+};
+
 type VGridAgent = [GridAgent, GridAgent];
 
 type VPixelAgent = [PixelAgent, PixelAgent];
@@ -142,8 +150,22 @@ export function createFlowRenderer(kwds: Expand<Props>): AnimationRenderer {
     ): Promise<[PixelField, PixelField]> {
       if (timeIndex === undefined) {
         return await pixelGet(
-          { ...uGridProps, z: props.vertIndex },
-          { ...vGridProps, z: props.vertIndex },
+          [
+            {
+              gridProps: { ...uGridProps, z: props.vertIndex },
+              lonAxis: props.u.lonAxis,
+              latAxis: props.u.latAxis,
+              gridProj: props.gridProj,
+              projectorState: props.projectorState,
+            },
+            {
+              gridProps: { ...vGridProps, z: props.vertIndex },
+              lonAxis: props.v.lonAxis,
+              latAxis: props.v.latAxis,
+              gridProj: props.gridProj,
+              projectorState: props.projectorState,
+            },
+          ],
           0,
         );
       }
@@ -155,29 +177,85 @@ export function createFlowRenderer(kwds: Expand<Props>): AnimationRenderer {
         await prefetch;
         lastPrefetchT2 = t2;
         prefetch = pixelGet(
-          { ...uGridProps, z: props.vertIndex, t: t2 },
-          { ...vGridProps, z: props.vertIndex, t: t2 },
+          [
+            {
+              gridProps: { ...uGridProps, z: props.vertIndex, t: t2 },
+              lonAxis: props.u.lonAxis,
+              latAxis: props.u.latAxis,
+              gridProj: props.gridProj,
+              projectorState: props.projectorState,
+            },
+            {
+              gridProps: { ...vGridProps, z: props.vertIndex, t: t2 },
+              lonAxis: props.v.lonAxis,
+              latAxis: props.v.latAxis,
+              gridProj: props.gridProj,
+              projectorState: props.projectorState,
+            },
+          ],
           2,
         );
       }
 
       if (t1 === t0) {
         return await pixelGet(
-          { ...uGridProps, z: props.vertIndex, t: t0 },
-          { ...vGridProps, z: props.vertIndex, t: t0 },
+          [
+            {
+              gridProps: { ...uGridProps, z: props.vertIndex, t: t0 },
+              lonAxis: props.u.lonAxis,
+              latAxis: props.u.latAxis,
+              gridProj: props.gridProj,
+              projectorState: props.projectorState,
+            },
+            {
+              gridProps: { ...vGridProps, z: props.vertIndex, t: t0 },
+              lonAxis: props.v.lonAxis,
+              latAxis: props.v.latAxis,
+              gridProj: props.gridProj,
+              projectorState: props.projectorState,
+            },
+          ],
           0,
         );
       }
       const alpha = timeIndex - t0;
       const [p0, p1] = await Promise.all([
         pixelGet(
-          { ...uGridProps, z: props.vertIndex, t: t0 },
-          { ...vGridProps, z: props.vertIndex, t: t0 },
+          [
+            {
+              gridProps: { ...uGridProps, z: props.vertIndex, t: t0 },
+              lonAxis: props.u.lonAxis,
+              latAxis: props.u.latAxis,
+              gridProj: props.gridProj,
+              projectorState: props.projectorState,
+            },
+            {
+              gridProps: { ...vGridProps, z: props.vertIndex, t: t0 },
+              lonAxis: props.v.lonAxis,
+              latAxis: props.v.latAxis,
+              gridProj: props.gridProj,
+              projectorState: props.projectorState,
+            },
+          ],
           0,
         ),
         pixelGet(
-          { ...uGridProps, z: props.vertIndex, t: t1 },
-          { ...vGridProps, z: props.vertIndex, t: t1 },
+          [
+            {
+              gridProps: { ...uGridProps, z: props.vertIndex, t: t1 },
+              lonAxis: props.u.lonAxis,
+              latAxis: props.u.latAxis,
+              gridProj: props.gridProj,
+              projectorState: props.projectorState,
+            },
+            {
+              gridProps: { ...vGridProps, z: props.vertIndex, t: t1 },
+              lonAxis: props.v.lonAxis,
+              latAxis: props.v.latAxis,
+              gridProj: props.gridProj,
+              projectorState: props.projectorState,
+            },
+          ],
           1,
         ),
       ]);
@@ -187,34 +265,30 @@ export function createFlowRenderer(kwds: Expand<Props>): AnimationRenderer {
     }
 
     async function pixelGet(
-      ugridProps: GridProps,
-      vgridProps: GridProps,
+      args: [PixelGetArgs, PixelGetArgs],
       agentId: number,
     ): Promise<[PixelField, PixelField]> {
-      const [uGrid, vGrid] = await Promise.all([
-        gridAgents[agentId]![0].get(ugridProps),
-        gridAgents[agentId]![1].get(vgridProps),
+      const pixelField = await Promise.all([
+        pixelGetSingle(args[0], agentId, 0),
+        pixelGetSingle(args[1], agentId, 1),
       ]);
+      return pixelField;
+    }
 
-      const [uPixelField, vPixelField] = await Promise.all([
-        pixelAgents[agentId]![0].get({
-          grid: uGrid,
-          lonAxis: props.u.lonAxis,
-          latAxis: props.u.latAxis,
-          gridProj: props.gridProj,
-          projectorState: props.projectorState,
-        }),
-
-        pixelAgents[agentId]![1].get({
-          grid: vGrid,
-          lonAxis: props.v.lonAxis,
-          latAxis: props.v.latAxis,
-          gridProj: props.gridProj,
-          projectorState: props.projectorState,
-        }),
-      ]);
-
-      return [uPixelField, vPixelField];
+    async function pixelGetSingle(
+      args: PixelGetArgs,
+      agentId: number,
+      n: 0 | 1,
+    ): Promise<PixelField> {
+      const grid = await gridAgents[agentId]![n].get(args.gridProps);
+      const pixelField = await pixelAgents[agentId]![n].get({
+        grid: grid,
+        lonAxis: args.lonAxis,
+        latAxis: args.latAxis,
+        gridProj: args.gridProj,
+        projectorState: args.projectorState,
+      });
+      return pixelField;
     }
   }
 }
