@@ -10,7 +10,6 @@ import {
   createPixelAgent,
   PixelAgent,
   PixelField,
-  type PixelProps,
   PixelProvider,
 } from "../../data/pixel-field";
 import { createFlowAnimator, type FlowAnimator } from "./animator";
