@@ -29,7 +29,6 @@ export function TimeWheel({
   totalLength = 240,
   orientation = "horizontal",
 }: RenderOptions) {
-  console.log("totalLength", totalLength);
   let dragging = false;
   let startY = 0;
   let startIndex = 0;

@@ -48,22 +48,16 @@ type Props = {
   }) => void;
 };
 
-type VGridAgent = {
-  u: GridAgent;
-  v: GridAgent;
-};
+type VGridAgent = [GridAgent, GridAgent];
 
-type VPixelAgent = {
-  u: PixelAgent;
-  v: PixelAgent;
-};
+type VPixelAgent = [PixelAgent, PixelAgent];
 
 function createVGridAgent(): VGridAgent {
-  return { u: createGridAgent(), v: createGridAgent() };
+  return [createGridAgent(), createGridAgent()];
 }
 
 function createVPixelAgent(provider: PixelProvider): VPixelAgent {
-  return { u: createPixelAgent(provider), v: createPixelAgent(provider) };
+  return [createPixelAgent(provider), createPixelAgent(provider)];
 }
 
 export function createFlowRenderer(kwds: Expand<Props>): AnimationRenderer {
@@ -198,18 +192,20 @@ export function createFlowRenderer(kwds: Expand<Props>): AnimationRenderer {
       agentId: number,
     ): Promise<[PixelField, PixelField]> {
       const [uGrid, vGrid] = await Promise.all([
-        gridAgents[agentId]!.u.get(ugridProps),
-        gridAgents[agentId]!.v.get(vgridProps),
+        gridAgents[agentId]![0].get(ugridProps),
+        gridAgents[agentId]![1].get(vgridProps),
       ]);
+
       const [uPixelField, vPixelField] = await Promise.all([
-        pixelAgents[agentId]!.u.get({
+        pixelAgents[agentId]![0].get({
           grid: uGrid,
           lonAxis: props.u.lonAxis,
           latAxis: props.u.latAxis,
           gridProj: props.gridProj,
           projectorState: props.projectorState,
         }),
-        pixelAgents[agentId]!.v.get({
+
+        pixelAgents[agentId]![1].get({
           grid: vGrid,
           lonAxis: props.v.lonAxis,
           latAxis: props.v.latAxis,
@@ -217,6 +213,7 @@ export function createFlowRenderer(kwds: Expand<Props>): AnimationRenderer {
           projectorState: props.projectorState,
         }),
       ]);
+
       return [uPixelField, vPixelField];
     }
   }
