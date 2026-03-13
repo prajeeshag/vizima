@@ -1,23 +1,10 @@
-import {
-  createGridAgent,
-  getGridProps,
-  Grid,
-  GridAgent,
-  type GridProps,
-} from "../../data/grid";
-import {
-  createPixelProvider,
-  createPixelAgent,
-  PixelAgent,
-  PixelField,
-  PixelProvider,
-} from "../../data/pixel-field";
+import { getGridProps } from "../../data/grid";
+import { createPixelProvider, PixelField } from "../../data/pixel-field";
 import { createFlowAnimator, type FlowAnimator } from "./animator";
 import type { VectorVarMeta, LatAxis, LonAxis } from "../../data/dataset";
 import { type GridProjection, type ProjectorState } from "../../projection";
 import { type AnimationRenderer } from "../../core/animation-renderer";
 import type { Expand } from "../../core/type-helpers";
-import { tInterpolatePixelField } from "../../data/pixel-field/utils";
 import { createPixelFetcher } from "../../data/pixel-field/fetcher";
 
 export type FlowRendererProps = {
@@ -49,34 +36,11 @@ type Props = {
   }) => void;
 };
 
-type PixelGetArgs = {
-  gridProps: GridProps;
-  gridProj: GridProjection;
-  lonAxis: LonAxis;
-  latAxis: LatAxis;
-  projectorState: ProjectorState;
-};
-
-type VGridAgent = [GridAgent, GridAgent];
-
-type VPixelAgent = [PixelAgent, PixelAgent];
-
-function createVGridAgent(): VGridAgent {
-  return [createGridAgent(), createGridAgent()];
-}
-
-function createVPixelAgent(provider: PixelProvider): VPixelAgent {
-  return [createPixelAgent(provider), createPixelAgent(provider)];
-}
-
 export function createFlowRenderer(kwds: Expand<Props>): AnimationRenderer {
-  let lastPrefetchT2: number | null = null;
-  let prefetch: Promise<[PixelField, Grid][]> | null = null;
   let renderRequestId = 0;
-
   const pixelProvider = createPixelProvider(8);
 
-  const pixelGet = createPixelFetcher(2, pixelProvider);
+  const getPixel = createPixelFetcher(2, pixelProvider);
 
   const callback = kwds.callback || (() => {});
   let flowAnimator: FlowAnimator | undefined;
@@ -126,7 +90,7 @@ export function createFlowRenderer(kwds: Expand<Props>): AnimationRenderer {
       ...props.v,
     });
 
-    const [uPixelField, vPixelField] = await getPixel(
+    const field = await getPixel(
       [
         {
           gridProps: { ...uGridProps, z: props.vertIndex },
@@ -149,71 +113,10 @@ export function createFlowRenderer(kwds: Expand<Props>): AnimationRenderer {
 
     callback({
       props: props,
-      uPixelField: uPixelField![0],
-      vPixelField: vPixelField![0],
+      uPixelField: field[0]![0],
+      vPixelField: field[1]![0],
     });
 
-    return [uPixelField![0], vPixelField![0]];
-
-    async function getPixel(
-      args: PixelGetArgs[],
-      timeIndex: number | undefined,
-      numTimeSteps: number,
-    ): Promise<[PixelField, Grid][]> {
-      if (timeIndex === undefined) {
-        return await pixelGet(args, 0);
-      }
-      const t0 = Math.floor(timeIndex);
-      const t1 = Math.ceil(timeIndex);
-      const t2 = (t1 + 1) % numTimeSteps;
-
-      if (t2 !== lastPrefetchT2) {
-        await prefetch;
-        lastPrefetchT2 = t2;
-        prefetch = pixelGet(
-          args.map((x) => ({
-            ...x,
-            gridProps: { ...x.gridProps, t: t2 },
-          })),
-          2,
-        );
-      }
-
-      if (t1 === t0) {
-        return await pixelGet(
-          args.map((x) => ({
-            ...x,
-            gridProps: { ...x.gridProps, t: t0 },
-          })),
-          0,
-        );
-      }
-      const alpha = timeIndex - t0;
-      const [p0, p1] = await Promise.all([
-        pixelGet(
-          args.map((x) => ({
-            ...x,
-            gridProps: { ...x.gridProps, t: t0 },
-          })),
-          0,
-        ),
-        pixelGet(
-          args.map((x) => ({
-            ...x,
-            gridProps: { ...x.gridProps, t: t1 },
-          })),
-          1,
-        ),
-      ]);
-
-      const p = args.map(
-        (x, i) =>
-          [tInterpolatePixelField(p0[i]![0], p1[i]![0], alpha), p0[i]![1]] as [
-            PixelField,
-            Grid,
-          ],
-      );
-      return p;
-    }
+    return [field[0]![0], field[1]![0]];
   }
 }
