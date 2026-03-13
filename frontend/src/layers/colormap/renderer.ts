@@ -1,17 +1,6 @@
-import {
-  createGridAgent,
-  getGridProps,
-  Grid,
-  GridAgent,
-  type GridProps,
-} from "../../data/grid";
+import { getGridProps } from "../../data/grid";
 
-import {
-  createPixelProvider,
-  createPixelAgent,
-  PixelField,
-  PixelAgent,
-} from "../../data/pixel-field";
+import { createPixelProvider, PixelField } from "../../data/pixel-field";
 
 import { createColorMapPainter } from "./painter";
 
@@ -23,7 +12,6 @@ import {
   type ColorScaleStatic,
   buildColorScale,
 } from "./colorscale";
-import { tInterpolatePixelField } from "../../data/pixel-field/utils";
 import { createPixelFetcher } from "../../data/pixel-field/fetcher";
 
 export type ColorMapRendererProps = {
