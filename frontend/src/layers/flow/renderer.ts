@@ -70,7 +70,7 @@ function createVPixelAgent(provider: PixelProvider): VPixelAgent {
 
 export function createFlowRenderer(kwds: Expand<Props>): AnimationRenderer {
   let lastPrefetchT2: number | null = null;
-  let prefetch: Promise<[PixelField, PixelField]> | null = null;
+  let prefetch: Promise<[[PixelField, Grid], [PixelField, Grid]]> | null = null;
   let renderRequestId = 0;
 
   const gridAgents: [VGridAgent, VGridAgent, VGridAgent] = [
@@ -139,15 +139,15 @@ export function createFlowRenderer(kwds: Expand<Props>): AnimationRenderer {
 
     callback({
       props: props,
-      uPixelField: uPixelField,
-      vPixelField: vPixelField,
+      uPixelField: uPixelField[0],
+      vPixelField: vPixelField[0],
     });
 
-    return [uPixelField, vPixelField];
+    return [uPixelField[0], vPixelField[0]];
 
     async function getPixel(
       timeIndex: number | undefined,
-    ): Promise<[PixelField, PixelField]> {
+    ): Promise<[[PixelField, Grid], [PixelField, Grid]]> {
       if (timeIndex === undefined) {
         return await pixelGet(
           [
@@ -259,15 +259,18 @@ export function createFlowRenderer(kwds: Expand<Props>): AnimationRenderer {
           1,
         ),
       ]);
-      const u = tInterpolatePixelField(p0[0], p1[0], alpha);
-      const v = tInterpolatePixelField(p0[1], p1[1], alpha);
-      return [u, v];
+      const u = tInterpolatePixelField(p0[0][0], p1[0][0], alpha);
+      const v = tInterpolatePixelField(p0[1][0], p1[1][0], alpha);
+      return [
+        [u, p0[0][1]],
+        [v, p0[1][1]],
+      ];
     }
 
     async function pixelGet(
       args: [PixelGetArgs, PixelGetArgs],
       agentId: number,
-    ): Promise<[PixelField, PixelField]> {
+    ): Promise<[[PixelField, Grid], [PixelField, Grid]]> {
       const pixelField = await Promise.all([
         pixelGetSingle(args[0], agentId, 0),
         pixelGetSingle(args[1], agentId, 1),
@@ -279,7 +282,7 @@ export function createFlowRenderer(kwds: Expand<Props>): AnimationRenderer {
       args: PixelGetArgs,
       agentId: number,
       n: 0 | 1,
-    ): Promise<PixelField> {
+    ): Promise<[PixelField, Grid]> {
       const grid = await gridAgents[agentId]![n].get(args.gridProps);
       const pixelField = await pixelAgents[agentId]![n].get({
         grid: grid,
@@ -288,7 +291,7 @@ export function createFlowRenderer(kwds: Expand<Props>): AnimationRenderer {
         gridProj: args.gridProj,
         projectorState: args.projectorState,
       });
-      return pixelField;
+      return [pixelField, grid];
     }
   }
 }
