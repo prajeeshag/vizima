@@ -1,7 +1,7 @@
 import type { LatAxis, LonAxis } from "../dataset";
 import { Grid } from "../grid";
 import type { GridProjection, ProjectorState } from "../../projection";
-import { CachedResult } from "../../core/types";
+import { PropValue } from "../../core/types";
 import * as d3 from "d3";
 
 export type PixelProps = {
@@ -20,7 +20,7 @@ export const pixelPropKeys = [
   "latAxis",
 ] as const;
 
-export class PixelField extends CachedResult<PixelProps, PixelFieldValue> {
+export class PixelField extends PropValue<PixelProps, PixelFieldValue> {
   get viewSize(): readonly [number, number] {
     return this.props.projectorState.viewSize;
   }
@@ -44,7 +44,7 @@ export class PixelField extends CachedResult<PixelProps, PixelFieldValue> {
   }
 
   max(): number {
-    return this.value.range[0];
+    return this.value.range[1];
   }
 }
 

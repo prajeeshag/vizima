@@ -1,14 +1,14 @@
-import { DataClient, CachingCompute } from "../../core/types";
+import { ComputeAgent, AsyncCache } from "../../core/types";
 import { Dataset, type DatasetConfig, datasetConfigKeys } from "./dataset";
 import { fetchZarrDataset } from "./fetch-zarr-dataset";
 
-export class DatasetProvider extends CachingCompute<
+export class DatasetProvider extends AsyncCache<
   DatasetConfig,
   Dataset,
   typeof datasetConfigKeys
 > {}
 
-export class DatasetAgent extends DataClient<DatasetConfig, Dataset> {}
+export class DatasetAgent extends ComputeAgent<DatasetConfig, Dataset> {}
 
 export const zarrDatasetProvider = new DatasetProvider(
   fetchZarrDataset,

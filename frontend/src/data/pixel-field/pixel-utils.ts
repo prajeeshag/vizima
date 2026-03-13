@@ -103,5 +103,5 @@ export function isPreriodicLon(lon: {
   dlon: number;
 }) {
   const lonEnd = lon.lon0 + lon.nlon * lon.dlon;
-  return lon.lon0 === lonEnd - 360;
+  return Math.abs(lon.lon0 - (lonEnd - 360)) < 1e-9;
 }

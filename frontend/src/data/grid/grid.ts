@@ -1,4 +1,4 @@
-import { CachedResult } from "../../core/types";
+import { PropValue } from "../../core/types";
 
 export type GridProps = {
   url: string;
@@ -18,7 +18,7 @@ type GridValue = {
   rangeTime: [number, number];
 };
 
-export class Grid extends CachedResult<GridProps, GridValue> {
+export class Grid extends PropValue<GridProps, GridValue> {
   range(): [number, number] {
     return this.value.range;
   }

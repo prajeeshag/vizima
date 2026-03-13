@@ -1,8 +1,8 @@
-import { CachedResult } from "./types";
+import { PropValue } from "./types";
 
 export type PainterProps = {};
 
-export abstract class Painter<Props extends PainterProps> extends CachedResult<
+export abstract class Painter<Props extends PainterProps> extends PropValue<
   Props,
   null
 > {

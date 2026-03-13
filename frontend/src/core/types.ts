@@ -8,11 +8,11 @@ export type ConfigType = {
     | ConfigType
     | Primitive
     | readonly Primitive[]
-    | CachedResult<any, any>
-    | readonly CachedResult<any, any>[];
+    | PropValue<any, any>
+    | readonly PropValue<any, any>[];
 };
 
-export class CachedResult<Config extends ConfigType, Value> {
+export class PropValue<Config extends ConfigType, Value> {
   constructor(
     readonly props: Config,
     readonly value: Value,
@@ -23,8 +23,8 @@ export class CachedResult<Config extends ConfigType, Value> {
   }
 }
 
-export class DataClient<Prop extends ConfigType, Value> {
-  constructor(readonly provider: CachingCompute<Prop, Value, any>) {}
+export class ComputeAgent<Prop extends ConfigType, Value> {
+  constructor(readonly provider: AsyncCache<Prop, Value, any>) {}
 
   get(props: Prop, args?: any): Promise<Value> {
     return this.provider.get(props, this, args);
@@ -37,12 +37,12 @@ type ComputeFn<Prop extends ConfigType, Value> = (
   args?: any,
 ) => Promise<Value>;
 
-type CachingComputeOptions = {
+type AsyncCacheOptions = {
   maxCacheSize?: number;
   logLevel?: Level;
 };
 
-export class CachingCompute<
+export class AsyncCache<
   Prop extends ConfigType,
   Value,
   K extends readonly (keyof Prop)[],
@@ -50,16 +50,19 @@ export class CachingCompute<
   private cache = new Map<string, Value>();
   private pending = new Map<
     string,
-    { promise: Promise<Value>; agent: DataClient<Prop, Value> }
+    { promise: Promise<Value>; agent: ComputeAgent<Prop, Value> }
   >();
-  private controllers = new WeakMap<DataClient<Prop, Value>, AbortController>();
+  private controllers = new WeakMap<
+    ComputeAgent<Prop, Value>,
+    AbortController
+  >();
   private logger = logger.child({ component: this.constructor.name });
   private maxCacheSize: number;
 
   constructor(
     private compute: ComputeFn<Prop, Value>,
     readonly keys: [keyof Prop] extends [K[number]] ? K : never,
-    { maxCacheSize = 1, logLevel }: CachingComputeOptions = {},
+    { maxCacheSize = 1, logLevel }: AsyncCacheOptions = {},
   ) {
     this.maxCacheSize = maxCacheSize;
     if (logLevel) {
@@ -69,7 +72,7 @@ export class CachingCompute<
 
   async get(
     props: Prop,
-    agent: DataClient<Prop, Value>,
+    agent: ComputeAgent<Prop, Value>,
     args?: any,
   ): Promise<Value> {
     const propsClean = this.keys.reduce((acc, key) => {
@@ -131,7 +134,9 @@ export class CachingCompute<
           (err instanceof DOMException && err.name === "AbortError")
         ) {
           this.logger.debug(`Computation aborted for ${stableKey}`);
-          return new Promise<Value>(() => {}); // never resolves
+          throw Object.assign(new DOMException("Aborted", "AbortError"), {
+            aborted: true,
+          });
         }
         throw err;
       } finally {

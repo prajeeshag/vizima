@@ -1,10 +1,10 @@
-import { DataClient, CachingCompute } from "../../core/types";
+import { ComputeAgent, AsyncCache } from "../../core/types";
 import { fetchZarrGrid } from "./fetch-zarr-grid";
 import { type GridProps, Grid, gridPropsKeys } from "./grid";
 
 const CACHE_SIZE = 50;
-export class GridAgent extends DataClient<GridProps, Grid> {}
-export class GridProvider extends CachingCompute<
+export class GridAgent extends ComputeAgent<GridProps, Grid> {}
+export class GridProvider extends AsyncCache<
   GridProps,
   Grid,
   typeof gridPropsKeys

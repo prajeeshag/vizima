@@ -1,8 +1,8 @@
-import { CachedResult } from "./types";
+import { PropValue } from "./types";
 
 let canvasCount = 0;
 
-export class CanvasElement extends CachedResult<
+export class CanvasElement extends PropValue<
   { id: string },
   HTMLCanvasElement
 > {

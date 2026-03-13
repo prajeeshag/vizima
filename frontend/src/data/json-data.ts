@@ -1,5 +1,5 @@
 import { json as d3json } from "d3";
-import { CachedResult, DataClient, CachingCompute } from "../core/types";
+import { PropValue, ComputeAgent, AsyncCache } from "../core/types";
 
 type JsonDataProp = {
   readonly url: string;
@@ -11,15 +11,15 @@ type Keys = typeof keys;
 
 const DEFAULT_CACHE_SIZE = 100;
 
-export class JsonData extends CachedResult<JsonDataProp, any> {}
+export class JsonData extends PropValue<JsonDataProp, any> {}
 
-export class JsonDataProvider extends CachingCompute<
+export class JsonDataProvider extends AsyncCache<
   JsonDataProp,
   JsonData,
   Keys
 > {}
 
-export class JsonDataAgent extends DataClient<JsonDataProp, JsonData> {}
+export class JsonDataAgent extends ComputeAgent<JsonDataProp, JsonData> {}
 
 async function jsonDataFetch(
   props: JsonDataProp,

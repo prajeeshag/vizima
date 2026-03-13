@@ -8,7 +8,7 @@ import type {
   VertAxis,
 } from ".";
 import { GridProjection } from "../../projection";
-import { CachedResult } from "../../core/types";
+import { PropValue } from "../../core/types";
 
 export type DatasetConfig = {
   url: string;
@@ -16,7 +16,7 @@ export type DatasetConfig = {
 
 export const datasetConfigKeys = ["url"] as const;
 
-export class Dataset extends CachedResult<DatasetConfig, DatasetMeta> {
+export class Dataset extends PropValue<DatasetConfig, DatasetMeta> {
   getLonAxis(vname: string): LonAxis | undefined {
     const attr = this.value.datavars[vname];
     if (!attr) return undefined;

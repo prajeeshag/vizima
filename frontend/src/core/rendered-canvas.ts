@@ -1,5 +1,5 @@
 import { CanvasElement } from "./canvas-element";
-import { CachedResult, CachingCompute, DataClient } from "./types";
+import { PropValue, AsyncCache, ComputeAgent } from "./types";
 import { Painter } from "./painter";
 
 type CanvasRendererProps = {
@@ -14,7 +14,7 @@ const canvasRendererPropsKeys = ["canvas", "painters", "viewSize"] as const;
 RenderedCanvas agent make sure that it re-renders only when the props change
 */
 
-export class RenderedCanvas extends CachedResult<
+export class RenderedCanvas extends PropValue<
   CanvasRendererProps,
   HTMLCanvasElement
 > {}
@@ -39,11 +39,11 @@ async function paint(
   return new RenderedCanvas(props, canvas);
 }
 
-export class RenderedCanvasAgent extends DataClient<
+export class RenderedCanvasAgent extends ComputeAgent<
   CanvasRendererProps,
   RenderedCanvas
 > {}
-export class RenderedCanvasProvider extends CachingCompute<
+export class RenderedCanvasProvider extends AsyncCache<
   CanvasRendererProps,
   RenderedCanvas,
   typeof canvasRendererPropsKeys
