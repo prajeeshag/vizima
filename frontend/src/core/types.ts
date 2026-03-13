@@ -3,16 +3,16 @@ import stringify from "json-stable-stringify";
 
 type Primitive = string | number | boolean | undefined | null;
 
-export type ConfigType = {
+export type PropType = {
   readonly [key: string]:
-    | ConfigType
+    | PropType
     | Primitive
     | readonly Primitive[]
     | PropValue<any, any>
     | readonly PropValue<any, any>[];
 };
 
-export class PropValue<Config extends ConfigType, Value> {
+export class PropValue<Config extends PropType, Value> {
   constructor(
     readonly props: Config,
     readonly value: Value,
@@ -23,7 +23,7 @@ export class PropValue<Config extends ConfigType, Value> {
   }
 }
 
-export class ComputeAgent<Prop extends ConfigType, Value> {
+export class ComputeAgent<Prop extends PropType, Value> {
   constructor(readonly provider: AsyncCache<Prop, Value, any>) {}
 
   get(props: Prop, args?: any): Promise<Value> {
@@ -31,7 +31,7 @@ export class ComputeAgent<Prop extends ConfigType, Value> {
   }
 }
 
-type ComputeFn<Prop extends ConfigType, Value> = (
+type ComputeFn<Prop extends PropType, Value> = (
   props: Prop,
   signal: AbortSignal,
   args?: any,
@@ -43,7 +43,7 @@ type AsyncCacheOptions = {
 };
 
 export class AsyncCache<
-  Prop extends ConfigType,
+  Prop extends PropType,
   Value,
   K extends readonly (keyof Prop)[],
 > {
