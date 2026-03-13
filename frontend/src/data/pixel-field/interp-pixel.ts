@@ -30,6 +30,17 @@ export async function interpPixelProjected(
   const mask = createMask();
 
   const grid = props.grid;
+  const lon0 = props.lonAxis.corners.lb;
+  const lon1 = props.lonAxis.corners.rt;
+  const nlon = props.lonAxis.count;
+  const dlon = (lon1 - lon0) / nlon;
+
+  const lat0 = props.latAxis.corners.lb;
+  const lat1 = props.latAxis.corners.rt;
+  const nlat = props.latAxis.count;
+  const dlat = (lat1 - lat0) / nlat;
+
+  const xwrap = isPreriodicLonAxis(props.lonAxis);
   const pixelFieldArray = new Float32Array(width * height);
   let min = Infinity;
   let max = -Infinity;
@@ -44,11 +55,7 @@ export async function interpPixelProjected(
         continue;
       }
       const [xg, yg] = getGridIndex([x, y]);
-      const value = grid.interpolateBilinear(
-        xg,
-        yg,
-        isPreriodicLonAxis(props.lonAxis),
-      );
+      const value = grid.interpolateBilinear(xg, yg, xwrap);
       pixelFieldArray[y * width + x] = value;
       if (!Number.isNaN(value)) {
         min = Math.min(min, value);
@@ -68,24 +75,11 @@ export async function interpPixelProjected(
     if (!coord) {
       throw Error(`invert failed for pixel point ${pixelPoint}`);
     }
-
-    const lon0 = props.lonAxis.corners.lb;
-    const lon1 = props.lonAxis.corners.rt;
-    const nlon = props.lonAxis.count;
-
     if (coord[0] < lon0) {
       coord[0] += 360;
     }
-
-    const dlon = (lon1 - lon0) / nlon;
     const xg = (coord[0] - lon0) / dlon;
-
-    const lat0 = props.latAxis.corners.lb;
-    const lat1 = props.latAxis.corners.rt;
-    const nlat = props.latAxis.count;
-    const dlat = (lat1 - lat0) / nlat;
     const yg = (coord[1] - lat0) / dlat;
-
     return [xg, yg];
   }
 

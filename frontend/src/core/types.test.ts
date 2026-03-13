@@ -171,7 +171,7 @@ describe("CachingCompute", () => {
       );
 
       for (let i = 0; i < 6; i++) {
-        await provider.get({ key: `k${i}`, value: i }, agents[i]);
+        await provider.get({ key: `k${i}`, value: i }, agents[i]!);
       }
 
       expect(internal.cache.size).toBeLessThanOrEqual(maxCacheSize);
