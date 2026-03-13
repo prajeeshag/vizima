@@ -41,6 +41,32 @@ function windSpeedColorScale(
   };
 }
 
+export function computeValidMask(field: PixelField): Uint8Array {
+  const [width, height] = field.viewSize;
+  const arr = field.value.array;
+  const mask = new Uint8Array(width * height);
+  // Edge pixels always have out-of-bounds neighbors → leave as 0
+  for (let y = 1; y < height - 1; y++) {
+    for (let x = 1; x < width - 1; x++) {
+      const idx = y * width + x;
+      if (
+        !Number.isNaN(arr[idx]) &&
+        !Number.isNaN(arr[idx + 1]) &&
+        !Number.isNaN(arr[idx - 1]) &&
+        !Number.isNaN(arr[idx + width]) &&
+        !Number.isNaN(arr[idx - width]) &&
+        !Number.isNaN(arr[idx + width + 1]) &&
+        !Number.isNaN(arr[idx + width - 1]) &&
+        !Number.isNaN(arr[idx - width + 1]) &&
+        !Number.isNaN(arr[idx - width - 1])
+      ) {
+        mask[idx] = 1;
+      }
+    }
+  }
+  return mask;
+}
+
 export function extentNonNaN(
   fld: PixelField,
 ): [[number, number], [number, number]] | null {
@@ -136,6 +162,7 @@ export function createFlowAnimator({
   const buckets: Particle[][] = colorScale.colors.map(() => []);
   let projector = getProjector(ufld.props.projectorState);
   let extent = extentNonNaN(ufld);
+  let validMask = computeValidMask(ufld);
 
   const animator = {
     animate,
@@ -202,6 +229,7 @@ export function createFlowAnimator({
     }
     randomPos = createRandomPoints(extent);
     projector = getProjector(ufld.props.projectorState);
+    validMask = computeValidMask(ufld);
   }
 
   function frame(currentTime: number) {
@@ -295,30 +323,16 @@ export function createFlowAnimator({
   }
 
   function getWind(x: number, y: number): [number, number, number] {
+    const xr = Math.round(x);
+    const yr = Math.round(y);
+    if (validMask[yr * ufld.viewSize[0] + xr] === 0) return [NaN, NaN, NaN];
     const u = ufld.get(x, y);
     const v = vfld.get(x, y);
-    const isNaN = Number.isNaN;
-    if (isNaN(u) || isNaN(v)) return [NaN, NaN, NaN];
-    if (anyNeighborIsNaN(x, y)) return [NaN, NaN, NaN];
     const d = distortion(x, y);
     const mag = Math.sqrt(u * u + v * v);
     const uval = (d[0] * u + d[2] * v) * velocityScale;
     const vval = (d[1] * u + d[3] * v) * velocityScale;
     return [uval, vval, mag];
-  }
-
-  function anyNeighborIsNaN(x: number, y: number): boolean {
-    const isNaN = Number.isNaN;
-    return (
-      isNaN(ufld.get(x + 1, y)) ||
-      isNaN(ufld.get(x - 1, y)) ||
-      isNaN(ufld.get(x, y + 1)) ||
-      isNaN(ufld.get(x, y - 1)) ||
-      isNaN(ufld.get(x + 1, y + 1)) ||
-      isNaN(ufld.get(x + 1, y - 1)) ||
-      isNaN(ufld.get(x - 1, y + 1)) ||
-      isNaN(ufld.get(x - 1, y - 1))
-    );
   }
 
   function distortion(x: number, y: number): [number, number, number, number] {
