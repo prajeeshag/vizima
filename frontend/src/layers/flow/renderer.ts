@@ -50,8 +50,8 @@ type Props = {
 };
 
 type PixelGetArgs = {
-  gridProj: GridProjection;
   gridProps: GridProps;
+  gridProj: GridProjection;
   lonAxis: LonAxis;
   latAxis: LatAxis;
   projectorState: ProjectorState;
@@ -126,7 +126,26 @@ export function createFlowRenderer(kwds: Expand<Props>): AnimationRenderer {
       ...props.v,
     });
 
-    const [uPixelField, vPixelField] = await getPixel(props.timeIndex);
+    const [uPixelField, vPixelField] = await getPixel(
+      [
+        {
+          gridProps: { ...uGridProps, z: props.vertIndex },
+          lonAxis: props.u.lonAxis,
+          latAxis: props.u.latAxis,
+          gridProj: props.gridProj,
+          projectorState: props.projectorState,
+        },
+        {
+          gridProps: { ...vGridProps, z: props.vertIndex },
+          lonAxis: props.v.lonAxis,
+          latAxis: props.v.latAxis,
+          gridProj: props.gridProj,
+          projectorState: props.projectorState,
+        },
+      ],
+      props.timeIndex,
+      props.numTimeSteps,
+    );
 
     callback({
       props: props,
@@ -137,125 +156,64 @@ export function createFlowRenderer(kwds: Expand<Props>): AnimationRenderer {
     return [uPixelField![0], vPixelField![0]];
 
     async function getPixel(
+      args: PixelGetArgs[],
       timeIndex: number | undefined,
+      numTimeSteps: number,
     ): Promise<[PixelField, Grid][]> {
       if (timeIndex === undefined) {
-        return await pixelGet(
-          [
-            {
-              gridProps: { ...uGridProps, z: props.vertIndex },
-              lonAxis: props.u.lonAxis,
-              latAxis: props.u.latAxis,
-              gridProj: props.gridProj,
-              projectorState: props.projectorState,
-            },
-            {
-              gridProps: { ...vGridProps, z: props.vertIndex },
-              lonAxis: props.v.lonAxis,
-              latAxis: props.v.latAxis,
-              gridProj: props.gridProj,
-              projectorState: props.projectorState,
-            },
-          ],
-          0,
-        );
+        return await pixelGet(args, 0);
       }
       const t0 = Math.floor(timeIndex);
       const t1 = Math.ceil(timeIndex);
-      const t2 = (t1 + 1) % props.numTimeSteps;
+      const t2 = (t1 + 1) % numTimeSteps;
 
       if (t2 !== lastPrefetchT2) {
         await prefetch;
         lastPrefetchT2 = t2;
         prefetch = pixelGet(
-          [
-            {
-              gridProps: { ...uGridProps, z: props.vertIndex, t: t2 },
-              lonAxis: props.u.lonAxis,
-              latAxis: props.u.latAxis,
-              gridProj: props.gridProj,
-              projectorState: props.projectorState,
-            },
-            {
-              gridProps: { ...vGridProps, z: props.vertIndex, t: t2 },
-              lonAxis: props.v.lonAxis,
-              latAxis: props.v.latAxis,
-              gridProj: props.gridProj,
-              projectorState: props.projectorState,
-            },
-          ],
+          args.map((x) => ({
+            ...x,
+            gridProps: { ...x.gridProps, t: t2 },
+          })),
           2,
         );
       }
 
       if (t1 === t0) {
         return await pixelGet(
-          [
-            {
-              gridProps: { ...uGridProps, z: props.vertIndex, t: t0 },
-              lonAxis: props.u.lonAxis,
-              latAxis: props.u.latAxis,
-              gridProj: props.gridProj,
-              projectorState: props.projectorState,
-            },
-            {
-              gridProps: { ...vGridProps, z: props.vertIndex, t: t0 },
-              lonAxis: props.v.lonAxis,
-              latAxis: props.v.latAxis,
-              gridProj: props.gridProj,
-              projectorState: props.projectorState,
-            },
-          ],
+          args.map((x) => ({
+            ...x,
+            gridProps: { ...x.gridProps, t: t0 },
+          })),
           0,
         );
       }
       const alpha = timeIndex - t0;
       const [p0, p1] = await Promise.all([
         pixelGet(
-          [
-            {
-              gridProps: { ...uGridProps, z: props.vertIndex, t: t0 },
-              lonAxis: props.u.lonAxis,
-              latAxis: props.u.latAxis,
-              gridProj: props.gridProj,
-              projectorState: props.projectorState,
-            },
-            {
-              gridProps: { ...vGridProps, z: props.vertIndex, t: t0 },
-              lonAxis: props.v.lonAxis,
-              latAxis: props.v.latAxis,
-              gridProj: props.gridProj,
-              projectorState: props.projectorState,
-            },
-          ],
+          args.map((x) => ({
+            ...x,
+            gridProps: { ...x.gridProps, t: t0 },
+          })),
           0,
         ),
         pixelGet(
-          [
-            {
-              gridProps: { ...uGridProps, z: props.vertIndex, t: t1 },
-              lonAxis: props.u.lonAxis,
-              latAxis: props.u.latAxis,
-              gridProj: props.gridProj,
-              projectorState: props.projectorState,
-            },
-            {
-              gridProps: { ...vGridProps, z: props.vertIndex, t: t1 },
-              lonAxis: props.v.lonAxis,
-              latAxis: props.v.latAxis,
-              gridProj: props.gridProj,
-              projectorState: props.projectorState,
-            },
-          ],
+          args.map((x) => ({
+            ...x,
+            gridProps: { ...x.gridProps, t: t1 },
+          })),
           1,
         ),
       ]);
-      const u = tInterpolatePixelField(p0[0]![0], p1[0]![0], alpha);
-      const v = tInterpolatePixelField(p0[1]![0], p1[1]![0], alpha);
-      return [
-        [u, p0[0]![1]],
-        [v, p0[1]![1]],
-      ];
+
+      const p = args.map(
+        (x, i) =>
+          [tInterpolatePixelField(p0[i]![0], p1[i]![0], alpha), p0[i]![1]] as [
+            PixelField,
+            Grid,
+          ],
+      );
+      return p;
     }
   }
 }
