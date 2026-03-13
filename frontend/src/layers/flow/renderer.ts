@@ -18,6 +18,7 @@ import { type GridProjection, type ProjectorState } from "../../projection";
 import { type AnimationRenderer } from "../../core/animation-renderer";
 import type { Expand } from "../../core/type-helpers";
 import { tInterpolatePixelField } from "../../data/pixel-field/utils";
+import { createPixelFetcher } from "../../data/pixel-field/fetcher";
 
 export type FlowRendererProps = {
   projectorState: ProjectorState;
@@ -70,22 +71,12 @@ function createVPixelAgent(provider: PixelProvider): VPixelAgent {
 
 export function createFlowRenderer(kwds: Expand<Props>): AnimationRenderer {
   let lastPrefetchT2: number | null = null;
-  let prefetch: Promise<[[PixelField, Grid], [PixelField, Grid]]> | null = null;
+  let prefetch: Promise<[PixelField, Grid][]> | null = null;
   let renderRequestId = 0;
-
-  const gridAgents: [VGridAgent, VGridAgent, VGridAgent] = [
-    createVGridAgent(),
-    createVGridAgent(),
-    createVGridAgent(),
-  ];
 
   const pixelProvider = createPixelProvider(8);
 
-  const pixelAgents: [VPixelAgent, VPixelAgent, VPixelAgent] = [
-    createVPixelAgent(pixelProvider),
-    createVPixelAgent(pixelProvider),
-    createVPixelAgent(pixelProvider),
-  ];
+  const pixelGet = createPixelFetcher(2, pixelProvider);
 
   const callback = kwds.callback || (() => {});
   let flowAnimator: FlowAnimator | undefined;
@@ -139,15 +130,15 @@ export function createFlowRenderer(kwds: Expand<Props>): AnimationRenderer {
 
     callback({
       props: props,
-      uPixelField: uPixelField[0],
-      vPixelField: vPixelField[0],
+      uPixelField: uPixelField![0],
+      vPixelField: vPixelField![0],
     });
 
-    return [uPixelField[0], vPixelField[0]];
+    return [uPixelField![0], vPixelField![0]];
 
     async function getPixel(
       timeIndex: number | undefined,
-    ): Promise<[[PixelField, Grid], [PixelField, Grid]]> {
+    ): Promise<[PixelField, Grid][]> {
       if (timeIndex === undefined) {
         return await pixelGet(
           [
@@ -259,39 +250,12 @@ export function createFlowRenderer(kwds: Expand<Props>): AnimationRenderer {
           1,
         ),
       ]);
-      const u = tInterpolatePixelField(p0[0][0], p1[0][0], alpha);
-      const v = tInterpolatePixelField(p0[1][0], p1[1][0], alpha);
+      const u = tInterpolatePixelField(p0[0]![0], p1[0]![0], alpha);
+      const v = tInterpolatePixelField(p0[1]![0], p1[1]![0], alpha);
       return [
-        [u, p0[0][1]],
-        [v, p0[1][1]],
+        [u, p0[0]![1]],
+        [v, p0[1]![1]],
       ];
-    }
-
-    async function pixelGet(
-      args: [PixelGetArgs, PixelGetArgs],
-      agentId: number,
-    ): Promise<[[PixelField, Grid], [PixelField, Grid]]> {
-      const pixelField = await Promise.all([
-        pixelGetSingle(args[0], agentId, 0),
-        pixelGetSingle(args[1], agentId, 1),
-      ]);
-      return pixelField;
-    }
-
-    async function pixelGetSingle(
-      args: PixelGetArgs,
-      agentId: number,
-      n: 0 | 1,
-    ): Promise<[PixelField, Grid]> {
-      const grid = await gridAgents[agentId]![n].get(args.gridProps);
-      const pixelField = await pixelAgents[agentId]![n].get({
-        grid: grid,
-        lonAxis: args.lonAxis,
-        latAxis: args.latAxis,
-        gridProj: args.gridProj,
-        projectorState: args.projectorState,
-      });
-      return [pixelField, grid];
     }
   }
 }
