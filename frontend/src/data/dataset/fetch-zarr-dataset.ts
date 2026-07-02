@@ -17,8 +17,11 @@ export async function fetchZarrDataset(
   const store = new zarr.FetchStore(rootUrl);
 
   const arr = await zarr.open(store, { kind: "group" });
-  log.debug(`Opened Zarr at ${config.url}`);
 
+  log.debug(`Opened Zarr at ${config.url}`);
+  console.log(`Opened Zarr at ${config.url}`);
+
+  console.log(`attributes: ${JSON.stringify(arr.attrs)}`);
   const attrs = DatasetMeta.parse(arr.attrs);
 
   return new Dataset(config, attrs);

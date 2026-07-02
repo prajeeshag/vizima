@@ -150,8 +150,11 @@ def process_dataset(
         description=metadata["description"],
     )
 
+    
+
     out_ds = xr.Dataset()
     encoding: dict[str, dict] = {}
+    out_ds.attrs = dataset.model_dump()
 
     for _, dataarray in metadata["datavars"].items():
         arr_name = dataarray["arrName"]
