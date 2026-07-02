@@ -1,0 +1,63 @@
+{
+  "datavars": {
+    "air": {
+      "units": "degK",
+      "long_name": "Long Term Mean Monthly Mean of Forecast of Air temperature at 2 m",
+      "standard_name": "air_temperature",
+      "vertical": "",
+      "time": "time",
+      "arrName": "air",
+      "lon": "lon",
+      "lat": "lat"
+    },
+    "prate": {
+      "units": "Kg/m^2/s",
+      "long_name": "Long Term Mean Monthly Mean of Precipitation Rate at Surface",
+      "standard_name": "precipitation_rate",
+      "vertical": "",
+      "time": "time",
+      "arrName": "prate",
+      "lon": "lon",
+      "lat": "lat"
+    },
+    "uwnd": {
+      "units": "m/s",
+      "long_name": "Long Term Mean Monthly Mean of Forecast of U-wind at 10 m",
+      "standard_name": "eastward_wind",
+      "vertical": "",
+      "time": "time",
+      "arrName": "uwnd",
+      "lon": "lon",
+      "lat": "lat"
+    },
+    "vwnd": {
+      "units": "m/s",
+      "long_name": "Long Term Mean Monthly Mean of Forecast of V-wind at 10 m",
+      "standard_name": "northward_wind",
+      "vertical": "",
+      "time": "time",
+      "arrName": "vwnd",
+      "lon": "lon",
+      "lat": "lat"
+    }
+  },
+  "vectors": {
+    "wind": {
+      "units": "m/s",
+      "long_name": "Long Term Mean Monthly Mean of Forecast of Wind at 10 m",
+      "standard_name": "wind",
+      "vertical": "",
+      "time": "time",
+      "uArrName": "uwnd",
+      "vArrName": "vwnd"
+    }
+  },
+  "projection": {
+    "name": "LonLat",
+    "poleLon": 0.0,
+    "poleLat": 90.0
+  },
+  "title": "NCEP reanalysis version 2",
+  "subtitle": "",
+  "description": ""
+}
