@@ -1,4 +1,4 @@
-from vizima.vizimacli import check_periodic_lon
+from vizima.cli.utils import check_periodic_lon
 
 
 def test_check_periodic_lon_standard():

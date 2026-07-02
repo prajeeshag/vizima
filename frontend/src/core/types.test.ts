@@ -148,8 +148,8 @@ describe("CachingCompute", () => {
       const second = provider.get({ key: "z", value: 2 }, agent);
 
       // First should be aborted, second should succeed
-      await expect(first).rejects.toMatchObject({ name: "AbortError" });
-      await expect(second).resolves.toBe(4);
+      expect(first).rejects.toMatchObject({ name: "AbortError" });
+      expect(second).resolves.toBe(4);
     });
   });
 

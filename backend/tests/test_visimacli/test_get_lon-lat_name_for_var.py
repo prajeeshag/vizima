@@ -1,6 +1,6 @@
 import numpy as np
 import xarray as xr
-from vizima.vizimacli import get_lat_name_for_var, get_lon_name_for_var
+from vizima.cli.utils import get_lat_name_for_var, get_lon_name_for_var
 
 
 def test_1d_standard_name():

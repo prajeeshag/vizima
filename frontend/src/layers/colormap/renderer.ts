@@ -1,9 +1,6 @@
 import { getGridProps } from "../../data/grid";
-
 import { createPixelProvider, PixelField } from "../../data/pixel-field";
-
 import { createColorMapPainter } from "./painter";
-
 import { type StaticRenderer } from "../../core/static-renderer";
 import type { DataVarMeta, LatAxis, LonAxis } from "../../data/dataset";
 import type { GridProjection, ProjectorState } from "../../projection";

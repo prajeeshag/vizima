@@ -1,5 +1,5 @@
 import xarray as xr
-from vizima.vizimacli import handle_levels
+from vizima.cli.utils import handle_levels
 
 
 def test_handle_levels_success():
@@ -11,7 +11,7 @@ def test_handle_levels_success():
     results = handle_levels(ds)
 
     assert "level" in results
-    assert results["level"] == ["1000 hPa", "500 hPa"]
+    assert results["level"].root == ["1000 hPa", "500 hPa"]
 
 
 def test_handle_levels_no_vertical():
@@ -32,7 +32,7 @@ def test_handle_levels_missing_units():
 
     results = handle_levels(ds)
 
-    assert results["depth"] == ["5", "10"]
+    assert results["depth"].root == ["5", "10"]
 
 
 def test_handle_levels_scalar_coordinate():

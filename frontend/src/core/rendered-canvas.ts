@@ -26,10 +26,6 @@ async function paint(
   const canvas = props.canvas.value;
   canvas.width = props.viewSize[0];
   canvas.height = props.viewSize[1];
-  // const ctx = canvas.getContext("2d");
-  // if (!ctx) throw new Error("Canvas context not available");
-  // ctx.clearRect(0, 0, canvas.width, canvas.height);
-
   for (const painter of props.painters) {
     if (signal?.aborted) {
       throw new Error("Canvas creation aborted");

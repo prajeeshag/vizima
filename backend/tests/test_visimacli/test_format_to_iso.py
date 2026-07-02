@@ -3,14 +3,14 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 import pytest
-from vizima.vizimacli import format_to_iso
+from vizima.cli.utils import format_to_iso
 
 
 def test_format_to_iso_numpy():
     """Test branch 1: np.datetime64"""
     dt = np.datetime64("2026-01-23T18:00:00")
     # pd.Timestamp(dt).isoformat() usually yields '2026-01-23T18:00:00'
-    assert format_to_iso(dt) == "2026-01-23T18:00:00"
+    assert format_to_iso(dt) == "2026-01-23T18:00:00Z"
 
 
 def test_format_to_iso_has_attr():

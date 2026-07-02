@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 import pandas as pd
 import xarray as xr
-from vizima.vizimacli import handle_times
+from vizima.cli.utils import handle_times
 
 
 def test_handle_times_with_real_cf_accessor():
@@ -19,16 +19,16 @@ def test_handle_times_with_real_cf_accessor():
     ds.forecast_time.attrs["standard_name"] = "time"
     ds.reference_time.attrs["standard_name"] = "time"
 
-    with patch("vizima.vizimacli.format_to_iso", side_effect=lambda t: t):
-        result = handle_times(ds)
+    # with patch("vizima.cli.utils.format_to_iso", side_effect=lambda t: t):
+    result = handle_times(ds)
 
     assert "time" in result
     assert "forecast_time" in result
 
     assert "reference_time" not in result
 
-    assert len(result["time"]) == 2
-    assert result["forecast_time"] == [pd.Timestamp("2026-01-05")]
+    assert len(result["time"].root) == 2
+    assert result["forecast_time"].root[0].root == pd.Timestamp("2026-01-05")
 
 
 def test_handle_times_no_cf_match():

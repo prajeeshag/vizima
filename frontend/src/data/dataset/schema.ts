@@ -2,10 +2,13 @@ import { z } from "zod";
 import { GridProjection } from "../../projection";
 
 const lon = z.number().min(-180).max(360);
+
 const lat = z.number().min(-90).max(90);
+
 const lonCorners = z
   .object({ lb: lon, rb: lon, rt: lon, lt: lon })
   .meta({ title: "LonCorners" });
+
 const latCorners = z
   .object({ lb: lat, rb: lat, rt: lat, lt: lat })
   .meta({ title: "LatCorners" });
