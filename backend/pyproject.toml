@@ -23,7 +23,7 @@ dev = [
 ]
 
 [project.scripts]
-vizimacli = "vizima.vizimacli:app"
+vizimacli = "vizima.cli.main:app"
 
 [build-system]
 requires = ["pdm-backend"]
@@ -50,9 +50,7 @@ exclude_lines = ["pragma: no cover", "if TYPE_CHECKING:"]
 exclude = ["vizima/dataset_model.py"]
 
 [tool.pytest.ini_options]
-filterwarnings = [
-    "ignore::DeprecationWarning:vizima.dataset_model",
-]
+filterwarnings = ["ignore::DeprecationWarning:vizima.dataset_model"]
 
 [tool.datamodel-codegen]
 input-file-type = "jsonschema"
