@@ -4,7 +4,6 @@ import { getPixelNativeUtils, isPreriodicLon } from "./pixel-utils";
 import equal from "fast-deep-equal";
 import type { LonAxis } from "../dataset";
 import { logger as _logger } from "../../logger";
-import stringify from "json-stable-stringify";
 
 const logger = _logger.child({ module: "interpPixel" });
 

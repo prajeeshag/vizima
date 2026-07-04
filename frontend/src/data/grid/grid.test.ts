@@ -89,7 +89,7 @@ describe("GridScalarData", () => {
     it("should return NaN if any corner is NaN", () => {
       const nanData = new Float32Array([10, NaN, 40, 50, 0, 0, 0, 0, 0]);
       const nanGrid = new Grid(
-        { x0: 0, y0: 0, nx: 3, ny: 3, url: "..." },
+        { x0: 0, y0: 0, nx: 3, ny: 3, arr: "..." },
         { grid: nanData, ...extras },
       );
       expect(nanGrid.interpolateBilinear(0.5, 0.5, false)).toBeNaN();

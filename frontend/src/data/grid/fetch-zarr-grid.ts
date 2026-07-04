@@ -14,23 +14,17 @@ export async function fetchZarrGrid(
 ): Promise<Grid> {
   const log = logger.child({ component: "fetchZarrGrid" });
 
-  let rootUrl = config.url;
-  if (!config.url.startsWith("http")) {
-    rootUrl = new URL(config.url, window.location.origin).href;
-  }
-
   const [values, range, rangeTime] = await Promise.all([
-    getValues(rootUrl, config, signal),
-    getRange(rootUrl, config, signal),
-    getRangeTime(rootUrl, config, signal),
+    getValues(config, signal),
+    getRange(config, signal),
+    getRangeTime(config, signal),
   ]);
 
   return new Grid(config, { grid: values, range, rangeTime });
 }
 
-async function getValues(url: string, config: GridProps, signal: AbortSignal) {
-  const store = new zarr.FetchStore(url);
-  const arr = await zarr.open(store, { kind: "array" });
+async function getValues(config: GridProps, signal: AbortSignal) {
+  const arr = config.arr.value.arr;
   const attrs = ZarrAttrsSchema.parse(arr.attrs);
 
   const slice: (zarr.Slice | number)[] = [];
@@ -45,18 +39,16 @@ async function getValues(url: string, config: GridProps, signal: AbortSignal) {
 
   const sliceArray = await zarr.get(arr, slice, { signal: signal } as any);
   const values = new Float32Array(sliceArray.data as any).map(
-    (x) => x * attrs.scale_factor + attrs.add_offset,
+    (x) => (x === -32767 ? NaN : x * attrs.scale_factor + attrs.add_offset)
   );
   return values;
 }
 
 async function fetchRange(
-  url: string,
+  arr: zarr.Array<zarr.DataType, zarr.FetchStore>,
   slice: (zarr.Slice | number | null)[],
   signal: AbortSignal,
 ): Promise<[number, number]> {
-  const store = new zarr.FetchStore(url);
-  const arr = await zarr.open(store, { kind: "array" });
   const attrs = ZarrAttrsSchema.parse(arr.attrs);
 
   const val = await zarr.get(arr, slice, { signal } as any);
@@ -67,7 +59,6 @@ async function fetchRange(
 }
 
 async function getRange(
-  url: string,
   config: GridProps,
   signal: AbortSignal,
 ): Promise<[number, number]> {
@@ -77,19 +68,18 @@ async function getRange(
   if (config.t !== undefined) slice.push(config.t);
   if (config.z !== undefined) slice.push(config.z);
 
-  return fetchRange(url + "_range", slice, signal);
+  return fetchRange(config.arr.value.rangeArr, slice, signal);
 }
 
 export async function getRangeTime(
-  url: string,
   config: GridProps,
   signal: AbortSignal,
 ): Promise<[number, number]> {
   if (config.t === undefined) {
-    return getRange(url, config, signal);
+    return getRange(config, signal);
   }
   const slice: (zarr.Slice | number | null)[] = [];
   slice.push(null);
   if (config.z !== undefined) slice.push(config.z);
-  return fetchRange(url + "_rangeTime", slice, signal);
+  return fetchRange(config.arr.value.rangeTimeArr, slice, signal);
 }

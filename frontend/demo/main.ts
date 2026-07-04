@@ -1,4 +1,4 @@
-import { createZarrDatasetAgent, DataVarMeta } from "../src";
+import { createZarrDatasetAgent, DataVarMeta, VertAxis } from "../src";
 import {
   createLandRenderer,
   createColorMapRenderer,
@@ -127,14 +127,14 @@ function reducer(state: AppState, action: Action): AppState {
   }
 }
 
-const cmVar = "air";
+const cmVar = "zos";
 const cmVertAxis = dset.getVertAxis(cmVar);
 const cmSelection: GridSelection = {
   name: cmVar,
   level: cmVertAxis?.[0] ?? "",
 };
 
-const flowVar = "wind";
+const flowVar = "currents";
 const flowVertAxis = dset.getVertAxis(flowVar);
 const flowSelection: GridSelection = {
   name: flowVar,
@@ -182,7 +182,7 @@ watchSelector(
   },
 );
 
-const numTimes = () => dset.getTimeAxis("prate")!.length;
+const numTimes = () => dset.getTimeAxis("uo")!.length;
 
 const view = new MapView(initialProjection, mapdiv1);
 
@@ -332,22 +332,22 @@ const selectColorMapState = (s: AppState) => ({
   mapInteracting: s.mapInteracting,
 });
 
-function getColorMapRendererProps(): ColorMapRendererProps {
+async function getColorMapRendererProps(): Promise<ColorMapRendererProps> {
   const { colorMap, projectorState, timeStep } = selectColorMapState(
     store.getState(),
   );
   const { name: varKey, level } = colorMap.selection;
   const vertAxis = dset.getVertAxis(varKey);
   const vertIndex = vertAxis ? vertAxis.indexOf(level) : undefined;
-  const url = dset.getUrl(varKey);
+  const arr = await dset.getArray(varKey);
   const latAxis = dset.getLatAxis(varKey);
   const lonAxis = dset.getLonAxis(varKey);
   const gridMeta = dset.getGridMeta(varKey);
-  if (!gridMeta || !latAxis || !lonAxis || !url || !projectorState) {
+  if (!gridMeta || !latAxis || !lonAxis || !arr || !projectorState) {
     throw new Error("Missing required data for color map rendering");
   }
   return {
-    url,
+    arr,
     projectorState,
     latAxis,
     lonAxis,
@@ -381,7 +381,7 @@ const selectFlowAnimationState = (s: AppState) => ({
   mapInteracting: s.mapInteracting,
 });
 
-function getFlowRendererProps(): FlowRendererProps {
+async function getFlowRendererProps(): Promise<FlowRendererProps> {
   const { projectorState, timeStep, flowAnimation } = selectFlowAnimationState(
     store.getState(),
   );
@@ -390,16 +390,16 @@ function getFlowRendererProps(): FlowRendererProps {
   const { uArrName, vArrName } = gridMeta;
   const vertAxis = dset.getVertAxis(vKey);
   const vertIndex = vertAxis ? vertAxis.indexOf(level) : undefined;
-  const uUrl = dset.getUrl(uArrName);
-  const vUrl = dset.getUrl(vArrName);
+  const uArray = await dset.getArray(uArrName);
+  const vArray = await dset.getArray(vArrName);
   const uLatAxis = dset.getLatAxis(uArrName);
   const uLonAxis = dset.getLonAxis(uArrName);
   const vLatAxis = dset.getLatAxis(vArrName);
   const vLonAxis = dset.getLonAxis(vArrName);
   if (
     !gridMeta ||
-    !uUrl ||
-    !vUrl ||
+    !uArray ||
+    !vArray ||
     !uLatAxis ||
     !uLonAxis ||
     !vLatAxis ||
@@ -410,12 +410,12 @@ function getFlowRendererProps(): FlowRendererProps {
   }
   return {
     u: {
-      url: uUrl,
+      arr: uArray,
       latAxis: uLatAxis,
       lonAxis: uLonAxis,
     },
     v: {
-      url: vUrl,
+      arr: vArray,
       latAxis: vLatAxis,
       lonAxis: vLonAxis,
     },
@@ -640,7 +640,7 @@ const statusBardiv = createStatusBar({
   timeBar: {
     timeWheel: {
       value: () => store.getState().timeStep,
-      items: () => dset.getTimeAxis("prate")!.map((t, i) => formatMonth(t)),
+      items: () => dset.getTimeAxis("uo")!.map((t, i) => formatMonth(t)),
       onChange: (timeStep) =>
         store.dispatch({ type: "time/changed", timeStep }),
       subscribe: subscribeBridge,

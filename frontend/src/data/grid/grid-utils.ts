@@ -2,11 +2,12 @@
 // import type { DataProjection, ProjectorState } from "../projection";
 import { type LatAxis, type LonAxis } from "../dataset";
 import { type GridProps } from "./grid";
+import { type Array } from "../dataset"
 
 export type GridConfig = {
   // readonly proj: ProjectorState;
   // readonly viewSize: [number, number];
-  readonly url: string;
+  readonly arr: Array;
   readonly latAxis: LatAxis;
   readonly lonAxis: LonAxis;
   // readonly gridProj: DataProjection;
@@ -24,7 +25,7 @@ export function subsetGrid(
 export function getGridProps(config: GridConfig): GridProps {
   const [x0, y0, nx, ny] = subsetGrid(config);
   return {
-    url: config.url,
+    arr: config.arr,
     x0: x0,
     y0: y0,
     nx: nx,

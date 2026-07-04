@@ -5,18 +5,18 @@ type Primitive = string | number | boolean | undefined | null;
 
 export type PropType = {
   readonly [key: string]:
-    | PropType
-    | Primitive
-    | readonly Primitive[]
-    | PropValue<any, any>
-    | readonly PropValue<any, any>[];
+  | PropType
+  | Primitive
+  | readonly Primitive[]
+  | PropValue<any, any>
+  | readonly PropValue<any, any>[];
 };
 
 export class PropValue<Config extends PropType, Value> {
   constructor(
     readonly props: Config,
     readonly value: Value,
-  ) {}
+  ) { }
 
   toJSON() {
     return this.props;
@@ -24,7 +24,7 @@ export class PropValue<Config extends PropType, Value> {
 }
 
 export class ComputeAgent<Prop extends PropType, Value> {
-  constructor(readonly provider: AsyncCache<Prop, Value, any>) {}
+  constructor(readonly provider: AsyncCache<Prop, Value, any>) { }
 
   get(props: Prop, args?: any): Promise<Value> {
     return this.provider.get(props, this, args);
@@ -150,5 +150,32 @@ export class AsyncCache<
 
     this.pending.set(stableKey!, { promise: computePromise, agent: agent });
     return computePromise;
+  }
+}
+
+
+export class SimpleAgent<Prop extends PropType, Value> {
+  private controller?: AbortController;
+
+  constructor(private fn: ComputeFn<Prop, Value>) { }
+
+  async get(
+    props: Prop,
+  ): Promise<Value> {
+    // Abort previous request
+    this.controller?.abort();
+
+    // Create controller for this request
+    const controller = new AbortController();
+    this.controller = controller;
+
+    try {
+      return await this.fn(props, controller.signal);
+    } finally {
+      // Don't clear if a newer request has already started
+      if (this.controller === controller) {
+        this.controller = undefined;
+      }
+    }
   }
 }

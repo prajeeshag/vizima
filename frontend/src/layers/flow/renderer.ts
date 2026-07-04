@@ -1,7 +1,7 @@
 import { getGridProps } from "../../data/grid";
 import { createPixelProvider, PixelField } from "../../data/pixel-field";
 import { createFlowAnimator, type FlowAnimator } from "./animator";
-import type { VectorVarMeta, LatAxis, LonAxis } from "../../data/dataset";
+import type { VectorVarMeta, LatAxis, LonAxis, Array } from "../../data/dataset";
 import { type GridProjection, type ProjectorState } from "../../projection";
 import { type AnimationRenderer } from "../../core/animation-renderer";
 import type { Expand } from "../../core/type-helpers";
@@ -10,12 +10,12 @@ import { createPixelFetcher } from "../../data/pixel-field/fetcher";
 export type FlowRendererProps = {
   projectorState: ProjectorState;
   u: {
-    url: string;
+    arr: Array;
     latAxis: LatAxis;
     lonAxis: LonAxis;
   };
   v: {
-    url: string;
+    arr: Array;
     latAxis: LatAxis;
     lonAxis: LonAxis;
   };
@@ -28,7 +28,7 @@ export type FlowRendererProps = {
 };
 
 type Props = {
-  getProps: () => FlowRendererProps;
+  getProps: () => Promise<FlowRendererProps>;
   callback?: (props: {
     props: FlowRendererProps;
     uPixelField: PixelField;
@@ -42,7 +42,7 @@ export function createFlowRenderer(kwds: Expand<Props>): AnimationRenderer {
 
   const getPixel = createPixelFetcher(2, pixelProvider);
 
-  const callback = kwds.callback || (() => {});
+  const callback = kwds.callback || (() => { });
   let flowAnimator: FlowAnimator | undefined;
 
   return { render: render, update: update, start: start, stop: stop };
@@ -82,7 +82,7 @@ export function createFlowRenderer(kwds: Expand<Props>): AnimationRenderer {
   }
 
   async function getFields(): Promise<[PixelField, PixelField]> {
-    const props = kwds.getProps();
+    const props = await kwds.getProps();
     const uGridProps = getGridProps({
       ...props.u,
     });

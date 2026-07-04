@@ -1,7 +1,8 @@
 import { PropValue } from "../../core/types";
+import { Array } from "../dataset"
 
 export type GridProps = {
-  url: string;
+  arr: Array;
   x0: number;
   y0: number;
   nx: number;
@@ -10,7 +11,7 @@ export type GridProps = {
   t?: number;
 };
 
-export const gridPropsKeys = ["url", "x0", "y0", "nx", "ny", "z", "t"] as const;
+export const gridPropsKeys = ["arr", "x0", "y0", "nx", "ny", "z", "t"] as const;
 
 type GridValue = {
   grid: Float32Array;

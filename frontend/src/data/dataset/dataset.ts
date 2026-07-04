@@ -9,6 +9,9 @@ import type {
 } from ".";
 import { GridProjection } from "../../projection";
 import { PropValue } from "../../core/types";
+import { type Array } from "./array";
+import { openZarrArray } from "./open-zarr-array";
+import QuickLRU from "quick-lru";
 
 export type DatasetConfig = {
   url: string;
@@ -17,6 +20,16 @@ export type DatasetConfig = {
 export const datasetConfigKeys = ["url"] as const;
 
 export class Dataset extends PropValue<DatasetConfig, DatasetMeta> {
+  private arrayCache: QuickLRU<string, Array>;
+
+  constructor(
+    override readonly props: DatasetConfig,
+    override readonly value: DatasetMeta,
+  ) {
+    super(props, value);
+    this.arrayCache = new QuickLRU<string, Array>({ maxSize: 10 });
+  }
+
   getLonAxis(vname: string): LonAxis | undefined {
     const attr = this.value.datavars[vname];
     if (!attr) return undefined;
@@ -54,6 +67,16 @@ export class Dataset extends PropValue<DatasetConfig, DatasetMeta> {
     if (!attr) return undefined;
     const url = this.props.url + `/${attr.arrName}`;
     return url;
+  }
+
+  async getArray(vname: string): Promise<Array | undefined> {
+    const url = this.getUrl(vname);
+    if (!url) return undefined;
+    let hit = this.arrayCache.get(url);
+    if (hit) return hit;
+    const array = await openZarrArray({ url });
+    this.arrayCache.set(url, array);
+    return array;
   }
 
   getGridProj(): GridProjection {
