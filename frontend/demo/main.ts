@@ -127,14 +127,16 @@ function reducer(state: AppState, action: Action): AppState {
   }
 }
 
-const cmVar = "zos";
+const dataVars = dset.dataVars();
+const cmVar = Object.keys(dataVars)[0]!;
 const cmVertAxis = dset.getVertAxis(cmVar);
 const cmSelection: GridSelection = {
   name: cmVar,
   level: cmVertAxis?.[0] ?? "",
 };
 
-const flowVar = "currents";
+const vecVars = dset.vectorVars();
+const flowVar = Object.keys(vecVars)[0]!;
 const flowVertAxis = dset.getVertAxis(flowVar);
 const flowSelection: GridSelection = {
   name: flowVar,
@@ -182,7 +184,7 @@ watchSelector(
   },
 );
 
-const numTimes = () => dset.getTimeAxis("uo")!.length;
+const numTimes = () => dset.getTimeAxis()!.length;
 
 const view = new MapView(initialProjection, mapdiv1);
 
@@ -640,7 +642,7 @@ const statusBardiv = createStatusBar({
   timeBar: {
     timeWheel: {
       value: () => store.getState().timeStep,
-      items: () => dset.getTimeAxis("uo")!.map((t, i) => formatMonth(t)),
+      items: () => dset.getTimeAxis()!.map((t, i) => formatMonth(t)),
       onChange: (timeStep) =>
         store.dispatch({ type: "time/changed", timeStep }),
       subscribe: subscribeBridge,

@@ -51,7 +51,7 @@ export class Dataset extends PropValue<DatasetConfig, DatasetMeta> {
     return vertAxis;
   }
 
-  getTimeAxis(vname: string | undefined): TimeAxis | undefined {
+  getTimeAxis(vname?: string): TimeAxis | undefined {
     if (!vname) {
       const values = Object.values(this.value.times);
       return values[0];
