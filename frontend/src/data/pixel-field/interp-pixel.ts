@@ -1,5 +1,5 @@
 import { PixelField, type PixelProps } from "./pixel-field";
-import { getProjector } from "../../projection";
+import { getLonLatArray } from "../../projection";
 import { getPixelNativeUtils, isPreriodicLon } from "./pixel-utils";
 import equal from "fast-deep-equal";
 import type { LonAxis } from "../dataset";
@@ -25,8 +25,6 @@ export async function interpPixelProjected(
 ): Promise<PixelField> {
   const width = props.projectorState.viewSize[0];
   const height = props.projectorState.viewSize[1];
-  const proj = getProjector(props.projectorState);
-  const mask = createMask();
 
   const grid = props.grid;
   const lon0 = props.lonAxis.corners.lb;
@@ -43,17 +41,20 @@ export async function interpPixelProjected(
   const pixelFieldArray = new Float32Array(width * height);
   let min = Infinity;
   let max = -Infinity;
+  const { lonArray, latArray } = getLonLatArray(props.projectorState);
 
   let lastYieldTime = performance.now();
 
   for (let y = 0; y < height; y += 1) {
     signal.throwIfAborted();
     for (let x = 0; x < width; x += 1) {
-      if (mask[y * width + x] === 0) {
+      const lon = lonArray[y * width + x];
+      const lat = latArray[y * width + x];
+      if (Number.isNaN(lon)) {
         pixelFieldArray[y * width + x] = NaN;
         continue;
       }
-      const [xg, yg] = getGridIndex([x, y]);
+      const [xg, yg] = getGridIndex([lon!, lat!]);
       const value = grid.interpolateBilinear(xg, yg, xwrap);
       pixelFieldArray[y * width + x] = value;
       if (!Number.isNaN(value)) {
@@ -69,41 +70,13 @@ export async function interpPixelProjected(
   }
   return new PixelField(props, { array: pixelFieldArray, range: [min, max] });
 
-  function getGridIndex(pixelPoint: [number, number]): [number, number] {
-    const coord: [number, number] | null = proj.invert(pixelPoint);
-    if (!coord) {
-      throw Error(`invert failed for pixel point ${pixelPoint}`);
-    }
+  function getGridIndex(coord: [number, number]): [number, number] {
     if (coord[0] < lon0) {
       coord[0] += 360;
     }
     const xg = (coord[0] - lon0) / dlon;
     const yg = (coord[1] - lat0) / dlat;
     return [xg, yg];
-  }
-
-  function createMask() {
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) {
-      throw new Error("Canvas 2D context is null!");
-    }
-    ctx.beginPath();
-    ctx.fillStyle = "rgba(255, 255, 255, 1)";
-    proj.geoPath(ctx)({ type: "Sphere" });
-    ctx.fill();
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const pixels = imageData.data;
-
-    const mask = new Uint8Array(canvas.width * canvas.height);
-
-    for (let i = 0; i < mask.length; i++) {
-      mask[i] = pixels[i * 4 + 3]! > 0 ? 1 : 0;
-    }
-
-    return mask;
   }
 }
 

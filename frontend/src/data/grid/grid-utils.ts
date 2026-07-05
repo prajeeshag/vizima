@@ -1,12 +1,12 @@
 // import equal from "fast-deep-equal";
-// import type { DataProjection, ProjectorState } from "../projection";
+
 import { type LatAxis, type LonAxis } from "../dataset";
 import { type GridProps } from "./grid";
 import { type Array } from "../dataset"
+import type { ProjectorState } from "../../projection";
 
 export type GridConfig = {
   // readonly proj: ProjectorState;
-  // readonly viewSize: [number, number];
   readonly arr: Array;
   readonly latAxis: LatAxis;
   readonly lonAxis: LonAxis;
