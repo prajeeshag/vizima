@@ -41,15 +41,15 @@ export async function interpPixelProjected(
   const pixelFieldArray = new Float32Array(width * height);
   let min = Infinity;
   let max = -Infinity;
-  const { lonArray, latArray } = getLonLatArray(props.projectorState);
+  const { lons, lats } = getLonLatArray(props.projectorState);
 
   let lastYieldTime = performance.now();
 
   for (let y = 0; y < height; y += 1) {
     signal.throwIfAborted();
     for (let x = 0; x < width; x += 1) {
-      const lon = lonArray[y * width + x];
-      const lat = latArray[y * width + x];
+      const lon = lons[y * width + x];
+      const lat = lats[y * width + x];
       if (Number.isNaN(lon)) {
         pixelFieldArray[y * width + x] = NaN;
         continue;

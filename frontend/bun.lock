@@ -9,6 +9,7 @@
         "@types/topojson-client": "^3.1.5",
         "d3": "^7.9.0",
         "fast-deep-equal": "^3.1.3",
+        "geojson": "^0.5.0",
         "json-stable-stringify": "^1.3.0",
         "quick-lru": "^7.3.0",
         "solid-js": "^1.9.11",
@@ -454,6 +455,8 @@
     "geographiclib": ["geographiclib@1.48.0", "", {}, "sha512-WIpDKKj2Gu+E4jkF3f3fg7OPF6T1/35tQXKc4jLLQrwjNiTZ5KrrYF5Gp0dQ/YbJIoCjb9vs2/abWTRsCEoi2w=="],
 
     "geographiclib-geodesic": ["geographiclib-geodesic@2.2.0", "", {}, "sha512-cIedo9VTYb0DFufodgibDmVfsWe9EASqb/kUByl09xc6PZYvLvlc89BHCThtGTPf2OII/zWJGxsR3Uz6O7QOVw=="],
+
+    "geojson": ["geojson@0.5.0", "", {}, "sha512-/Bx5lEn+qRF4TfQ5aLu6NH+UKtvIv7Lhc487y/c8BdludrCTpiWf9wyI0RTyqg49MFefIAvFDuEi5Dfd/zgNxQ=="],
 
     "geokdbush": ["geokdbush@1.1.0", "", { "dependencies": { "tinyqueue": "^1.2.2" } }, "sha512-pyyrGCMXZwWJaGt1YZIgGQg5ol3JjvEKESTon10HxdfWXlaqh5An8fNJkwOYUE+VkQfCdvYQKPVezTQU9AqWAA=="],
 
