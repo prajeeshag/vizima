@@ -1,4 +1,4 @@
-type LonSubset = {
+export type LonSubset = {
     start: number;
     end: number;
 };

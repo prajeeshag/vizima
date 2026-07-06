@@ -12,9 +12,9 @@ import { PropValue } from "../../core/types";
 import { type Array } from "./array";
 import { openZarrArray } from "./open-zarr-array";
 import QuickLRU from "quick-lru";
-import { type Grid } from "./grid"
-
-
+import { Grid } from "./grid"
+import { lonSubsetIndices } from "./lon-subsetting";
+import { fetchZarrGrid } from "./fetch-zarr-grid"
 
 export type DatasetConfig = {
   url: string;
@@ -88,9 +88,10 @@ export class Dataset extends PropValue<DatasetConfig, DatasetMeta> {
     x1: number,
     y0: number,
     y1: number,
-    z?: number,
-    t?: number
-  ): Promise<Grid | undefined> {
+    z: number | undefined,
+    t: number | undefined,
+    signal: AbortSignal,
+  ): Promise<Grid> {
 
     if (x0 > x1) {
       throw new Error('x0 must be less than x1');
@@ -110,68 +111,34 @@ export class Dataset extends PropValue<DatasetConfig, DatasetMeta> {
     const lon0 = lonAxis.corners.lb;
     const lon1 = lonAxis.corners.rt;
     const nlon = lonAxis.count;
-    const dlon = (lon1 - lon0) / nlon;
+    const dlon = (lon1 - lon0) / (nlon - 1)
     const lat0 = latAxis.corners.lb;
     const lat1 = latAxis.corners.rt;
     const nlat = latAxis.count;
-    const dlat = (lat1 - lat0) / nlat;
-    const periodicLon = isPreriodicLonAxis(lonAxis);
+    const dlat = (lat1 - lat0) / (nlat - 1)
 
-    if (x0 >= 0 && x1 < 180) {
+    const lonSubsets = lonSubsetIndices(lon0, lon1, nlon, x0, x1)
+    const latSubset = latSubsetIndices(lat0, lat1, nlat, y0, y1)
 
+    if (lonSubsets.length === 0) {
+      throw new Error('Invalid lon indices')
     }
 
-    return undefined
+    const arr = await this.getArray(vname)
+
+    if (!arr) {
+      throw new Error("Invalid Array")
+    }
+
+    const config = { arr, lonSubsets, latSubset, t, z }
+    const { data, range, rangeTime, nx, ny } = await fetchZarrGrid(config, signal)
+    const olon0 = lon0 + lonSubsets[0]!.start * dlon
+    const olat0 = lat0 + latSubset[0] * dlat
+
+    return new Grid(data, range, rangeTime, olon0, olat0, nx, ny, dlon, dlat, z, t)
+
   }
 
-  getGridDims(
-    vname: string,
-    x0: number,
-    x1: number,
-    y0: number,
-    y1: number,
-    z?: number,
-    t?: number
-  ): [number, number, number, number] {
-
-    if (x0 > x1) {
-      throw new Error('x0 must be less than x1');
-    }
-
-    if (y0 > y1) {
-      throw new Error('y0 must be less than y1');
-    }
-
-    const lonAxis = this.getLonAxis(vname);
-    const latAxis = this.getLatAxis(vname);
-
-    if (!lonAxis || !latAxis) {
-      throw new Error('Missing longitude or latitude axis');
-    }
-
-    const lon0 = lonAxis.corners.lb;
-    const lon1 = lonAxis.corners.rt;
-    const nlon = lonAxis.count;
-    const dlon = (lon1 - lon0) / nlon;
-    const lat0 = latAxis.corners.lb;
-    const lat1 = latAxis.corners.rt;
-    const nlat = latAxis.count;
-    const dlat = (lat1 - lat0) / nlat;
-    const periodicLon = isPreriodicLonAxis(lonAxis);
-
-    const i0 = Math.floor((x0 - lon0) / dlon);
-    const i1 = Math.ceil((x1 - lon0) / dlon);
-    const icount = i1 - i0 + 1;
-
-    if (icount > nlon + 1 || (icount > nlon && !periodicLon)) {
-      throw new Error('i dimension size exceeds the array size');
-    }
-
-    if (i0 < 0 && !periodicLon) {
-      throw new Error('i dimension size exceeds the array size');
-    }
-
-  }
 
   getGridProj(): GridProjection {
     return this.value.projection;
@@ -198,18 +165,7 @@ export class Dataset extends PropValue<DatasetConfig, DatasetMeta> {
   }
 }
 
-function isPreriodicLonAxis(lonAxis: LonAxis): boolean {
-  const lon0: number = lonAxis.corners.lb;
-  const nlon: number = lonAxis.count;
-  const dlon: number = (lonAxis.corners.rt - lon0 + 1) / nlon;
-  return isPreriodicLon({ lon0: lon0, nlon: nlon, dlon: dlon });
-}
-
-export function isPreriodicLon(lon: {
-  lon0: number;
-  nlon: number;
-  dlon: number;
-}) {
-  const lonEnd = lon.lon0 + lon.nlon * lon.dlon;
-  return Math.abs(lon.lon0 - (lonEnd - 360)) < 1e-9;
+function latSubsetIndices(lat0: number, lat1: number, nlat: number, y0: number, y1: number): [number, number] {
+  const dlon = (lat1 - lat0) / (nlat - 1)
+  return [Math.floor((y0 - lat0) / dlon), Math.ceil((y1 - lat0) / dlon)]
 }
