@@ -168,7 +168,7 @@ async function loadValues(
   const sliceArray = await zarr.get(arr, slice, { signal: signal } as any);
 
   const values = new Float32Array(sliceArray.data as any).map(
-    (x) => (x === -32767 ? NaN : x * attrs.scale_factor + attrs.add_offset)
+    (x) => (x === arr.fillValue ? NaN : x * attrs.scale_factor + attrs.add_offset)
   );
 
   return values;
