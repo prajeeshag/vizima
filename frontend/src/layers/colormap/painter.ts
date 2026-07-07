@@ -43,8 +43,8 @@ export class ColorMapPainter extends Painter<ColorMapProps> {
 
     const colorScale = createColorScale(this.props.colorScale);
 
-    for (let i = 0; i < pixelField.value.array.length; i++) {
-      const val = pixelField.value.array[i];
+    for (let i = 0; i < pixelField.data.length; i++) {
+      const val = pixelField.data[i];
       const pos = i * 4;
 
       if (val === undefined || isNaN(val)) {

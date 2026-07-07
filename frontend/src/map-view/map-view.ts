@@ -85,7 +85,7 @@ export class MapView {
       const painters = await Promise.all(
         renderers.map((renderer) => renderer()),
       );
-      await canvasRendererAgent.get({
+      await canvasRendererAgent.run({
         painters,
         canvas: canvasElement,
         viewSize: this.globe.getProjState().viewSize,

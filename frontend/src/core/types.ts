@@ -75,6 +75,7 @@ export class AsyncCache<
     agent: ComputeAgent<Prop, Value>,
     args?: any,
   ): Promise<Value> {
+
     const propsClean = this.keys.reduce((acc, key) => {
       if (key in props) {
         acc[key] = props[key];
@@ -82,7 +83,9 @@ export class AsyncCache<
       return acc;
     }, {} as Prop);
 
-    const stableKey = stringify(propsClean);
+    // const stableKey = stringify(propsClean);
+
+    const stableKey = undefined
 
     if (stableKey && this.cache.has(stableKey)) {
       const value = this.cache.get(stableKey)!;
@@ -153,26 +156,21 @@ export class AsyncCache<
   }
 }
 
+type AsyncFn<TArgs, TResult> = (
+  args: TArgs,
+  signal: AbortSignal,
+) => Promise<TResult>;
 
-export class SimpleAgent<Prop extends PropType, Value> {
+export class SimpleAgent<TArgs = void, TResult = void> {
   private controller?: AbortController;
-
-  constructor(private fn: ComputeFn<Prop, Value>) { }
-
-  async get(
-    props: Prop,
-  ): Promise<Value> {
-    // Abort previous request
+  constructor(private readonly fn: AsyncFn<TArgs, TResult>) { }
+  async run(args: TArgs): Promise<TResult> {
     this.controller?.abort();
-
-    // Create controller for this request
     const controller = new AbortController();
     this.controller = controller;
-
     try {
-      return await this.fn(props, controller.signal);
+      return await this.fn(args, controller.signal);
     } finally {
-      // Don't clear if a newer request has already started
       if (this.controller === controller) {
         this.controller = undefined;
       }

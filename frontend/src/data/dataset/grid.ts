@@ -1,6 +1,8 @@
+import type { DataArray } from "./DataArray";
 
 export class Grid {
   constructor(
+    readonly array: DataArray,
     readonly data: Float32Array,
     readonly range: [number, number],
     readonly rangeTime: [number, number],
@@ -10,10 +12,23 @@ export class Grid {
     readonly ny: number,
     readonly dx: number,
     readonly dy: number,
-    readonly z?: number,
-    readonly t?: number
+    readonly z: number | undefined,
+    readonly t: number | undefined
   ) { }
 
+  toJSON() {
+    return {
+      array: this.array.toJSON(),
+      x0: this.x0,
+      y0: this.y0,
+      nx: this.nx,
+      ny: this.ny,
+      dx: this.dx,
+      dy: this.dy,
+      z: this.z,
+      t: this.t
+    };
+  }
 
   get(i: number, j: number): number {
     if (i < 0 || i >= this.nx || j < 0 || j >= this.ny) {
@@ -71,10 +86,10 @@ export class Grid {
     const fCol = (x - this.x0) / this.dx;
     const fRow = (y - this.y0) / this.dy;
 
-    let i0 = Math.floor(fCol);
-    let j0 = Math.floor(fRow);
-    let i1 = i0 + 1;
-    let j1 = j0 + 1;
+    const i0 = Math.floor(fCol);
+    const j0 = Math.floor(fRow);
+    const i1 = i0 + 1;
+    const j1 = j0 + 1;
 
     const v = fRow - j0;
     const u = fCol - i0;
@@ -85,8 +100,8 @@ export class Grid {
   protected nearestInterpCtx(x: number, y: number) {
     const fCol = (x - this.x0) / this.dx;
     const fRow = (y - this.y0) / this.dy;
-    let i0 = Math.round(fCol);
-    let j0 = Math.round(fRow);
+    const i0 = Math.round(fCol);
+    const j0 = Math.round(fRow);
     return { i0, j0 };
   }
 }

@@ -1,5 +1,4 @@
-import { Grid } from "../grid";
-import { PixelField } from ".";
+import { PixelField } from "./pixel-field";
 
 export function tInterpolatePixelField(
   p0: PixelField,
@@ -11,28 +10,16 @@ export function tInterpolatePixelField(
   }
   const w0 = 1 - alpha;
   const w1 = alpha;
-  const gridProps = {
-    ...p0.props.grid.props,
-    t: p0.props.grid.props.t! + alpha,
-  };
-  const props = {
-    ...p0.props,
-    grid: new Grid(gridProps, {
-      grid: new Float32Array(1),
-      range: [0, 0] as [number, number],
-      rangeTime: [0, 0] as [number, number],
-    }),
-  };
-  const array = new Float32Array(p0.value.array.length);
+  const array = new Float32Array(p0.data.length);
   let min = Infinity;
   let max = -Infinity;
   for (let i = 0; i < array.length; i++) {
-    const v = p0.value.array[i]! * w0 + p1.value.array[i]! * w1;
+    const v = p0.data[i]! * w0 + p1.data[i]! * w1;
     array[i] = v;
     if (!Number.isNaN(v)) {
       min = Math.min(min, v);
       max = Math.max(max, v);
     }
   }
-  return new PixelField(props, { array, range: [min, max] });
+  return new PixelField(array, [min, max], p0.viewSize, p0.projectorState);
 }

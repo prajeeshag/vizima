@@ -6,15 +6,12 @@ import type {
   LonAxis,
   TimeAxis,
   VertAxis,
-} from ".";
+} from "./schema";
 import { GridProjection } from "../../projection";
 import { PropValue } from "../../core/types";
-import { type Array } from "./array";
 import { openZarrArray } from "./open-zarr-array";
 import QuickLRU from "quick-lru";
-import { Grid } from "./grid"
-import { lonSubsetIndices } from "./lon-subsetting";
-import { fetchZarrGrid } from "./fetch-zarr-grid"
+import { DataArray } from "./DataArray"
 
 export type DatasetConfig = {
   url: string;
@@ -22,15 +19,16 @@ export type DatasetConfig = {
 
 export const datasetConfigKeys = ["url"] as const;
 
+
 export class Dataset extends PropValue<DatasetConfig, DatasetMeta> {
-  private arrayCache: QuickLRU<string, Array>;
+  private arrayCache: QuickLRU<string, DataArray>;
 
   constructor(
     override readonly props: DatasetConfig,
     override readonly value: DatasetMeta,
   ) {
     super(props, value);
-    this.arrayCache = new QuickLRU<string, Array>({ maxSize: 10 });
+    this.arrayCache = new QuickLRU<string, DataArray>({ maxSize: 10 });
   }
 
   getLonAxis(vname: string): LonAxis | undefined {
@@ -72,72 +70,24 @@ export class Dataset extends PropValue<DatasetConfig, DatasetMeta> {
     return url;
   }
 
-  async getArray(vname: string): Promise<Array | undefined> {
+  async getArray(vname: string): Promise<DataArray> {
     const url = this.getUrl(vname);
-    if (!url) return undefined;
+    if (!url) {
+      throw new Error("URL not found for variable " + vname);
+    }
     let hit = this.arrayCache.get(url);
     if (hit) return hit;
-    const array = await openZarrArray({ url });
+    const { dataArr, rangeArr, rangeTimeArr } = await openZarrArray(url);
+    const lonAxis = this.getLonAxis(vname);
+    const latAxis = this.getLatAxis(vname);
+    if (!lonAxis || !latAxis) {
+      throw new Error("Missing longitude or latitude axis");
+    }
+    const array = new DataArray(url, dataArr, rangeArr, rangeTimeArr, lonAxis, latAxis);
     this.arrayCache.set(url, array);
     return array;
   }
 
-  async getGrid(
-    vname: string,
-    x0: number,
-    x1: number,
-    y0: number,
-    y1: number,
-    z: number | undefined,
-    t: number | undefined,
-    signal: AbortSignal,
-  ): Promise<Grid> {
-
-    if (x0 > x1) {
-      throw new Error('x0 must be less than x1');
-    }
-
-    if (y0 > y1) {
-      throw new Error('y0 must be less than y1');
-    }
-
-    const lonAxis = this.getLonAxis(vname);
-    const latAxis = this.getLatAxis(vname);
-
-    if (!lonAxis || !latAxis) {
-      throw new Error('Missing longitude or latitude axis');
-    }
-
-    const lon0 = lonAxis.corners.lb;
-    const lon1 = lonAxis.corners.rt;
-    const nlon = lonAxis.count;
-    const dlon = (lon1 - lon0) / (nlon - 1)
-    const lat0 = latAxis.corners.lb;
-    const lat1 = latAxis.corners.rt;
-    const nlat = latAxis.count;
-    const dlat = (lat1 - lat0) / (nlat - 1)
-
-    const lonSubsets = lonSubsetIndices(lon0, lon1, nlon, x0, x1)
-    const latSubset = latSubsetIndices(lat0, lat1, nlat, y0, y1)
-
-    if (lonSubsets.length === 0) {
-      throw new Error('Invalid lon indices')
-    }
-
-    const arr = await this.getArray(vname)
-
-    if (!arr) {
-      throw new Error("Invalid Array")
-    }
-
-    const config = { arr, lonSubsets, latSubset, t, z }
-    const { data, range, rangeTime, nx, ny } = await fetchZarrGrid(config, signal)
-    const olon0 = lon0 + lonSubsets[0]!.start * dlon
-    const olat0 = lat0 + latSubset[0] * dlat
-
-    return new Grid(data, range, rangeTime, olon0, olat0, nx, ny, dlon, dlat, z, t)
-
-  }
 
 
   getGridProj(): GridProjection {
@@ -163,9 +113,4 @@ export class Dataset extends PropValue<DatasetConfig, DatasetMeta> {
   verticals(): Record<string, VertAxis> {
     return this.value.verticals;
   }
-}
-
-function latSubsetIndices(lat0: number, lat1: number, nlat: number, y0: number, y1: number): [number, number] {
-  const dlon = (lat1 - lat0) / (nlat - 1)
-  return [Math.floor((y0 - lat0) / dlon), Math.ceil((y1 - lat0) / dlon)]
 }

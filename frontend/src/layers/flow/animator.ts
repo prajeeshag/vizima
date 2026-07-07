@@ -43,7 +43,7 @@ function windSpeedColorScale(
 
 export function computeValidMask(field: PixelField): Uint8Array {
   const [width, height] = field.viewSize;
-  const arr = field.value.array;
+  const arr = field.data;
   const mask = new Uint8Array(width * height);
   // Edge pixels always have out-of-bounds neighbors → leave as 0
   for (let y = 1; y < height - 1; y++) {
@@ -71,7 +71,7 @@ export function extentNonNaN(
   fld: PixelField,
 ): [[number, number], [number, number]] | null {
   const [nx, ny] = fld.viewSize;
-  const data = fld.value;
+  const data = fld.data;
 
   let x0 = nx,
     x1 = -1;
@@ -81,7 +81,7 @@ export function extentNonNaN(
   for (let y = 0; y < ny; y++) {
     const rowOffset = y * nx;
     for (let x = 0; x < nx; x++) {
-      const v = data.array[rowOffset + x];
+      const v = data[rowOffset + x];
       if (!Number.isNaN(v)) {
         if (x < x0) x0 = x;
         if (x > x1) x1 = x;
@@ -94,9 +94,9 @@ export function extentNonNaN(
   return x1 === -1
     ? null
     : [
-        [x0, x1],
-        [y0, y1],
-      ];
+      [x0, x1],
+      [y0, y1],
+    ];
 }
 
 function createRandomPoints(
@@ -145,9 +145,9 @@ export function createFlowAnimator({
   let vfld = vfield;
 
   let maxWind = -Infinity;
-  for (let i = 0; i < ufld.value.array.length; i++) {
-    const u = ufld.value.array[i]!;
-    const v = vfld.value.array[i]!;
+  for (let i = 0; i < ufld.data.length; i++) {
+    const u = ufld.data[i]!;
+    const v = vfld.data[i]!;
     if (Number.isNaN(u) || Number.isNaN(v)) continue;
     const speed = Math.sqrt(u * u + v * v);
     if (speed > maxWind) maxWind = speed;
@@ -160,7 +160,7 @@ export function createFlowAnimator({
 
   const particles: Particle[] = [];
   const buckets: Particle[][] = colorScale.colors.map(() => []);
-  let projector = getProjector(ufld.props.projectorState);
+  let projector = getProjector(ufld.projectorState);
   let extent = extentNonNaN(ufld);
   let validMask = computeValidMask(ufld);
 
@@ -228,7 +228,7 @@ export function createFlowAnimator({
       return;
     }
     randomPos = createRandomPoints(extent);
-    projector = getProjector(ufld.props.projectorState);
+    projector = getProjector(ufld.projectorState);
     validMask = computeValidMask(ufld);
   }
 

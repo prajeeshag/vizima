@@ -1,7 +1,6 @@
-import { getGridProps } from "../../data/grid";
-import { createPixelProvider, PixelField } from "../../data/pixel-field";
+import { PixelField } from "../../data/pixel-field";
 import { createFlowAnimator, type FlowAnimator } from "./animator";
-import type { VectorVarMeta, LatAxis, LonAxis, Array } from "../../data/dataset";
+import type { VectorVarMeta, LatAxis, LonAxis, DataArray } from "../../data/dataset";
 import { type GridProjection, type ProjectorState } from "../../projection";
 import { type AnimationRenderer } from "../../core/animation-renderer";
 import type { Expand } from "../../core/type-helpers";
@@ -9,16 +8,8 @@ import { createPixelFetcher } from "../../data/pixel-field/fetcher";
 
 export type FlowRendererProps = {
   projectorState: ProjectorState;
-  u: {
-    arr: Array;
-    latAxis: LatAxis;
-    lonAxis: LonAxis;
-  };
-  v: {
-    arr: Array;
-    latAxis: LatAxis;
-    lonAxis: LonAxis;
-  };
+  u: DataArray;
+  v: DataArray;
   gridProj: GridProjection;
   maxWind: (props: { gridMeta: VectorVarMeta }) => number;
   timeIndex?: number;
@@ -38,9 +29,8 @@ type Props = {
 
 export function createFlowRenderer(kwds: Expand<Props>): AnimationRenderer {
   let renderRequestId = 0;
-  const pixelProvider = createPixelProvider(8);
 
-  const getPixel = createPixelFetcher(2, pixelProvider);
+  const getPixel = createPixelFetcher(2);
 
   const callback = kwds.callback || (() => { });
   let flowAnimator: FlowAnimator | undefined;
@@ -83,26 +73,18 @@ export function createFlowRenderer(kwds: Expand<Props>): AnimationRenderer {
 
   async function getFields(): Promise<[PixelField, PixelField]> {
     const props = await kwds.getProps();
-    const uGridProps = getGridProps({
-      ...props.u,
-    });
-    const vGridProps = getGridProps({
-      ...props.v,
-    });
 
     const field = await getPixel(
       [
         {
-          gridProps: { ...uGridProps, z: props.vertIndex },
-          lonAxis: props.u.lonAxis,
-          latAxis: props.u.latAxis,
+          array: props.u,
+          z: props.vertIndex,
           gridProj: props.gridProj,
           projectorState: props.projectorState,
         },
         {
-          gridProps: { ...vGridProps, z: props.vertIndex },
-          lonAxis: props.v.lonAxis,
-          latAxis: props.v.latAxis,
+          array: props.v,
+          z: props.vertIndex,
           gridProj: props.gridProj,
           projectorState: props.projectorState,
         },

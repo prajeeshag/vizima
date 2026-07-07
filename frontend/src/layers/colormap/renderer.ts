@@ -1,8 +1,7 @@
-import { getGridProps } from "../../data/grid";
-import { createPixelProvider, PixelField } from "../../data/pixel-field";
+import { PixelField } from "../../data/pixel-field";
 import { createColorMapPainter } from "./painter";
 import { type StaticRenderer } from "../../core/static-renderer";
-import type { DataVarMeta, LatAxis, LonAxis, Array } from "../../data/dataset";
+import type { DataVarMeta, DataArray } from "../../data/dataset";
 import type { GridProjection, ProjectorState } from "../../projection";
 import {
   type ColorScaleDynamic,
@@ -13,9 +12,7 @@ import { createPixelFetcher } from "../../data/pixel-field/fetcher";
 
 export type ColorMapRendererProps = {
   projectorState: ProjectorState;
-  arr: Array;
-  latAxis: LatAxis;
-  lonAxis: LonAxis;
+  arr: DataArray;
   gridProj: GridProjection;
   timeIndex?: number;
   vertIndex?: number;
@@ -37,25 +34,15 @@ export const createColorMapRenderer = (kwrgs: Props) => {
   const callback = kwrgs.callback || (() => { });
   const getProps = kwrgs.getProps;
 
-  const pixelProvider = createPixelProvider(4);
-
-  const getPixel = createPixelFetcher(1, pixelProvider);
+  const getPixel = createPixelFetcher(1);
 
   const colorMapRenderer: StaticRenderer = async () => {
     const props = await getProps();
-    const gridProps = getGridProps({
-      arr: props.arr,
-      latAxis: props.latAxis,
-      lonAxis: props.lonAxis,
-      timeIndex: props.timeIndex,
-      vertIndex: props.vertIndex,
-    });
     const field = await getPixel(
       [
         {
-          gridProps: gridProps,
-          lonAxis: props.lonAxis,
-          latAxis: props.latAxis,
+          array: props.arr,
+          z: props.vertIndex,
           gridProj: props.gridProj,
           projectorState: props.projectorState,
         },

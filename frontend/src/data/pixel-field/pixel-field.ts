@@ -1,29 +1,19 @@
-import type { LatAxis, LonAxis } from "../dataset";
-import { Grid } from "../grid";
+import { Grid } from "../dataset/grid";
 import type { GridProjection, ProjectorState } from "../../projection";
-import { PropValue } from "../../core/types";
-import * as d3 from "d3";
 
 export type PixelProps = {
   readonly grid: Grid;
   readonly gridProj: GridProjection;
   readonly projectorState: ProjectorState;
-  readonly lonAxis: LonAxis;
-  readonly latAxis: LatAxis;
 };
 
-export const pixelPropKeys = [
-  "grid",
-  "gridProj",
-  "projectorState",
-  "lonAxis",
-  "latAxis",
-] as const;
-
-export class PixelField extends PropValue<PixelProps, PixelFieldValue> {
-  get viewSize(): readonly [number, number] {
-    return this.props.projectorState.viewSize;
-  }
+export class PixelField {
+  constructor(
+    readonly data: Float32Array,
+    readonly range: readonly [number, number],
+    readonly viewSize: readonly [number, number],
+    readonly projectorState: ProjectorState
+  ) { }
 
   isDefined(x: number, y: number): boolean {
     return !Number.isNaN(this.get(x, y));
@@ -35,20 +25,15 @@ export class PixelField extends PropValue<PixelProps, PixelFieldValue> {
     if (xr < 0 || xr >= this.viewSize[0] || yr < 0 || yr >= this.viewSize[1]) {
       return NaN;
     }
-    const val = this.value.array[xr + yr * this.viewSize[0]];
+    const val = this.data[xr + yr * this.viewSize[0]];
     return val === undefined ? NaN : val;
   }
 
   min(): number {
-    return this.value.range[0];
+    return this.range[0];
   }
 
   max(): number {
-    return this.value.range[1];
+    return this.range[1];
   }
 }
-
-type PixelFieldValue = {
-  array: Float32Array;
-  range: readonly [number, number];
-};

@@ -35,9 +35,9 @@ export class WebGLColormapContext {
     gl.enableVertexAttribArray(aPos);
     gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
 
-    const arr = pixelField.value.array;
-    const min = pixelField.value.range[0];
-    const max = pixelField.value.range[1];
+    const arr = pixelField.data
+    const min = pixelField.range[0];
+    const max = pixelField.range[1];
 
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.valueTex!);

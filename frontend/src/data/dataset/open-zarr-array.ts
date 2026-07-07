@@ -1,5 +1,4 @@
 import * as zarr from "zarrita";
-import { type ArrayProps, Array } from "./array";
 import QuickLRU from "quick-lru";
 
 interface ChunkCache {
@@ -20,20 +19,25 @@ const withChunkCache = zarr.defineArrayExtension(
   }),
 );
 
+type Array = {
+  dataArr: zarr.Array<zarr.DataType, zarr.FetchStore>;
+  rangeArr: zarr.Array<zarr.DataType, zarr.FetchStore>;
+  rangeTimeArr: zarr.Array<zarr.DataType, zarr.FetchStore>;
+};
 
-export async function openZarrArray(config: ArrayProps, cacheSize: number = 54): Promise<Array> {
+export async function openZarrArray(url: string, cacheSize: number = 54): Promise<Array> {
   // Allocate a bounded cache instance
   const chunkCache = new QuickLRU<string, zarr.Chunk<zarr.DataType>>({ maxSize: cacheSize });
   const chunkCacheRange = new QuickLRU<string, zarr.Chunk<zarr.DataType>>({ maxSize: cacheSize });
   const chunkCacheRangeTime = new QuickLRU<string, zarr.Chunk<zarr.DataType>>({ maxSize: cacheSize });
 
-  let rootUrl = config.url;
-  if (!config.url.startsWith("http")) {
-    rootUrl = new URL(config.url, window.location.origin).href;
+  let rootUrl = url;
+  if (!url.startsWith("http")) {
+    rootUrl = new URL(url, window.location.origin).href;
   }
 
   const store = new zarr.FetchStore(rootUrl);
-  const arr = await zarr.extendArray(
+  const dataArr = await zarr.extendArray(
     await zarr.open(store, { kind: "array" }),
     // Pass the QuickLRU instance instead of a plain Map
     (a) => withChunkCache(a, { cache: chunkCache }),
@@ -53,5 +57,5 @@ export async function openZarrArray(config: ArrayProps, cacheSize: number = 54):
     (a) => withChunkCache(a, { cache: chunkCacheRangeTime }),
   );
 
-  return new Array(config, { arr, rangeArr, rangeTimeArr });
+  return { dataArr, rangeArr, rangeTimeArr };
 }

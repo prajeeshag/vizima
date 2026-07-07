@@ -3,7 +3,7 @@ import * as chromatic from "d3-scale-chromatic";
 import type { PixelField } from "../../data/pixel-field";
 import type { DataVarMeta } from "../../data/dataset";
 import type { Expand } from "../../core/type-helpers";
-import { Grid } from "../../data/grid";
+import { Grid } from "../../data/dataset/grid";
 
 export const PALETTES = {
   Turbo: { kind: "sequential", interpolate: chromatic.interpolateTurbo },
@@ -68,15 +68,15 @@ type DomainFnByKind = {
 };
 
 function rangeGrid(props: DomainFnProps) {
-  return props.grid.range();
+  return props.grid.range;
 }
 
 function rangeGridT(props: DomainFnProps) {
-  return props.grid.rangeTime();
+  return props.grid.rangeTime;
 }
 
 function rangePixel(props: DomainFnProps): [number, number] {
-  const range = props.pixelField.value.range;
+  const range = props.pixelField.range;
   return [range[0], range[1]];
 }
 
@@ -93,17 +93,17 @@ function rangeDiv(range: [number, number]): [number, number, number] {
 }
 
 function rangeGridDiv(props: DomainFnProps): [number, number, number] {
-  const range = props.grid.range();
+  const range = props.grid.range;
   return rangeDiv(range);
 }
 
 function rangeGridTDiv(props: DomainFnProps): [number, number, number] {
-  const range = props.grid.rangeTime();
+  const range = props.grid.rangeTime;
   return rangeDiv(range);
 }
 
 function rangePixelDiv(props: DomainFnProps): [number, number, number] {
-  const range = props.pixelField.value.range;
+  const range = props.pixelField.range;
   return rangeDiv([...range]);
 }
 

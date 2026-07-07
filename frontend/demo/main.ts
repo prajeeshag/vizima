@@ -342,17 +342,13 @@ async function getColorMapRendererProps(): Promise<ColorMapRendererProps> {
   const vertAxis = dset.getVertAxis(varKey);
   const vertIndex = vertAxis ? vertAxis.indexOf(level) : undefined;
   const arr = await dset.getArray(varKey);
-  const latAxis = dset.getLatAxis(varKey);
-  const lonAxis = dset.getLonAxis(varKey);
   const gridMeta = dset.getGridMeta(varKey);
-  if (!gridMeta || !latAxis || !lonAxis || !arr || !projectorState) {
+  if (!gridMeta || !arr || !projectorState) {
     throw new Error("Missing required data for color map rendering");
   }
   return {
     arr,
     projectorState,
-    latAxis,
-    lonAxis,
     gridProj: dset.getGridProj(),
     gridMeta,
     timeIndex: timeStep,
@@ -394,33 +390,17 @@ async function getFlowRendererProps(): Promise<FlowRendererProps> {
   const vertIndex = vertAxis ? vertAxis.indexOf(level) : undefined;
   const uArray = await dset.getArray(uArrName);
   const vArray = await dset.getArray(vArrName);
-  const uLatAxis = dset.getLatAxis(uArrName);
-  const uLonAxis = dset.getLonAxis(uArrName);
-  const vLatAxis = dset.getLatAxis(vArrName);
-  const vLonAxis = dset.getLonAxis(vArrName);
   if (
     !gridMeta ||
     !uArray ||
     !vArray ||
-    !uLatAxis ||
-    !uLonAxis ||
-    !vLatAxis ||
-    !vLonAxis ||
     !projectorState
   ) {
     throw new Error("Missing required data for Flow rendering");
   }
   return {
-    u: {
-      arr: uArray,
-      latAxis: uLatAxis,
-      lonAxis: uLonAxis,
-    },
-    v: {
-      arr: vArray,
-      latAxis: vLatAxis,
-      lonAxis: vLonAxis,
-    },
+    u: uArray,
+    v: vArray,
     projectorState,
     gridProj: dset.getGridProj(),
     timeIndex: timeStep,
@@ -570,6 +550,7 @@ function createTimeAnimationManager(
 
 const timeAnimation = createTimeAnimationManager(
   onTimeAnimation([colorMapLayer, flowLayer]),
+  // onTimeAnimation([flowLayer]),
   onTimeAnimationStop([colorMapLayer, flowLayer]),
   numTimes,
   () => store.getState().timeStep,

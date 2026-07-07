@@ -1,5 +1,5 @@
 import { CanvasElement } from "./canvas-element";
-import { PropValue, AsyncCache, ComputeAgent } from "./types";
+import { PropValue, SimpleAgent } from "./types";
 import { Painter } from "./painter";
 
 type CanvasRendererProps = {
@@ -17,7 +17,7 @@ RenderedCanvas agent make sure that it re-renders only when the props change
 export class RenderedCanvas extends PropValue<
   CanvasRendererProps,
   HTMLCanvasElement
-> {}
+> { }
 
 async function paint(
   props: CanvasRendererProps,
@@ -27,28 +27,12 @@ async function paint(
   canvas.width = props.viewSize[0];
   canvas.height = props.viewSize[1];
   for (const painter of props.painters) {
-    if (signal?.aborted) {
-      throw new Error("Canvas creation aborted");
-    }
+    // signal?.throwIfAborted();
     await painter.draw(canvas, signal);
   }
   return new RenderedCanvas(props, canvas);
 }
 
-export class RenderedCanvasAgent extends ComputeAgent<
-  CanvasRendererProps,
-  RenderedCanvas
-> {}
-export class RenderedCanvasProvider extends AsyncCache<
-  CanvasRendererProps,
-  RenderedCanvas,
-  typeof canvasRendererPropsKeys
-> {}
-
-export function createRenderedCanvasAgent(): RenderedCanvasAgent {
-  const renderedCanvasProvider = new RenderedCanvasProvider(
-    paint,
-    canvasRendererPropsKeys,
-  );
-  return new RenderedCanvasAgent(renderedCanvasProvider);
+export function createRenderedCanvasAgent() {
+  return new SimpleAgent<CanvasRendererProps, RenderedCanvas>(paint);
 }
