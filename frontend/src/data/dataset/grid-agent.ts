@@ -4,6 +4,7 @@ import { type DataArray } from "./DataArray"
 import { lonSubsetIndices, type LonSubset } from "./lon-subsetting"
 import { Grid } from "./grid"
 import { SimpleAgent } from "../../core";
+import * as d3 from "d3";
 
 const ZarrAttrsSchema = z.looseObject({
   scale_factor: z.coerce.number().default(1),
@@ -170,7 +171,6 @@ async function loadValues(
   const values = new Float32Array(sliceArray.data as any).map(
     (x) => (x === arr.fillValue ? NaN : x * attrs.scale_factor + attrs.add_offset)
   );
-
   return values;
 }
 
@@ -218,5 +218,7 @@ async function loadRangeValues(
 
 function latSubsetIndices(lat0: number, lat1: number, nlat: number, y0: number, y1: number): [number, number] {
   const dlon = (lat1 - lat0) / (nlat - 1)
-  return [Math.floor((y0 - lat0) / dlon), Math.ceil((y1 - lat0) / dlon)]
+  const js = Math.max(Math.floor((y0 - lat0) / dlon), 0)
+  const je = Math.min(Math.ceil((y1 - lat0) / dlon), nlat)
+  return [js, je]
 }

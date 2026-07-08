@@ -21,5 +21,5 @@ export function tInterpolatePixelField(
       max = Math.max(max, v);
     }
   }
-  return new PixelField(array, [min, max], p0.viewSize, p0.projectorState);
+  return new PixelField(array, [min, max], p0.projectorState);
 }

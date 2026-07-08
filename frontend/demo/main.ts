@@ -551,7 +551,6 @@ function createTimeAnimationManager(
 
 const timeAnimation = createTimeAnimationManager(
   onTimeAnimation([colorMapLayer, flowLayer]),
-  // onTimeAnimation([flowLayer]),
   onTimeAnimationStop([colorMapLayer, flowLayer]),
   numTimes,
   () => store.getState().timeStep,

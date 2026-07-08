@@ -64,6 +64,7 @@ export async function interpPixelProjected(
       lastYieldTime = performance.now();
     }
   }
+
   return new PixelField(pixelFieldArray, [min, max], props.projectorState);
 }
 
