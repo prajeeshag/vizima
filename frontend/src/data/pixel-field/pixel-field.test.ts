@@ -1,26 +1,13 @@
 import { describe, expect, it } from "bun:test";
 import { PixelField } from "./pixel-field";
-import { Grid } from "../grid";
 
-// Minimal stubs for props that PixelField doesn't use in min/max/get
-const gridStub = new Grid(
-  { url: "stub", x0: 0, y0: 0, nx: 1, ny: 1 },
-  { grid: new Float32Array([0]), range: [0, 0], rangeTime: [0, 0] },
-);
 
 function makeField(
   array: Float32Array,
   range: readonly [number, number],
 ): PixelField {
   return new PixelField(
-    {
-      grid: gridStub,
-      gridProj: {} as any,
-      projectorState: { viewSize: [4, 4] } as any,
-      lonAxis: {} as any,
-      latAxis: {} as any,
-    },
-    { array, range },
+    array, range, { viewSize: [4, 4] } as any
   );
 }
 

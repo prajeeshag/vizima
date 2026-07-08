@@ -11,9 +11,13 @@ export class PixelField {
   constructor(
     readonly data: Float32Array,
     readonly range: readonly [number, number],
-    readonly viewSize: readonly [number, number],
     readonly projectorState: ProjectorState
   ) { }
+
+
+  get viewSize(): readonly [number, number] {
+    return this.projectorState.viewSize;
+  }
 
   isDefined(x: number, y: number): boolean {
     return !Number.isNaN(this.get(x, y));
