@@ -24,6 +24,7 @@ import { createStatusBar } from "../src";
 import { createControlPanel } from "../src";
 import { createJsonAgent } from "../src";
 import { geoDistance } from "d3";
+import { feature } from "topojson-client";
 
 const datasetAgent = createZarrDatasetAgent();
 const dset = await datasetAgent.get({ url: "/dataset.zarr" });
@@ -236,15 +237,35 @@ const selectLandGraticuleState = (s: AppState) => ({
 });
 
 const JsonDataAgent = createJsonAgent();
-const landLow = await JsonDataAgent.run(
+
+const landLowTopology = await JsonDataAgent.run(
   "./assets/landjson/land-110m.topojson",
 );
-const landMid = await JsonDataAgent.run(
+const landLow = feature(
+  landLowTopology,
+  landLowTopology.objects.land,
+);
+
+const landMidTopology = await JsonDataAgent.run(
   "./assets/landjson/land-50m.topojson",
 );
-const landHigh = await JsonDataAgent.run(
-  "./assets/landjson/land-10m.topojson",
+
+const landMid = feature(
+  landMidTopology,
+  landMidTopology.objects.land,
 );
+
+const landHighTopology = await JsonDataAgent.run(
+  "./assets/landjson/land-10m.topojson",
+  // "https://cdn.jsdelivr.net/npm/world-atlas@2/land-10m.json",
+);
+
+const landHigh = feature(
+  landHighTopology,
+  landHighTopology.objects.land,
+).features[0];
+
+landHigh.geometry.coordinates.splice(2161, 1);
 
 function selectLand(scaleMeters: number) {
   if (scaleMeters > 20000) {
@@ -271,6 +292,8 @@ function getLandRendererProps(): LandRendererProps {
   return {
     projectorState,
     topoJson: landType,
+    fillStyle: "#d9d2b6",
+    strokeStyle: null,
   };
 }
 

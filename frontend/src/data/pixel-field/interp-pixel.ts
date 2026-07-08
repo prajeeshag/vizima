@@ -100,3 +100,73 @@ export async function interpPixelProjected(
 //   }
 //   return new PixelField(pixelFieldArray, [min, max], [viewWidth, viewHeight]);
 // }
+
+
+export function fillNearestInPlace(
+  data: Float32Array,
+  mask: Float32Array,
+  nx: number,
+  ny: number,
+): void {
+  const n = nx * ny;
+
+  const queue = new Int32Array(n);
+  const visited = new Uint8Array(n);
+
+  let head = 0;
+  let tail = 0;
+
+  // Initialize queue with valid source cells.
+  for (let idx = 0; idx < n; idx++) {
+    if (Number.isNaN(mask[idx])) {
+      visited[idx] = 1; // barrier
+    } else if (!Number.isNaN(data[idx])) {
+      visited[idx] = 1;
+      queue[tail++] = idx;
+    }
+  }
+
+  while (head < tail) {
+    const idx = queue[head++]!;
+    const value = data[idx]!;
+
+    const i = idx % nx;
+    const j = (idx / nx) | 0;
+
+    if (i > 0) {
+      const m = idx - 1;
+      if (!visited[m]) {
+        visited[m] = 1;
+        data[m] = value;
+        queue[tail++] = m;
+      }
+    }
+
+    if (i + 1 < nx) {
+      const m = idx + 1;
+      if (!visited[m]) {
+        visited[m] = 1;
+        data[m] = value;
+        queue[tail++] = m;
+      }
+    }
+
+    if (j > 0) {
+      const m = idx - nx;
+      if (!visited[m]) {
+        visited[m] = 1;
+        data[m] = value;
+        queue[tail++] = m;
+      }
+    }
+
+    if (j + 1 < ny) {
+      const m = idx + nx;
+      if (!visited[m]) {
+        visited[m] = 1;
+        data[m] = value;
+        queue[tail++] = m;
+      }
+    }
+  }
+}

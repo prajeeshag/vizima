@@ -1,6 +1,5 @@
 import { Grid } from "../dataset/grid";
 import type { GridProjection, ProjectorState } from "../../projection";
-import type { RelationalOperator } from "typescript";
 
 export type PixelProps = {
   readonly grid: Grid;

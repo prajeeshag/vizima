@@ -59,6 +59,7 @@ export function createColorMapRenderer(kwrgs: Props): Renderer {
           z: props.vertIndex,
           gridProj: props.gridProj,
           projectorState: props.projectorState,
+          fillNN: true
         },
       ],
       props.timeIndex,

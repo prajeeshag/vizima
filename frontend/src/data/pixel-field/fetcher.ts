@@ -16,6 +16,7 @@ export type GetPixelArgs = {
   z: number | undefined;
   gridProj: GridProjection;
   projectorState: ProjectorState;
+  fillNN: boolean;
 };
 
 export function createPixelFetcher(n: number) {

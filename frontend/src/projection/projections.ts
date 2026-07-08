@@ -45,7 +45,7 @@ export function getProjector(config: ProjectorState): Projector {
     .rotate(config.rotation)
     .translate(config.translation)
     .scale(config.scale)
-    .clipExtent([[0, 0], [...config.viewSize]]);
+  // .clipExtent([[0, 0], [...config.viewSize]]);
 
   return new Projector(projection);
 }

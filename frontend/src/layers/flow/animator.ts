@@ -154,7 +154,7 @@ export function createFlowAnimator({
   }
 
   const randomAge = randomInt(0, particleMaxAge);
-  const colorScale = windSpeedColorScale(colorScaleSteps, Math.floor(maxWind));
+  const colorScale = windSpeedColorScale(colorScaleSteps, maxWind);
 
   const frameInterval = 1000 / fps;
 
@@ -266,7 +266,8 @@ export function createFlowAnimator({
           // Path from (x,y) to (xt,yt) is visible, so add this particle to the appropriate draw bucket.
           particle.xt = xt;
           particle.yt = yt;
-          buckets[colorScale.indexFor(m)]!.push(particle);
+          const cidx = colorScale.indexFor(m);
+          buckets[cidx]!.push(particle);
         } else {
           // Particle isn't visible, will get reinitialized in the next frame.
           particle.x = xt;
