@@ -1,4 +1,4 @@
-import { Painter } from "../../core/painter";
+import { type Painter } from "../../core/painter";
 import { geoGraticule } from "d3-geo";
 import { type ProjectorState, getProjector } from "../../projection";
 
@@ -11,8 +11,10 @@ export type GraticuleProp = {
 
 const defaultStrokeStyle: string = "rgba(125, 125, 125, 0.5)";
 
-export class GraticulePainter extends Painter<GraticuleProp> {
-  async draw(canvas: HTMLCanvasElement, signal?: AbortSignal) {
+export class GraticulePainter implements Painter {
+  constructor(readonly props: GraticuleProp) { }
+
+  async draw(canvas: HTMLCanvasElement) {
     const ctx = canvas.getContext("2d")!;
     const proj = getProjector(this.props.projectorState);
     ctx.beginPath();
@@ -25,8 +27,12 @@ export class GraticulePainter extends Painter<GraticuleProp> {
     ctx.strokeStyle = strokeStyle;
     ctx.stroke();
   }
+
+  async start() { }
+  async stop() { }
+  async destroy() { }
 }
 
 export function createGraticulePainter(props: GraticuleProp): GraticulePainter {
-  return new GraticulePainter(props, null);
+  return new GraticulePainter(props);
 }

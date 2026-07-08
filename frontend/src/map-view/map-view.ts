@@ -7,9 +7,7 @@ import {
 } from "../projection";
 import {
   createCanvas,
-  createRenderedCanvasAgent,
-  type AnimationRenderer,
-  type StaticRenderer,
+  type Renderer,
 } from "../core";
 import type { Expand } from "../core/type-helpers";
 
@@ -76,24 +74,23 @@ export class MapView {
 
   on = this.events.on.bind(this.events);
 
-  addLayer(renderers: StaticRenderer[]): MapLayer {
+  addLayer(renderers: Renderer[]): MapLayer {
     const canvasElement = createCanvas();
     this.div.appendChild(canvasElement.value);
-    const canvasRendererAgent = createRenderedCanvasAgent();
 
     const render = async ({ show }: { show: boolean } = { show: true }) => {
-      const painters = await Promise.all(
-        renderers.map((renderer) => renderer()),
+      const viewSize = this.globe.getProjState().viewSize
+      const canvas = canvasElement.value;
+      canvas.width = viewSize[0];
+      canvas.height = viewSize[1];
+      await Promise.all(
+        renderers.map((renderer) => renderer.render(canvas)),
       );
-      await canvasRendererAgent.run({
-        painters,
-        canvas: canvasElement,
-        viewSize: this.globe.getProjState().viewSize,
-      });
       if (show) {
         canvasElement.show();
       }
     };
+
     return {
       render: render,
       show: () => {
@@ -108,7 +105,7 @@ export class MapView {
     };
   }
 
-  addAnimationLayer(renderer: AnimationRenderer): MapLayer {
+  addAnimationLayer(renderer: Renderer): MapLayer {
     const canvasElement = createCanvas();
     this.div.appendChild(canvasElement.value);
     return {

@@ -1,10 +1,7 @@
-import { PropValue } from "./types";
 
-export type PainterProps = {};
-
-export abstract class Painter<Props extends PainterProps> extends PropValue<
-  Props,
-  null
-> {
-  abstract draw(canvas: HTMLCanvasElement, signal?: AbortSignal): Promise<void>;
-}
+export type Painter = {
+  draw: (htmlCanvas: HTMLCanvasElement, options?: {}) => void;
+  start: (options?: {}) => void;
+  stop: (options?: {}) => void;
+  destroy: (options?: {}) => void;
+};

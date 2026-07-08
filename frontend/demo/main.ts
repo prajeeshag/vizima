@@ -1,3 +1,4 @@
+import { url } from "zod";
 import { createZarrDatasetAgent, DataVarMeta, VertAxis } from "../src";
 import {
   createLandRenderer,
@@ -21,7 +22,7 @@ import { getProjector, ViewProjection, type ProjectorState } from "../src";
 import { createStore, watchSelector } from "../src";
 import { createStatusBar } from "../src";
 import { createControlPanel } from "../src";
-import { createJsonDataAgent } from "../src";
+import { createJsonAgent } from "../src";
 import { geoDistance } from "d3";
 
 const datasetAgent = createZarrDatasetAgent();
@@ -234,16 +235,16 @@ const selectLandGraticuleState = (s: AppState) => ({
   mapInteracting: s.mapInteracting,
 });
 
-const JsonDataAgent = createJsonDataAgent();
-const landLow = await JsonDataAgent.get({
-  url: "./assets/landjson/land-110m.topojson",
-});
-const landMid = await JsonDataAgent.get({
-  url: "./assets/landjson/land-50m.topojson",
-});
-const landHigh = await JsonDataAgent.get({
-  url: "./assets/landjson/land-10m.topojson",
-});
+const JsonDataAgent = createJsonAgent();
+const landLow = await JsonDataAgent.run(
+  "./assets/landjson/land-110m.topojson",
+);
+const landMid = await JsonDataAgent.run(
+  "./assets/landjson/land-50m.topojson",
+);
+const landHigh = await JsonDataAgent.run(
+  "./assets/landjson/land-10m.topojson",
+);
 
 function selectLand(scaleMeters: number) {
   if (scaleMeters > 20000) {

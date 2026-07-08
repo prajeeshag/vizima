@@ -2,7 +2,7 @@ import { PixelField } from "../../data/pixel-field";
 import { createFlowAnimator, type FlowAnimator } from "./animator";
 import type { VectorVarMeta, LatAxis, LonAxis, DataArray } from "../../data/dataset";
 import { type GridProjection, type ProjectorState } from "../../projection";
-import { type AnimationRenderer } from "../../core/animation-renderer";
+import { type Renderer } from "../../core/renderer";
 import type { Expand } from "../../core/type-helpers";
 import { createPixelFetcher } from "../../data/pixel-field/fetcher";
 
@@ -27,7 +27,7 @@ type Props = {
   }) => void;
 };
 
-export function createFlowRenderer(kwds: Expand<Props>): AnimationRenderer {
+export function createFlowRenderer(kwds: Expand<Props>): Renderer {
   let renderRequestId = 0;
 
   const getPixel = createPixelFetcher(2);
@@ -35,7 +35,7 @@ export function createFlowRenderer(kwds: Expand<Props>): AnimationRenderer {
   const callback = kwds.callback || (() => { });
   let flowAnimator: FlowAnimator | undefined;
 
-  return { render: render, update: update, start: start, stop: stop };
+  return { render, update, start, stop };
 
   async function start() {
     if (!flowAnimator) return;
@@ -59,7 +59,7 @@ export function createFlowRenderer(kwds: Expand<Props>): AnimationRenderer {
       ufield: uField,
       vfield: vField,
     });
-    flowAnimator.animate(canvas);
+    flowAnimator.draw(canvas);
   }
 
   async function update() {

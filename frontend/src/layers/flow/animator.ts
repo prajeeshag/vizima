@@ -165,7 +165,7 @@ export function createFlowAnimator({
   let validMask = computeValidMask(ufld);
 
   const animator = {
-    animate,
+    draw: animate,
     start,
     stop,
     destroy,

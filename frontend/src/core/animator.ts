@@ -1,6 +1,7 @@
+
 export type Animator = {
-  animate: (htmlCanvas: HTMLCanvasElement) => void;
-  start: () => void;
-  stop: () => void;
-  destroy: () => void;
+  draw: (htmlCanvas: HTMLCanvasElement, options?: {}) => void;
+  start: (options?: {}) => void;
+  stop: (options?: {}) => void;
+  destroy: (options?: {}) => void;
 };

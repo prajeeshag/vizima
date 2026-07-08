@@ -1,4 +1,4 @@
-import { Painter } from "../../core/painter";
+import { type Painter } from "../../core/painter";
 import { PixelField } from "../../data/pixel-field";
 import { logger } from "../../logger";
 import * as d3 from "d3";
@@ -21,16 +21,23 @@ type ColorMapProps = {
   readonly colorScale: ColorScaleStatic;
 };
 
-export class ColorMapPainter extends Painter<ColorMapProps> {
+export class ColorMapPainter implements Painter {
+
   private readonly logger = logger.child({ component: "ColorMapPainter" });
 
-  async draw(canvas: HTMLCanvasElement, signal: AbortSignal) {
+  constructor(readonly props: ColorMapProps) { }
+
+  async draw(canvas: HTMLCanvasElement) {
     if (canvas.getContext("webgl2")) {
       const ctx = getWebGLContext(canvas);
       return ctx.draw(this.props.pixelField, this.props.colorScale, ALPHA);
     }
     return this.drawCPU(canvas);
   }
+
+  async start() { }
+  async stop() { }
+  async destroy() { }
 
   private async drawCPU(canvas: HTMLCanvasElement) {
     const ctx = canvas.getContext("2d")!;
@@ -63,5 +70,5 @@ export class ColorMapPainter extends Painter<ColorMapProps> {
 }
 
 export function createColorMapPainter(props: ColorMapProps) {
-  return new ColorMapPainter(props, null);
+  return new ColorMapPainter(props);
 }

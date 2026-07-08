@@ -1,37 +1,23 @@
 import { json as d3json } from "d3";
-import { PropValue, ComputeAgent, AsyncCache } from "../core/types";
+import { SimpleAgent } from "../core";
+import QuickLRU from "quick-lru";
 
-type JsonDataProp = {
-  readonly url: string;
-};
 
-const keys = ["url"] as const;
+const jsonCache = new QuickLRU<string, any>({ maxSize: 10 });
 
-type Keys = typeof keys;
-
-const DEFAULT_CACHE_SIZE = 100;
-
-export class JsonData extends PropValue<JsonDataProp, any> {}
-
-export class JsonDataProvider extends AsyncCache<
-  JsonDataProp,
-  JsonData,
-  Keys
-> {}
-
-export class JsonDataAgent extends ComputeAgent<JsonDataProp, JsonData> {}
-
-async function jsonDataFetch(
-  props: JsonDataProp,
+export async function getJson(
+  url: string,
   signal: AbortSignal,
-): Promise<JsonData> {
-  const data = await d3json(props.url, { signal });
-  return new JsonData(props, data);
+): Promise<any> {
+  const hit = jsonCache.get(url);
+  if (hit) return hit
+  const data = await d3json(url, { signal });
+  jsonCache.set(url, data);
+  return data;
 }
 
-export const createJsonDataAgent = () =>
-  new JsonDataAgent(
-    new JsonDataProvider(jsonDataFetch, keys, {
-      maxCacheSize: DEFAULT_CACHE_SIZE,
-    }),
-  );
+
+
+export function createJsonAgent() {
+  return new SimpleAgent<string, any>(getJson);
+}

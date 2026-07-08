@@ -1,20 +1,29 @@
-import type { StaticRenderer } from "../../core/static-renderer";
+import type { Renderer } from "../../core/renderer";
 import {
   createGraticulePainter,
   type GraticuleProp,
-  GraticulePainter,
 } from "./painter";
 
 export type GraticuleRendererProps = GraticuleProp;
 
-export const createGraticuleRenderer = (kwrgs: {
+export function createGraticuleRenderer(kwrgs: {
   getProps: () => GraticuleRendererProps;
-}) => {
+}): Renderer {
   const getProps = kwrgs.getProps;
-  const graticuleRenderer: StaticRenderer =
-    async (): Promise<GraticulePainter> => {
-      const props = getProps();
-      return createGraticulePainter(props);
-    };
-  return graticuleRenderer;
+
+  return { render, stop, start, update }
+
+  async function render(canvas: HTMLCanvasElement) {
+    const props = getProps();
+    createGraticulePainter(props).draw(canvas)
+  };
+
+  async function stop() {
+  };
+
+  async function start() {
+  };
+
+  async function update() {
+  };
 };

@@ -1,6 +1,6 @@
 import { PixelField } from "../../data/pixel-field";
 import { createColorMapPainter } from "./painter";
-import { type StaticRenderer } from "../../core/static-renderer";
+import { type Renderer } from "../../core/renderer";
 import type { DataVarMeta, DataArray } from "../../data/dataset";
 import type { GridProjection, ProjectorState } from "../../projection";
 import {
@@ -30,14 +30,24 @@ type Props = {
   }) => void;
 };
 
-export const createColorMapRenderer = (kwrgs: Props) => {
+export function createColorMapRenderer(kwrgs: Props): Renderer {
+
   const callback = kwrgs.callback || (() => { });
   const getProps = kwrgs.getProps;
 
   const getPixel = createPixelFetcher(1);
 
-  const colorMapRenderer: StaticRenderer = async () => {
+  return { render, update, start, stop };
+
+  async function update() { }
+
+  async function start() { }
+
+  async function stop() { }
+
+  async function render(canvas: HTMLCanvasElement) {
     const props = await getProps();
+
     const field = await getPixel(
       [
         {
@@ -50,6 +60,7 @@ export const createColorMapRenderer = (kwrgs: Props) => {
       props.timeIndex,
       props.numTimeSteps,
     );
+
     const [pixelField, grid] = field[0]!;
 
     const staticColorScale = buildColorScale(props.colorScale, {
@@ -64,10 +75,11 @@ export const createColorMapRenderer = (kwrgs: Props) => {
       pixelField,
     });
 
-    return createColorMapPainter({
+    createColorMapPainter({
       pixelField,
       colorScale: staticColorScale,
-    });
+    }).draw(canvas);
+
   };
-  return colorMapRenderer;
+
 };
