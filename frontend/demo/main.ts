@@ -420,7 +420,7 @@ const graticuleRenderer = createGraticuleRenderer({
   getProps: getGraticuleRendererProps,
 });
 
-const flowLayer = view.addAnimationLayer(flowRenderer);
+const flowLayer = view.addLayer([flowRenderer]);
 const colorMapLayer = view.addLayer([colorMapRenderer]);
 const landGraticuleLayer = view.addLayer([landRenderer, graticuleRenderer]);
 

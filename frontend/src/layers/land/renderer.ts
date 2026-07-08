@@ -1,5 +1,5 @@
 import { type Renderer } from "../../core/renderer";
-import { createLandPainter, LandPainter, type LandProps } from "./painter";
+import { createLandPainter, type LandProps } from "./painter";
 import { type Expand } from "../../core/type-helpers";
 import { mesh } from "topojson-client";
 
@@ -25,5 +25,9 @@ export function createLandRenderer(kwrgs: {
 
   async function stop() { }
   async function start() { }
-  async function update() { }
+  async function update(canvas?: HTMLCanvasElement) {
+    if (canvas) {
+      await render(canvas);
+    }
+  }
 };

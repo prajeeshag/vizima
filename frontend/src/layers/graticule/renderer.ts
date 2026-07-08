@@ -24,6 +24,9 @@ export function createGraticuleRenderer(kwrgs: {
   async function start() {
   };
 
-  async function update() {
-  };
+  async function update(canvas?: HTMLCanvasElement) {
+    if (canvas) {
+      await render(canvas);
+    }
+  }
 };

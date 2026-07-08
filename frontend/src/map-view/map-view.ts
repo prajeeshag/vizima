@@ -77,54 +77,27 @@ export class MapView {
   addLayer(renderers: Renderer[]): MapLayer {
     const canvasElement = createCanvas();
     this.div.appendChild(canvasElement.value);
-
-    const render = async ({ show }: { show: boolean } = { show: true }) => {
-      const viewSize = this.globe.getProjState().viewSize
-      const canvas = canvasElement.value;
-      canvas.width = viewSize[0];
-      canvas.height = viewSize[1];
-      await Promise.all(
-        renderers.map((renderer) => renderer.render(canvas)),
-      );
-      if (show) {
-        canvasElement.show();
-      }
-    };
-
-    return {
-      render: render,
-      show: () => {
-        canvasElement.show();
-      },
-      hide: () => {
-        canvasElement.hide();
-      },
-      update: async () => {
-        await render();
-      },
-    };
-  }
-
-  addAnimationLayer(renderer: Renderer): MapLayer {
-    const canvasElement = createCanvas();
-    this.div.appendChild(canvasElement.value);
     return {
       render: async ({ show }: { show: boolean } = { show: true }) => {
-        await renderer.render(canvasElement.value);
+        const viewSize = this.globe.getProjState().viewSize
+        const canvas = canvasElement.value;
+        canvas.width = viewSize[0];
+        canvas.height = viewSize[1];
+        await Promise.all(renderers.map((renderer) => renderer.render(canvas)));
         if (show) {
           canvasElement.show();
         }
       },
       show: () => {
-        renderer.start();
+        renderers.forEach((renderer) => renderer.start());
         canvasElement.show();
       },
       hide: () => {
-        renderer.stop();
+        renderers.forEach((renderer) => renderer.stop());
         canvasElement.hide();
       },
       update: async () => {
-        await renderer.update();
+        await Promise.all(renderers.map((renderer) => renderer.update(canvasElement.value)));
       },
     };
   }

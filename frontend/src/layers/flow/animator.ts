@@ -1,8 +1,8 @@
 import type { PixelField } from "../../data/pixel-field";
 import { logger } from "../../logger";
 import { randomInt } from "d3-random";
-import type { Animator } from "../../core/animator";
-import { getProjector, type ProjectorState } from "../../projection";
+import type { Painter } from "../../core/painter";
+import { getProjector } from "../../projection";
 
 type Particle = {
   x: number;
@@ -109,7 +109,7 @@ function createRandomPoints(
   return () => [xgen(), ygen()];
 }
 
-export type FlowAnimator = Animator & {
+export type FlowAnimator = Painter & {
   updateFields: (fields: { ufield: PixelField; vfield: PixelField }) => void;
 };
 

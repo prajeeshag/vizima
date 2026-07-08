@@ -39,7 +39,11 @@ export function createColorMapRenderer(kwrgs: Props): Renderer {
 
   return { render, update, start, stop };
 
-  async function update() { }
+  async function update(canvas?: HTMLCanvasElement) {
+    if (canvas) {
+      await render(canvas);
+    }
+  }
 
   async function start() { }
 
