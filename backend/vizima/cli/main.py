@@ -180,17 +180,17 @@ def process_dataset(
         chunks = []
         chunk_minmax = []
         if dataarray["time"]:
-            chunks.append(1)
-            chunk_minmax.append(1)
+            chunks.append(3)
+            chunk_minmax.append(3)
         if dataarray["vertical"]:
-            chunks.append(1)
-            chunk_minmax.append(1)
-        chunks.append(var.shape[-2])
-        chunks.append(var.shape[-1])
+            chunks.append(3)
+            chunk_minmax.append(3)
+        chunks.append(180)
+        chunks.append(360)
 
         encoding[arr_name] = {
             "dtype": "int16",
-            "_FillValue": -32767,
+            "_FillValue": -32768,
             "chunks": tuple(chunks),
             **get_packing_params(var),
         }
