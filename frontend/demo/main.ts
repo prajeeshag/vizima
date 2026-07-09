@@ -260,10 +260,10 @@ const landHighTopology = await JsonDataAgent.run(
   // "https://cdn.jsdelivr.net/npm/world-atlas@2/land-10m.json",
 );
 
-const landHigh = feature(
+const landHigh = (feature(
   landHighTopology,
   landHighTopology.objects.land,
-).features[0];
+) as any).features[0];
 
 landHigh.geometry.coordinates.splice(2161, 1);
 
