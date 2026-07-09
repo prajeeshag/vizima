@@ -1,7 +1,7 @@
 import { z } from "zod";
 import * as fs from "fs";
 
-import { DatasetMeta } from "../src/components/dataset/schema";
+import { DatasetMeta } from "../src/data/dataset/schema";
 
 function exportSchema(schema: z.ZodObject<any>, filename: string) {
   const jsonSchema = schema.toJSONSchema({
